@@ -1,0 +1,10 @@
+# Filtrage des parties Lichess pour le pré-entraînement supervisé (étape 3).
+[filter]
+min_elo = 2000                                   # Elo minimum des DEUX joueurs
+min_plies = 20                                   # parties plus courtes écartées (demi-coups)
+min_estimated_seconds = 180                      # base + 40 * incrément ; < 180 s = bullet
+allowed_terminations = ["Normal", "Time forfeit"]  # exclut Abandoned, Rules infraction...
+val_fraction = 0.02                              # part des PARTIES en validation
+
+[output]
+shard_size = 250000                              # positions par shard (~18 Mo)

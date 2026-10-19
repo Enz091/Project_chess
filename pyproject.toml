@@ -13,6 +13,7 @@ dependencies = [
     "chess>=1.10",
     "numpy",
     "tqdm",
+    "zstandard",
 ]
 
 [project.optional-dependencies]

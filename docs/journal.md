@@ -63,3 +63,49 @@ session ; tout le reste va ici. Ajouter une section à la fin de chaque étape.
   Avec 4 threads : tiny 838, 2 695, 3 773 ; kaggle 215, 435, 441.
   Conclusion : le lot rapporte × 4 à × 8, donc le MCTS devra évaluer par lots (étape 5) ;
   le réseau kaggle est trop lent pour du MCTS sur ce CPU, à réserver au GPU.
+
+## Étape 3 — Données Lichess (2026-10-20)
+
+- **Source retenue** : base mensuelle `standard/lichess_db_standard_rated_2026-09.pgn.zst` (29,2 Go compressé,
+  taille vérifiée par requête HEAD), lue **en flux HTTP + décompression zstd à la volée**, jamais stockée ; on
+  s'arrête dès la cible atteinte. Écartée : la base « Elite » (database.nikonoel.fr, ~80 Mo/mois en `.zip`) car
+  elle ne contient que des joueurs 2500+ contre 2300+, trop étroit pour un seuil à 2000. Biais connu : on ne lit
+  que les premiers jours du mois (ordre chronologique du fichier) ; pour plus de diversité, relancer sur un autre mois.
+- **Pipeline** (`src/chesszero/data.py`) : le processus principal découpe les parties et filtre sur les **en-têtes
+  seuls** (peu coûteux) ; un pool de workers (14 max) rejoue les parties gardées avec `chess.pgn`. Au plus
+  `2 × workers` lots en vol (RAM bornée), résultats consommés dans l'ordre : la sortie ne dépend pas du nombre de
+  workers (testé). Fenêtre zstd : `max_window_size=2**31` (les fichiers Lichess utilisent une grande fenêtre).
+- **Filtres** (`configs/data.toml`, surchargeables en ligne de commande) : `min(WhiteElo, BlackElo) ≥ 2000` ;
+  `Result` décisif ou nul ; `Termination` ∈ {Normal, Time forfeit} ; pas de `FEN`/`SetUp`/variante ; cadence
+  estimée `base + 40 × incrément ≥ 180 s` (définition Lichess du bullet), correspondance (`-`) écartée ;
+  parties de moins de 20 demi-coups écartées ; partie entière jetée si un coup est illisible/illégal.
+- **Séparation** : `crc32(Site) % 10000 < 200` → validation (≈ 2 % des PARTIES). Déterministe, indépendant de
+  l'ordre et du nombre de workers ; aucune partie dans les deux splits (vérifié sur les vraies données).
+- **Format des shards** (`train_00000.npz`, `val_00000.npz`, 250 000 positions chacun, écriture atomique, `.npz` non
+  compressé) : `boards (N,67) uint8`, `moves (N,) int16`, `results (N,) int8` (+1/0/−1 du point de vue du camp au
+  trait), `games (N,) int32` (n° de partie dans la source). 71 octets par position. `manifest.json` : config,
+  compteurs de rejets par raison, shards, octets lus/écrits, durée. Les positions restent dans l'ordre des
+  parties : l'étape 4 doit mélanger (tout tient en RAM : 3 M × 71 o ≈ 215 Mo), `data.load_split(dossier, split)`.
+- **Tests** (`tests/test_data.py`, 11 tests, 30 au total) sur un PGN synthétique au format Lichess (72 parties
+  aléatoires avec commentaires `[%clk]`/`[%eval]`, dont des cas à rejeter : Elo bas, bullet, abandon, trop courte,
+  FEN, résultat `*`, plus une partie à coup illégal) : compteurs de rejets exacts ; pour chaque position, à partir
+  des **seules données stockées** → position valide (`Board.is_valid()`, un roi par camp, pas de pion en
+  rangée 1/8) et coup légal ; relecture indépendante des parties → mêmes octets, mêmes indices, résultat du bon
+  signe pour les deux camps ; train/val sans partie commune ; shards de taille fixe ; workers 1 vs 2 identiques ;
+  lecture `.zst` + arrêt à la cible ; garde-fou d'écrasement. Test de mutation : inverser le signe du résultat
+  fait bien échouer le test.
+- **Essai** (1 000 parties, `data/essai`) : 61 parties gardées (6,1 %), 5 194 positions, 0,4 Mo, 2 s.
+- **Extraction réelle** (`data/lichess_2000`, cible 3 M) :
+
+  | | |
+  |---|---|
+  | Parties lues | 660 723 |
+  | Rejetées (en-têtes) | Elo 553 759 · bullet 65 228 · time_control 97 · result 76 · termination 63 |
+  | Rejetées après lecture | trop courtes 515 |
+  | Parties gardées | 38 285 (5,8 % des lues) |
+  | Positions | 3 002 978 (train 2 941 812 · val 61 166 = 2,04 %) |
+  | Flux lu (compressé) | 213,8 Mo |
+  | Taille sur disque | 222,2 Mo (13 shards) |
+  | Durée | 39 s (≈ 77 000 pos/s, 14 workers) |
+
+  Résultats équilibrés (−1 : 45 %, 0 : 9 %, +1 : 46 %), indice de coup max 4660 < 4672.

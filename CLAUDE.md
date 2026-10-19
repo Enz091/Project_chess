@@ -54,9 +54,9 @@ pip install -e .        # NE PAS réinstaller torch : garder le torch CUDA de Ka
 ## Arborescence
 
 ```
-src/chesszero/   device.py, checkpoint.py, encoding.py, model.py   (+ mcts, selfplay, train à venir)
-scripts/         points d'entrée (smoke_resume.py = démo reprise, show_encoding.py = démo encodage, bench_inference.py = vitesse du réseau)
-configs/         tiny.toml (4 blocs × 64, CPU) et kaggle.toml (10 blocs × 128), section [model]
+src/chesszero/   device.py, checkpoint.py, encoding.py, model.py, data.py   (+ train, mcts, selfplay à venir)
+scripts/         points d'entrée (smoke_resume.py = démo reprise, show_encoding.py = démo encodage, bench_inference.py = vitesse du réseau, prepare_data.py = extraction Lichess)
+configs/         tiny.toml (4 blocs × 64, CPU) et kaggle.toml (10 blocs × 128), section [model] ; data.toml = filtres Lichess
 tests/           pytest
 docs/            journal.md = détails, mesures et tests de chaque étape
 notebooks/       notebook Kaggle (clone + lance un script)
@@ -94,7 +94,10 @@ une section par étape, à compléter à la fin de chaque étape.
   - Perte : `policy_value_loss(logits, value, target_policy, target_value, legal_mask)` = entropie croisée avec coups illégaux masqués (cible = indice du coup ou distribution de visites) + MSE valeur. `masked_policy` donne les probabilités pour le MCTS.
   - Vitesse CPU (14 threads) : tiny ≈ 780 pos/s une par une, ≈ 5 000 en lots de 64+ ; kaggle ≈ 230 seule, ≈ 700 en lots. Le MCTS doit donc évaluer par lots, et le réseau kaggle est réservé au GPU.
   - `requires-python >= 3.11` (configs en TOML, `tomllib`).
-- [ ] Étape 3 — Données Lichess
+- [x] **Étape 3 — Données Lichess** (2026-10-20)
+  - `data.py` + `scripts/prepare_data.py` : base mensuelle Lichess 2026-09 lue **en flux HTTP + zstd** (jamais stockée, arrêt dès la cible ; `zstandard` ajouté aux dépendances), filtrage sur les en-têtes (Elo des deux joueurs ≥ 2000, pas de bullet = durée estimée < 180 s, Termination Normal/Time forfeit, ≥ 20 demi-coups, position de départ standard), config dans `configs/data.toml`.
+  - Train/val **par partie** (`crc32(Site)`, 2 %). Shards `.npz` de 250 000 positions dans `data/<nom>/` : `boards (N,67) uint8`, `moves (N,) int16`, `results (N,) int8` (+1/0/−1 du camp au trait), `games (N,) int32` ; `manifest.json`. `data.load_split(dossier, "train"|"val")` charge tout en RAM (étape 4 : mélanger, les positions sont dans l'ordre des parties).
+  - Extraction réelle `data/lichess_2000` : 660 723 parties lues, 38 285 gardées, **3 002 978 positions** (val 61 166), 222 Mo, 39 s, 214 Mo de flux. Détails, rejets et tests dans le journal.
 - [ ] Étape 4 — Pré-entraînement supervisé
 - [ ] Étape 5 — MCTS
 - [ ] Étape 6 — Self-play
@@ -105,6 +108,7 @@ une section par étape, à compléter à la fin de chaque étape.
 
 ```powershell
 .venv\Scripts\python.exe -m pytest -q
+.venv\Scripts\python.exe scripts\prepare_data.py --out data\lichess_2000 --target-positions 3000000   # --max-games 1000 pour un essai
 .venv\Scripts\python.exe scripts\bench_inference.py --configs tiny   # vitesse d'inférence
 .venv\Scripts\python.exe scripts\show_encoding.py --fen "<FEN>"
 .venv\Scripts\python.exe scripts\smoke_resume.py --stop-after 60   # puis relancer sans l'option
