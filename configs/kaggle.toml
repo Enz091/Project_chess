@@ -1,0 +1,5 @@
+# Réseau plus gros pour les entraînements sur GPU Kaggle.
+[model]
+n_blocks = 10
+n_filters = 128
+value_hidden = 128

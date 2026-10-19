@@ -11,7 +11,7 @@ avancer étape par étape, et **mettre à jour ce fichier (section Avancement) �
 ## Environnement
 
 - **Local (développement / tests)** : Windows 11, Intel Iris Xe, pas de GPU NVIDIA → CPU.
-  Python 3.12, venv dans `.venv/`, PyTorch **version CPU**.
+  Python 3.12 (le projet exige ≥ 3.11 pour `tomllib`), venv dans `.venv/`, PyTorch **version CPU**.
 - **Entraînements réels** : Kaggle (GPU), le code arrive par GitHub (`git clone`).
 - Git : branche `main`, auteur `345045991+Enz091@users.noreply.github.com` (config locale au dépôt).
   Le dépôt GitHub n'existe pas encore.
@@ -48,9 +48,9 @@ pip install -e .        # NE PAS réinstaller torch : garder le torch CUDA de Ka
 ## Arborescence
 
 ```
-src/chesszero/   device.py, checkpoint.py, encoding.py   (+ model, mcts, selfplay, train à venir)
-scripts/         points d'entrée (smoke_resume.py = démo reprise, show_encoding.py = démo encodage)
-configs/         hyperparamètres (local = petits, kaggle = gros)
+src/chesszero/   device.py, checkpoint.py, encoding.py, model.py   (+ mcts, selfplay, train à venir)
+scripts/         points d'entrée (smoke_resume.py = démo reprise, show_encoding.py = démo encodage, bench_inference.py = vitesse du réseau)
+configs/         tiny.toml (4 blocs × 64, CPU) et kaggle.toml (10 blocs × 128), section [model]
 tests/           pytest
 notebooks/       notebook Kaggle (clone + lance un script)
 data/            PGN Lichess et données prétraitées (ignoré par git)
@@ -61,7 +61,7 @@ checkpoints/     sauvegardes d'entraînement (ignoré par git)
 
 0. **Mise en place** : venv, PyTorch CPU, python-chess, git, arborescence, détection du device, checkpoints avec reprise.
 1. **Encodage** : plateau vers tenseur (plans de pièces, trait, roques, en passant, répétitions), et coup vers indice dans un espace d'actions fixe (8×8×73 comme AlphaZero), avec masque des coups légaux.
-2. **Réseau** : ResNet (tronc de blocs résiduels, une tête politique et une tête valeur), taille réglable par config (petit en local, plus gros sur Kaggle).
+2. **Réseau** (fait) : ResNet (tronc de blocs résiduels, une tête politique et une tête valeur), taille réglable par config (petit en local, plus gros sur Kaggle).
 3. **Données Lichess** : téléchargement et filtrage des parties (Elo, cadence), conversion PGN en exemples (position, coup joué, résultat) stockés en fichiers compacts.
 4. **Pré-entraînement supervisé** : boucle d'entraînement avec perte politique + perte valeur, validation et checkpoints. Premier notebook Kaggle.
 5. **MCTS** : recherche guidée par le réseau (PUCT, bruit de Dirichlet à la racine, température), évaluation par lots.
@@ -81,7 +81,13 @@ checkpoints/     sauvegardes d'entraînement (ignoré par git)
   - Stockage compact : 67 octets `uint8` par position (64 cases codées 0-12, masque de roques, case en passant, compteur 50 coups). `pack_board` / `unpack_batch` (vectorisé). Environ 270 Mo pour 4 M de positions. Les cibles (indice du coup en int16, résultat en int8) seront stockées à côté à l'étape 3.
   - 11 tests verts : aller-retour de tous les coups légaux (>3000 positions aléatoires + FEN ciblées roque / en passant / promotions), unicité des indices, masque, symétrie `board` / `board.mirror()` (tenseur, masque et indices de coups), pack/unpack = encode.
   - `scripts/show_encoding.py [--fen ...] [--all-planes]` : affiche les plans et les coups légaux avec leurs indices.
-- [ ] Étape 2 — Réseau
+- [x] **Étape 2 — Réseau** (2026-10-20)
+  - `model.py` : `ModelConfig` (n_blocks, n_filters, value_hidden ; `ModelConfig.named("tiny")` lit `configs/tiny.toml`), `ChessNet`, `build_model(nom_ou_config)`, `count_parameters`.
+  - Tronc : conv 3×3 + BN + ReLU, puis N `ResBlock` (conv-BN-ReLU-conv-BN, + x, ReLU). Tête politique : conv 3×3 + BN + ReLU puis conv 1×1 vers 73 plans ; sortie `(B,73,8,8)` permutée en `(B,8,8,73)` et aplatie, donc l'indice vaut `case_départ*73 + plan` comme `encoding.move_to_index` (testé). Tête valeur : conv 1×1 → 1 plan + BN + ReLU, FC 64→hidden→1, `tanh`. Le réseau renvoie des logits bruts `(B,4672)` et une valeur `(B,)` du point de vue du camp au trait.
+  - Paramètres : **tiny = 352 460** (4 × 64), **kaggle = 3 140 940** (10 × 128).
+  - Perte : `masked_log_softmax` / `masked_policy` (illégaux à -1e9, calculé en float32), `policy_value_loss` = entropie croisée (cible = indice du coup OU distribution de visites) + MSE valeur, poids 1 pour chacun. Retourne aussi les deux termes pour les logs.
+  - 8 tests dans `tests/test_model.py` (19 au total, tous verts) dont le surapprentissage : tiny mémorise 50 positions à cibles aléatoires, perte 4,0 → ~1e-4 en ~50 pas Adam (lr 2e-3), 100 % de coups justes en mode eval.
+  - Vitesse d'inférence CPU (14 threads, `scripts/bench_inference.py`) : tiny ≈ **780 pos/s** une par une, ≈ 1 800 (lot 8), 3 700 (lot 32), ~5 900 (lot 128-256) ; kaggle ≈ **226 pos/s** seule, ≈ 640 (lot 32-64), ~730 au mieux. Avec 1 seul thread : tiny 570 seule / 1 280 en lot ; kaggle 103 / 150. Le lot rapporte x4 à x8 : le MCTS devra évaluer par lots (étape 5), et le gros réseau est à réserver au GPU.
 - [ ] Étape 3 — Données Lichess
 - [ ] Étape 4 — Pré-entraînement supervisé
 - [ ] Étape 5 — MCTS
@@ -93,6 +99,7 @@ checkpoints/     sauvegardes d'entraînement (ignoré par git)
 
 ```powershell
 .venv\Scripts\python -m pytest -q
+.venv\Scripts\python scripts\bench_inference.py --configs tiny   # vitesse d'inférence
 .venv\Scripts\python scripts\show_encoding.py --fen "<FEN>"
 .venv\Scripts\python scripts\smoke_resume.py --stop-after 60   # puis relancer sans l'option
 ```

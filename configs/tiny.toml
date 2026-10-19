@@ -1,0 +1,5 @@
+# Petit réseau pour tester et déboguer sur CPU.
+[model]
+n_blocks = 4
+n_filters = 64
+value_hidden = 64

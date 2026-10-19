@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "chesszero"
 version = "0.0.1"
 description = "IA d'échecs façon AlphaZero : pré-entraînement supervisé (Lichess) puis self-play + MCTS"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 # torch n'est volontairement PAS listé : en local on installe la version CPU,
 # sur Kaggle on garde le torch CUDA déjà fourni (voir CLAUDE.md).
 dependencies = [
