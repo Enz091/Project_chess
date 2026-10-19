@@ -1,0 +1,3 @@
+# Fins de ligne normalisées (le code tourne aussi sous Linux sur Kaggle)
+* text=auto
+*.sh text eol=lf

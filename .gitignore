@@ -1,0 +1,22 @@
+# Environnement
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Données et checkpoints : trop gros pour git (Kaggle Datasets / sorties)
+data/*
+!data/.gitkeep
+checkpoints/*
+!checkpoints/.gitkeep
+*.pt
+*.pt.tmp
+*.pgn
+*.pgn.zst
+
+# Divers
+.vscode/
+.idea/
+Thumbs.db
