@@ -1,5 +1,11 @@
 # Projet_chess — IA d'échecs façon AlphaZero
 
+> **RÈGLE — Python sur cette machine** : `python` n'est pas dans le PATH (Windows ouvre le
+> Microsoft Store à la place). Toujours utiliser `.venv\Scripts\python.exe` pour lancer des
+> scripts, les tests (`-m pytest`) ou pip (`-m pip`). Ne jamais appeler `python`, `pip` ou
+> `pytest` directement. Dans un shell bash, écrire `.venv/Scripts/python.exe`, et éviter de
+> passer des chemins à antislashs dans du code Python inline (ils sont mal interprétés).
+
 IA d'échecs en Python (PyTorch + python-chess) : un réseau de neurones à deux têtes
 (**politique** = probabilité de chaque coup, **valeur** = qui gagne) guide une recherche
 **MCTS**. Le réseau est d'abord **pré-entraîné en supervisé** sur des parties Lichess, puis
