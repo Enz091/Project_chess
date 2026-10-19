@@ -48,8 +48,8 @@ pip install -e .        # NE PAS réinstaller torch : garder le torch CUDA de Ka
 ## Arborescence
 
 ```
-src/chesszero/   device.py, checkpoint.py   (+ encoding, model, mcts, selfplay, train à venir)
-scripts/         points d'entrée (smoke_resume.py = démo reprise)
+src/chesszero/   device.py, checkpoint.py, encoding.py   (+ model, mcts, selfplay, train à venir)
+scripts/         points d'entrée (smoke_resume.py = démo reprise, show_encoding.py = démo encodage)
 configs/         hyperparamètres (local = petits, kaggle = gros)
 tests/           pytest
 notebooks/       notebook Kaggle (clone + lance un script)
@@ -75,7 +75,12 @@ checkpoints/     sauvegardes d'entraînement (ignoré par git)
   - Python 3.12.10 et Git 2.55 installés via winget. Venv avec torch 2.14.1+cpu, chess 1.11.2, numpy, tqdm, pytest.
   - `device.py` et `checkpoint.py` écrits. 3 tests verts, dont « reprise = run d'une traite ».
   - `scripts/smoke_resume.py` : interruption à l'étape 60 puis reprise automatique vérifiée.
-- [ ] Étape 1 — Encodage
+- [x] **Étape 1 — Encodage** (2026-10-20)
+  - `encoding.py` : tenseur `(18, 8, 8)` float32 du point de vue du camp au trait (Noirs = `board.mirror()`, retournement vertical seulement, pas de miroir gauche-droite à cause des roques). Plans : 0-5 mes pièces, 6-11 pièces adverses, 12-15 roques (mon petit/grand, adverse petit/grand), 16 en passant (seulement si la prise est légale), 17 compteur des 50 coups / 100 (plafonné à 1). Pas d'historique ni de répétitions pour l'instant.
+  - Coups : indice = `case_départ_retournée * 73 + plan` (4672). Plans 0-55 mouvements de dame (direction * 7 + distance - 1, directions N, NE, E, SE, S, SO, O, NO), 56-63 cavalier, 64-72 sous-promotions (C/F/T × prise gauche/tout droit/prise droite). Promotion en dame = coup normal. `move_to_index(move, board)`, `index_to_move(index, board)` (le `board` donne le trait et sert à reconnaître la promotion en dame), `legal_move_mask(board)`.
+  - Stockage compact : 67 octets `uint8` par position (64 cases codées 0-12, masque de roques, case en passant, compteur 50 coups). `pack_board` / `unpack_batch` (vectorisé). Environ 270 Mo pour 4 M de positions. Les cibles (indice du coup en int16, résultat en int8) seront stockées à côté à l'étape 3.
+  - 11 tests verts : aller-retour de tous les coups légaux (>3000 positions aléatoires + FEN ciblées roque / en passant / promotions), unicité des indices, masque, symétrie `board` / `board.mirror()` (tenseur, masque et indices de coups), pack/unpack = encode.
+  - `scripts/show_encoding.py [--fen ...] [--all-planes]` : affiche les plans et les coups légaux avec leurs indices.
 - [ ] Étape 2 — Réseau
 - [ ] Étape 3 — Données Lichess
 - [ ] Étape 4 — Pré-entraînement supervisé
@@ -88,5 +93,6 @@ checkpoints/     sauvegardes d'entraînement (ignoré par git)
 
 ```powershell
 .venv\Scripts\python -m pytest -q
+.venv\Scripts\python scripts\show_encoding.py --fen "<FEN>"
 .venv\Scripts\python scripts\smoke_resume.py --stop-after 60   # puis relancer sans l'option
 ```
