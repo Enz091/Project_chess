@@ -16,9 +16,13 @@ checkpoints/*
 *.pgn
 # parties de match (petites) : gardées dans git
 !docs/*.pgn
+!docs/stockfish/*.pgn
 *.pgn.zst
 
 # Divers
 .vscode/
 .idea/
 Thumbs.db
+
+# Logiciels externes téléchargés (Stockfish, Cute Chess) : gros binaires, hors git
+tools/

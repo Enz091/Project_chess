@@ -54,14 +54,15 @@ pip install -e .        # NE PAS réinstaller torch : garder le torch CUDA de Ka
 ## Arborescence
 
 ```
-src/chesszero/   device.py, checkpoint.py, encoding.py, model.py, data.py, train.py, mcts.py   (+ selfplay à venir)
-scripts/         points d'entrée (smoke_resume.py = démo reprise, show_encoding.py = démo encodage, bench_inference.py = vitesse du réseau, prepare_data.py = extraction Lichess (un ou plusieurs mois), make_kaggle_zip.py = archive des shards pour un Dataset Kaggle, summarize_run.py = débit/GPU/attente d'un entraînement + verdict, train.py = pré-entraînement, plot_curves.py = courbes PNG, show_policy.py = meilleurs coups d'un checkpoint, show_search.py = ce que voit le MCTS sur une position, bench_mcts.py = simulations/s selon la taille de lot, match.py = MCTS contre politique seule)
+src/chesszero/   device.py, checkpoint.py, encoding.py, model.py, data.py, train.py, mcts.py, rating.py (Elo par ajustement logistique), uci.py (interface UCI)   (+ selfplay à venir)
+scripts/         points d'entrée (smoke_resume.py = démo reprise, show_encoding.py = démo encodage, bench_inference.py = vitesse du réseau, prepare_data.py = extraction Lichess (un ou plusieurs mois), make_kaggle_zip.py = archive des shards pour un Dataset Kaggle, summarize_run.py = débit/GPU/attente d'un entraînement + verdict, train.py = pré-entraînement, plot_curves.py = courbes PNG, show_policy.py = meilleurs coups d'un checkpoint, show_search.py = ce que voit le MCTS sur une position, bench_mcts.py = simulations/s selon la taille de lot, match.py = MCTS contre politique seule, uci.py + chesszero.bat = moteur UCI, match_stockfish.py = échelle Elo contre Stockfish bridé (protocole de référence), lancer_cutechess.bat = prépare la liste des moteurs puis lance Cute Chess)
 configs/         tiny.toml (4 blocs × 64, CPU) et kaggle.toml (10 blocs × 128), sections [model], [train], [mcts] ; data.toml = filtres Lichess
 tests/           pytest
-docs/            journal.md = détails, mesures et tests de chaque étape ; img/ = courbes d'entraînement, match_*.pgn = parties des matchs
+docs/            journal.md = détails, mesures et tests de chaque étape ; img/ = courbes d'entraînement, match_*.pgn = parties des matchs, stockfish/ = résultats (json, pgn, log) des matchs contre Stockfish
 notebooks/       kaggle_train.ipynb = essai de débit + entraînement sur Kaggle (clone + lance des scripts)
 data/            PGN Lichess et données prétraitées (ignoré par git)
 checkpoints/     sauvegardes d'entraînement (ignoré par git)
+tools/           Stockfish 19 et Cute Chess 1.5.1 portable, téléchargés des releases officielles (ignoré par git)
 ```
 
 ## Feuille de route
@@ -74,7 +75,7 @@ checkpoints/     sauvegardes d'entraînement (ignoré par git)
 5. **MCTS** : recherche guidée par le réseau (PUCT, bruit de Dirichlet à la racine, température), évaluation par lots avec perte virtuelle, réutilisation de l'arbre.
 6. **Self-play** : génération de parties avec le MCTS, enregistrement des cibles (distribution de visites, résultat) dans un replay buffer.
 7. **Boucle AlphaZero** : alternance self-play et entraînement, arène nouveau contre ancien modèle, reprise après coupure Kaggle.
-8. **Évaluation et jeu** : mesure de force (contre Stockfish à niveau limité, estimation Elo), interface UCI pour jouer contre l'IA.
+8. **Évaluation et jeu** : mesure de force (contre Stockfish à niveau limité, estimation Elo), interface UCI pour jouer contre l'IA. *(UCI et mesure de référence faites en avance, voir Avancement ; reste à refaire la mesure après les étapes 6 et 7.)*
 
 ## Avancement
 
@@ -121,6 +122,13 @@ une section par étape, à compléter à la fin de chaque étape.
   - **Vitesse CPU (réseau kaggle)** : 220 simulations/s en lots de 1, **430 en lots de 8**, 540 en lots de 16, 670 en lots de 64 ; le réseau prend plus de 80 % du temps. Au-delà de 8, la perte virtuelle aplatit les visites (en lots de 64, la recherche retombe vers les priors). Sur GPU, il faudra plutôt des lots formés de plusieurs parties en parallèle.
   - **Résultats** : le MCTS trouve le mat du couloir (Ra8#, la politique jouait Ra7) et deux mats en deux (piège de Légal Bxf7+, la politique jouait Nxf7 ; mat étouffé Qg8+, la politique jouait Nf7+ ; serré à 200 simulations, net à 400). **Match MCTS-200 contre politique seule : 20-0, toutes par mat** (écart ≥ +317 Elo, borne à 95 %), 0,45 s par coup ; parties dans `docs/match_mcts200_vs_policy.pgn`.
   - Limite connue : un gain immédiat et un gain lointain valent tous deux +1, donc pas de préférence pour le mat le plus court (gains convertis lentement en finale).
+- [x] **Étape 8 (partielle, faite avant l'étape 6) — UCI et mesure de force contre Stockfish** (2026-10-20)
+  - **UCI** : `src/chesszero/uci.py` ; lanceur `scripts/chesszero.bat` (Python du venv). Options `Simulations` (200), `MoveTime`, `Threads` (≤ 8), `BatchSize` (8), `ReuseTree`, `Checkpoint` ; gère `movetime`, la pendule (`wtime/btime/inc`), `nodes`, `infinite`/`stop` ; arbre réutilisé entre les coups. Joué par `cutechess-cli` contre Stockfish : OK. Tests : `tests/test_uci.py`.
+  - **Jouer contre l'IA** : **double-cliquer `scripts\lancer_cutechess.bat`** depuis l'explorateur (Cute Chess 1.5.1 portable dans `tools/`), puis *Game → New*, joueur « ChessZero - MCTS 200 », pendule personnalisée (jamais « infinie »). Piège : une session Claude ne peut pas écrire dans le vrai `%APPDATA%` (redirection MSIX), c'est le double-clic qui crée `engines.json`.
+  - **Échelle Elo** : `scripts/match_stockfish.py` contre Stockfish 19 bridé (`UCI_Elo`), protocole de référence `stockfish-ladder-v1` : IA MCTS-200, Stockfish 300 ms par coup / 1 thread, 10 ouvertures × 2 couleurs, niveaux 1320-2500 puis extension +300 tant que > 80 %, puis affinage (3 niveaux × 40 parties), 4 processus × 2 threads torch (8 threads au plus). **Ne pas changer le protocole** (il sert de référence pour les étapes 6 et 7) ; le détail exact est dans `docs/journal.md`. Calcul d'Elo : `rating.py` (ajustement logistique unique sur toutes les parties, intervalle à 95 %).
+  - **Résultat de référence (`docs/stockfish/kaggle_sup.json`, réseau kaggle pas 92 000, 220 parties, 53 min)** : **Elo 2436 ± 56 (intervalle 2381 à 2492) sur l'échelle UCI_Elo de Stockfish 19**, scores : 1320 100 %, 1600 97,5 %, 1900 80 %, 2200 72,5 %, 2300 67,5 %, 2400 55 %, 2500 50 %. Extension non déclenchée. Limites : échelle CCRL Blitz de Stockfish (≠ FIDE/Lichess, décalage incertain), calibrée à 60 s + 0,6 s alors que Stockfish joue 300 ms (Elo de l'IA plutôt surestimé), Stockfish bridé fait des gaffes aléatoires, 10 ouvertures (intervalle un peu optimiste ; un écart < ~80 Elo entre deux checkpoints n'est pas significatif).
+  - **Mesurer un autre checkpoint** : `scripts\match_stockfish.py run --tag <nom> --checkpoint <best.pt> --like kaggle_sup` (rejoue exactement les mêmes parties, compare automatiquement ; sans `--like` : protocole adaptatif complet) ; `match_stockfish.py compare kaggle_sup <nom>`.
+  - Faiblesses vues dans les parties : gaffes tactiques de profondeur 3 (défaite à +6 contre le niveau 1900) et finales longues (255 demi-coups, pion h laissé promouvoir) ; gambit dame refusé (29 %), London et Caro-Kann (~45 %) sont les ouvertures les plus dures. Détails dans le journal.
 - [ ] Étape 6 — Self-play
 - [ ] Étape 7 — Boucle AlphaZero
 - [ ] Étape 8 — Évaluation et jeu
@@ -129,6 +137,10 @@ une section par étape, à compléter à la fin de chaque étape.
 
 ```powershell
 .venv\Scripts\python.exe -m pytest -q
+.venv\Scripts\python.exe scripts\match_stockfish.py bench   # 4 parties simultanées, estime la durée (rien n'est enregistré)
+.venv\Scripts\python.exe scripts\match_stockfish.py run --tag <nom> --checkpoint <cheminest.pt> --like kaggle_sup   # même protocole sur un autre checkpoint + comparaison
+.venv\Scripts\python.exe scripts\match_stockfish.py report kaggle_sup   # tableau par niveau + Elo
+scripts\lancer_cutechess.bat   # (double-clic) liste des moteurs + Cute Chess pour jouer contre l'IA
 .venv\Scripts\python.exe scripts\prepare_data.py --out data\lichess_2000 --target-positions 3000000   # --max-games 1000 pour un essai
 .venv\Scripts\python.exe scripts\prepare_data.py --months 2026-02 2026-03 --per-source-positions 3000000 --out data\lichess_24m --workers 7   # plusieurs mois
 .venv\Scripts\python.exe scripts\make_kaggle_zip.py data\lichess_24m --out data\kaggle\lichess_24m.zip   # archive à téléverser sur Kaggle

@@ -606,3 +606,71 @@ Validation = sous-ensemble fixe de 100 000 positions, toutes les 1 000 pas (92 p
 - **Partie 1 (italienne, MCTS Blancs, 24 coups)** : 12.Qxb7 gagne un pion, puis 22.Ne5 Rc8 23.Nxc6! Rxc6?? 24.Re8#. La politique reprend le cavalier et se fait mater sur la dernière rangée, le motif même qu'elle ne voit pas dans le test du mat du couloir.
 - **Partie 12 (est-indienne, MCTS Noirs, 26 coups)** : attaque classique à l'aile roi (…f5-f4, …g5-g4-g3), puis 23…Bxh3! 24.gxh3 Qxh3 25.Rfd1 Qh2+ 26.Kf1 Qh1#, sans avoir eu d'avance de matériel. La politique joue des coups « humains » à l'aile dame (Nb5, a4, Ba5, Nb6) et ne voit pas le mat venir.
 - **Partie 5 (française, MCTS Blancs, 127 demi-coups)** : une finale de cavaliers gagnée à la technique (pion de plus, roi actif, promotion puis 64.Qe5#). Elle montre aussi que les gains se convertissent lentement : il n'y a pas de bonus pour un mat plus court.
+
+## Étape 8 (partielle, avant l'étape 6) — Interface UCI et échelle Stockfish (2026-10-20)
+
+### Interface UCI (`src/chesszero/uci.py`, `scripts/uci.py`, `scripts/chesszero.bat`)
+- Le MCTS joue dans n'importe quel logiciel UCI. Options : `Simulations` (200), `MoveTime` (ms, 0 = utiliser les simulations), `Threads` (1 à 8, plafond voulu pour ce PC), `BatchSize` (8), `ReuseTree` (oui), `Checkpoint` (défaut `checkpoints/kaggle_sup/best.pt`).
+- `go movetime X` ; `go wtime/btime [winc binc movestogo]` : budget = temps restant / 30 (ou / movestogo) + 80 % de l'incrément, jamais plus de la moitié du temps restant, moins 50 ms de marge ; `go nodes N` ; `go infinite` + `stop`. Sans limite : option `MoveTime` si > 0, sinon `Simulations`. Le coup est toujours le plus visité (température 0, sans bruit).
+- La recherche tourne dans un thread, par paquets de 16 simulations : `stop`, `isready`, `quit` répondent tout de suite. Si la recherche plante, un `bestmove` légal est quand même renvoyé (le logiciel ne reste pas bloqué). `info` : profondeur de la variation principale, nodes, nps, temps, `score cp` (courbe de Leela `90·tan(1,5638·Q)`, simple convention d'affichage), pv.
+- **Réutilisation de l'arbre** : si la position reçue prolonge celle de l'arbre (notre coup + la réponse adverse), les coups sont joués dans l'arbre (`advance`) et le sous-arbre est gardé ; sinon (`ucinewgame`, autre position, option modifiée, `ReuseTree` désactivé) l'arbre repart de zéro. L'historique complet des coups reste dans l'arbre, donc les répétitions sont détectées.
+- stdout ne contient que du protocole ; les messages vont sur stderr.
+- Tests : `tests/test_uci.py` (15 tests, évaluateur factice) : poignée de main, nœuds et temps respectés, mat en un (Ra8#), `stop`, réutilisation de l'arbre (même objet, visites conservées), non-réutilisation, historique de répétition, position terminale (`bestmove 0000`), parsing, budget de temps, erreur de recherche.
+- Essai réel : `cutechess-cli` lance `chesszero.bat` contre Stockfish avec une pendule 3 s + 0,1 s : les parties se jouent normalement.
+
+### Logiciels installés (hors git, dans `tools/`)
+- **Stockfish 19** (release officielle `sf_19`, `stockfish-windows-x86-64-universal.zip`, SHA-256 vérifié contre celui publié par GitHub). `UCI_Elo` va de 1320 à 3190 (constantes `LowestElo` / `HighestElo` de `search.h`), « CCRL Blitz à peu près », calibration à 60 s + 0,6 s par coup d'après la documentation de Stockfish.
+- **Cute Chess 1.5.1**, version portable `cutechess-1.5.1-win64.zip` (release officielle GitHub, SHA-256 vérifié). `tools/` est dans le `.gitignore`.
+- **Liste de moteurs de Cute Chess** : `scripts/lancer_cutechess.bat` écrit `%APPDATA%\cutechess\engines.json` (« ChessZero - MCTS 200 » et « Stockfish 19 », chemins absolus calculés à partir de l'emplacement du dépôt ; sauvegarde `.bak` d'une ancienne liste) puis lance Cute Chess. **Piège** : l'application Claude Desktop (MSIX) redirige les écritures dans `%APPDATA%` vers `AppData\Local\Packages\Claude_…\LocalCache\Roaming` ; un fichier écrit depuis une session Claude n'est donc pas vu par un Cute Chess lancé normalement. Le `.bat` doit être lancé par double-clic depuis l'explorateur.
+
+### Calcul d'Elo (`src/chesszero/rating.py`, `tests/test_rating.py`, 10 tests)
+- Un seul Elo `R` est ajusté sur toutes les parties : score espéré `p = 1 / (1 + 10^((S − R)/400))` contre un niveau `S`, nulle = 0,5, estimation par quasi-vraisemblance de Bernoulli (`Σ(s − p) = 0`, bissection).
+- Écart-type = le plus grand de l'écart modèle (`1/(c·√Σp(1−p))`) et de l'écart « sandwich » observé (`√Σ(s−p)² / (c·Σp(1−p))`), `c = ln10/400`. Intervalle à 95 % = ± 1,96 écart-type. Vérifié par simulation : couverture de 90 à 99,5 % pour un nominal de 95 % (300 tirages). Tout gagné ou tout perdu : borne seulement, sans intervalle.
+
+### Protocole de référence (`scripts/match_stockfish.py`, `PROTOCOL` = `stockfish-ladder-v1`)
+**À ne pas modifier : les progrès du self-play (étapes 6 et 7) se mesurent en rejouant exactement ceci.**
+- **IA** : MCTS, section `[mcts]` de `configs/kaggle.toml` (200 simulations par coup, `c_puct` 1,5, lots de 8, perte virtuelle 1, FPU −0,2), température 0, sans bruit de Dirichlet, arbre réutilisé d'un coup à l'autre, un processus par partie, 2 threads torch. Les deux camps sont joués par `mcts.advance`.
+- **Stockfish 19** : `go movetime 300` (300 ms par coup), `Threads 1`, `Hash 16`, `UCI_LimitStrength true`, `UCI_Elo` = le niveau testé ; `ucinewgame` à chaque partie.
+- **Ouvertures** : les 10 de `scripts/match.py` (italienne, sicilienne, française, Caro-Kann, gambit dame refusé, est-indienne, anglaise, espagnole, scandinave, London ; 6 demi-coups chacune), chacune avec les deux couleurs : **un tour = 20 parties**.
+- **Fin de partie** : mat, pat, matériel insuffisant, 50 coups, triple répétition (règles officielles, historique complet) ; nulle au-delà de 400 demi-coups (jamais atteint dans le premier run). Pas d'abandon ni d'arbitrage.
+- **Phase 1** : niveaux 1320, 1600, 1900, 2200, 2500, un tour chacun (100 parties). **Extension** : tant que l'IA marque plus de 80 % au niveau le plus haut joué (phase 1 ou extension), un niveau 300 Elo au-dessus (2800, 3100, plafond 3190), un tour chacun. **Phase 2 (affinage)** : Elo ajusté sur la phase 1 et l'extension, arrondi à 50 → centre ; niveaux centre −100, centre, centre +100 (bornés à 1320–3190), 2 tours de plus chacun (40 parties par niveau, mêmes ouvertures : Stockfish tire au hasard, les parties diffèrent). Elo final = ajustement sur toutes les parties.
+- **Machine** : Intel Core i9-13900H (20 threads logiques), Windows 11 Pro, Python 3.12.10, torch 2.14.1+cpu, **4 processus en parallèle × 2 threads torch + Stockfish à 1 thread = 8 threads au plus**. Ne rien lancer d'autre pendant le match : le nombre de simulations ne change pas, mais la force de Stockfish à 300 ms dépend de la vitesse du CPU.
+- **Relancer sur un autre checkpoint** (mêmes parties : niveaux, tours, ouvertures, couleurs ; refuse si le protocole a changé, `--force` pour passer outre) :
+  `.venv\Scripts\python.exe scripts\match_stockfish.py run --tag <nom> --checkpoint <chemin\best.pt> --like kaggle_sup`
+  puis comparaison automatique ; `match_stockfish.py compare kaggle_sup <nom>` pour la refaire. Sans `--like`, le protocole adaptatif est rejoué depuis zéro (les niveaux de la phase 2 dépendent alors du checkpoint ; l'Elo reste comparable car ajusté sur toutes les parties). Si un checkpoint devient beaucoup plus fort, préférer le protocole adaptatif : le rejeu exact serait saturé (le rapport affiche alors `ATTENTION`).
+- Résultats : `docs/stockfish/<tag>.json` (protocole, environnement, toutes les parties avec leurs coups), `.pgn`, `.log`. Reprise automatique si le run est interrompu.
+- Limite connue : Stockfish n'est pas déterministe, donc deux runs du même protocole ne donnent pas les mêmes parties (ce bruit est dans l'intervalle de confiance).
+
+### Mesure de durée avant lancement (4 parties simultanées, rien enregistré)
+0,68 s par coup de l'IA avec 2 threads (0,45 s avec 14 threads au match précédent), partie moyenne 36 s sur ces 4 parties (niveaux 1320, 1900, 2200, 2500), soit 33 min estimées pour 220 parties. **Réel : 52,8 min** : les parties étaient plus longues (moyenne 57 s, 109 demi-coups) que dans l'échantillon, qui comptait une partie de 15 demi-coups. L'extension n'a pas été déclenchée (score de 52,5 % à 2500) ; un niveau d'extension de plus ajouterait 20 parties, environ 5 min.
+
+### Résultat : réseau kaggle (pas 92 000), MCTS-200 — tag `kaggle_sup`
+220 parties : 127 gains (toutes par mat), 49 défaites (toutes par mat), 44 nulles (29 triples répétitions, 8 matériels insuffisants, 7 pats).
+
+| niveau Stockfish | parties | V | N | D | score | attendu par le modèle (Elo 2436) | Elo implicite (95 %) |
+|---|---|---|---|---|---|---|---|
+| 1320 | 20 | 20 | 0 | 0 | 100,0 % | 99,8 % | non mesurable |
+| 1600 | 20 | 19 | 1 | 0 | 97,5 % | 99,2 % | 2236 (2039 à 2800) |
+| 1900 | 20 | 15 | 2 | 3 | 80,0 % | 95,6 % | 2141 (1996 à 2477) |
+| 2200 | 20 | 13 | 3 | 4 | 72,5 % | 79,6 % | 2368 (2231 à 2593) |
+| 2300 | 40 | 21 | 12 | 7 | 67,5 % | 68,7 % | 2427 (2339 à 2535) |
+| 2400 | 40 | 17 | 10 | 13 | 55,0 % | 55,2 % | 2435 (2340 à 2535) |
+| 2500 | 60 | 22 | 16 | 22 | 50,0 % | 41,0 % | 2500 (2423 à 2577) |
+
+- Phase 1 seule : 2389 ± 115 (2275 à 2504) ; la phase 2 a donc porté sur 2300, 2400 et 2500.
+- **Elo estimé : 2436 ± 56 (intervalle à 95 % : 2381 à 2492), sur l'échelle UCI_Elo de Stockfish 19** (CCRL Blitz, 300 ms par coup). Sensibilité : 2438 en gardant les niveaux ≥ 1900, 2453 pour ≥ 2200, 2462 ± 60 pour 2300-2500 ; par couleur : 2432 (Blancs) et 2441 (Noirs), donc pas d'effet de couleur.
+- Le modèle logistique s'ajuste bien de 2200 à 2500. Contre les niveaux faibles, l'IA marque moins que prévu à 1900 (80 % pour 95,6 % attendu, 3 défaites) : des gaffes tactiques isolées, voir ci-dessous.
+- Ouvertures les plus difficiles pour l'IA (niveaux ≥ 2300, score moyen) : gambit dame refusé 29 %, London 43 %, Caro-Kann 46 % ; les meilleures : française 71 %, sicilienne 68 %, scandinave 68 %.
+- **Nulles** : analysées avec Stockfish plein (250 ms) 30 demi-coups avant la fin : 37 sur 44 sont dans des positions égales (|éval| < 1,5 pion), 7 avec une avance de l'IA supérieure à 1,5 pion (5 triples répétitions, 1 matériel insuffisant, 1 pat), aucune avec un retard. Les nulles ne sont donc, en majorité, pas des gains gâchés ; la limite « pas de préférence pour le mat le plus court » (étape 5) joue sans doute dans les 7 autres.
+
+### Limites de l'échelle (à relire avant d'interpréter le chiffre)
+1. C'est l'échelle **CCRL Blitz de Stockfish**, pas FIDE ni Lichess : le décalage avec ces échelles est incertain (de quelques dizaines à plus d'une centaine de points). Ne pas annoncer « 2436 FIDE ».
+2. La calibration de Stockfish suppose 60 s + 0,6 s par coup ; ici 300 ms. À ce temps Stockfish est un peu plus faible que son niveau nominal, surtout aux niveaux hauts : l'Elo de l'IA est donc probablement un peu surestimé par rapport à l'échelle nominale.
+3. Stockfish bridé joue des coups parfaits mêlés à des gaffes tirées au hasard, pas comme un humain de ce niveau ; l'IA, tactique, s'en sort sans doute mieux qu'un humain de même force (et gaffe sur des coups simples, voir la partie 40).
+4. 10 ouvertures seulement, rejouées 1 à 3 fois : les parties d'une même ouverture ne sont pas indépendantes, l'intervalle est un peu optimiste. 220 parties donnent ± 56 : une différence entre deux checkpoints plus petite que ~80 Elo ne serait pas significative.
+5. Dépend de la machine : à 200 simulations l'IA joue la même chose partout, mais la force de Stockfish à 300 ms varie avec la vitesse du CPU.
+
+### Parties marquantes (PGN : `docs/stockfish/kaggle_sup.pgn`, « Round » = numéro de partie dans l'ordre de fin)
+- **Partie 201 (niveau 2500, sicilienne, IA Blancs, 49 demi-coups)** : victoire d'attaque. 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 e5 5.Bb5+ Nd7 6.Nf5 a6 7.Bxd7+ Qxd7 8.Nc3 Nf6 9.Bg5 Nxe4 10.Nxg7+ Bxg7 11.Nxe4 d5 12.Nf6+ Bxf6 13.Bxf6 Rg8 14.Qe2 Rxg2 15.Qxe5+ Kf8 16.O-O-O Qe6 17.Qf4 Rg4 18.Qh6+ Ke8 19.Rhe1 Re4 20.Rxe4 Qxe4 21.Bc3 Qf5 22.Bb4 b6 23.Qf8+ Kd7 24.Qd6+ Ke8 25.Qe7#. Stockfish plein donne l'avantage à l'IA à partir du demi-coup 30 (≈ +3 pions) et voit le mat à partir du demi-coup 45.
+- **Partie 40 (niveau 1900, italienne, IA Blancs, 38 demi-coups)** : une défaite contre un niveau bien plus faible. L'IA est à +6 pions (Stockfish plein) après 16.Qe4, puis joue **17.Bxe6??** et subit un mat en trois coups : 17…Qxf2+ 18.Rxf2 Rd1+ 19.Qe1 Rxe1#. Une gaffe tactique de profondeur 3 que 200 simulations n'attrapent pas : la recherche ne vérifie pas assez les échecs et sacrifices de dame adverses. C'est le type d'erreur que le self-play devrait corriger.
+- **Partie 90 (niveau 2500, Caro-Kann, IA Noirs, 255 demi-coups)** : la plus longue. Position équilibrée jusqu'au demi-coup 100 (éval ≈ 0), puis l'IA propose l'échange des dames (51…Qe7), laisse le pion h promouvoir (53.h7 puis 54.h8=Q) et Stockfish convertit dame contre cavalier en 128.Qa7#. Illustre la faiblesse en finale : le réseau, entraîné sur des coups humains, calcule mal les courses de pions lointaines à 200 simulations.

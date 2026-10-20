@@ -1,0 +1,244 @@
+
+== phase 1 (grossière) : 100 parties à jouer (0 déjà faites)
+  1/100 niveau 1320 tour 0 Italienne           IA Noirs  | gain    | mat                  |  52 demi-coups | 0.78 s/coup IA | 24 s | reste ~45 min
+  2/100 niveau 1320 tour 0 Sicilienne          IA Noirs  | gain    | mat                  |  54 demi-coups | 0.82 s/coup IA | 26 s | reste ~24 min
+  3/100 niveau 1320 tour 0 Italienne           IA Blancs | gain    | mat                  |  61 demi-coups | 0.75 s/coup IA | 28 s | reste ~17 min
+  4/100 niveau 1320 tour 0 Sicilienne          IA Blancs | gain    | mat                  |  75 demi-coups | 0.81 s/coup IA | 39 s | reste ~17 min
+  5/100 niveau 1320 tour 0 Française           IA Noirs  | gain    | mat                  |  56 demi-coups | 0.77 s/coup IA | 26 s | reste ~18 min
+  6/100 niveau 1320 tour 0 Française           IA Blancs | gain    | mat                  |  63 demi-coups | 0.83 s/coup IA | 31 s | reste ~15 min
+  7/100 niveau 1320 tour 0 Caro-Kann           IA Blancs | gain    | mat                  |  61 demi-coups | 0.82 s/coup IA | 31 s | reste ~14 min
+  8/100 niveau 1320 tour 0 Caro-Kann           IA Noirs  | gain    | mat                  |  86 demi-coups | 0.81 s/coup IA | 44 s | reste ~16 min
+  9/100 niveau 1320 tour 0 Gambit dame refusé  IA Blancs | gain    | mat                  |  63 demi-coups | 0.79 s/coup IA | 30 s | reste ~14 min
+ 10/100 niveau 1320 tour 0 Est-indienne        IA Blancs | gain    | mat                  |  59 demi-coups | 0.77 s/coup IA | 28 s | reste ~13 min
+ 11/100 niveau 1320 tour 0 Gambit dame refusé  IA Noirs  | gain    | mat                  |  68 demi-coups | 0.76 s/coup IA | 31 s | reste ~12 min
+ 12/100 niveau 1320 tour 0 Anglaise            IA Blancs | gain    | mat                  |  53 demi-coups | 0.79 s/coup IA | 25 s | reste ~14 min
+ 13/100 niveau 1320 tour 0 Est-indienne        IA Noirs  | gain    | mat                  |  68 demi-coups | 0.81 s/coup IA | 33 s | reste ~13 min
+ 14/100 niveau 1320 tour 0 Anglaise            IA Noirs  | gain    | mat                  |  68 demi-coups | 0.79 s/coup IA | 33 s | reste ~13 min
+ 15/100 niveau 1320 tour 0 Espagnole           IA Blancs | gain    | mat                  |  91 demi-coups | 0.78 s/coup IA | 45 s | reste ~13 min
+ 16/100 niveau 1320 tour 0 Espagnole           IA Noirs  | gain    | mat                  |  62 demi-coups | 0.81 s/coup IA | 31 s | reste ~12 min
+ 17/100 niveau 1320 tour 0 Scandinave          IA Noirs  | gain    | mat                  |  76 demi-coups | 0.80 s/coup IA | 38 s | reste ~13 min
+ 18/100 niveau 1320 tour 0 London              IA Blancs | gain    | mat                  |  61 demi-coups | 0.79 s/coup IA | 30 s | reste ~13 min
+ 19/100 niveau 1320 tour 0 London              IA Noirs  | gain    | mat                  |  60 demi-coups | 0.80 s/coup IA | 29 s | reste ~12 min
+ 20/100 niveau 1320 tour 0 Scandinave          IA Blancs | gain    | mat                  | 127 demi-coups | 0.80 s/coup IA | 66 s | reste ~12 min
+ 21/100 niveau 1600 tour 0 Italienne           IA Noirs  | gain    | mat                  |  62 demi-coups | 0.78 s/coup IA | 30 s | reste ~12 min
+ 22/100 niveau 1600 tour 0 Sicilienne          IA Blancs | gain    | mat                  |  87 demi-coups | 0.85 s/coup IA | 46 s | reste ~13 min
+ 23/100 niveau 1600 tour 0 Italienne           IA Blancs | gain    | mat                  | 115 demi-coups | 0.82 s/coup IA | 60 s | reste ~12 min
+ 24/100 niveau 1600 tour 0 Française           IA Blancs | gain    | mat                  |  83 demi-coups | 0.79 s/coup IA | 42 s | reste ~12 min
+ 25/100 niveau 1600 tour 0 Sicilienne          IA Noirs  | gain    | mat                  | 112 demi-coups | 0.81 s/coup IA | 58 s | reste ~12 min
+ 26/100 niveau 1600 tour 0 Caro-Kann           IA Noirs  | gain    | mat                  |  54 demi-coups | 0.80 s/coup IA | 26 s | reste ~12 min
+ 27/100 niveau 1600 tour 0 Caro-Kann           IA Blancs | gain    | mat                  |  95 demi-coups | 0.83 s/coup IA | 50 s | reste ~12 min
+ 28/100 niveau 1600 tour 0 Française           IA Noirs  | gain    | mat                  | 114 demi-coups | 0.81 s/coup IA | 59 s | reste ~12 min
+ 29/100 niveau 1600 tour 0 Gambit dame refusé  IA Blancs | gain    | mat                  |  69 demi-coups | 0.82 s/coup IA | 35 s | reste ~11 min
+ 30/100 niveau 1600 tour 0 Est-indienne        IA Noirs  | gain    | mat                  |  70 demi-coups | 0.82 s/coup IA | 35 s | reste ~12 min
+ 31/100 niveau 1600 tour 0 Gambit dame refusé  IA Noirs  | gain    | mat                  | 144 demi-coups | 0.80 s/coup IA | 75 s | reste ~13 min
+ 32/100 niveau 1600 tour 0 Est-indienne        IA Blancs | gain    | mat                  | 133 demi-coups | 0.83 s/coup IA | 70 s | reste ~12 min
+ 33/100 niveau 1600 tour 0 Anglaise            IA Blancs | nulle   | triple répétition    | 128 demi-coups | 0.83 s/coup IA | 69 s | reste ~12 min
+ 34/100 niveau 1600 tour 0 Anglaise            IA Noirs  | gain    | mat                  |  78 demi-coups | 0.79 s/coup IA | 38 s | reste ~11 min
+ 35/100 niveau 1600 tour 0 Scandinave          IA Noirs  | gain    | mat                  |  56 demi-coups | 0.77 s/coup IA | 26 s | reste ~12 min
+ 36/100 niveau 1600 tour 0 Espagnole           IA Blancs | gain    | mat                  |  89 demi-coups | 0.80 s/coup IA | 46 s | reste ~11 min
+ 37/100 niveau 1600 tour 0 Scandinave          IA Blancs | gain    | mat                  | 101 demi-coups | 0.81 s/coup IA | 52 s | reste ~11 min
+ 38/100 niveau 1600 tour 0 London              IA Blancs | gain    | mat                  |  55 demi-coups | 0.79 s/coup IA | 26 s | reste ~11 min
+ 39/100 niveau 1600 tour 0 Espagnole           IA Noirs  | gain    | mat                  | 120 demi-coups | 0.84 s/coup IA | 65 s | reste ~11 min
+ 40/100 niveau 1900 tour 0 Italienne           IA Blancs | défaite | mat                  |  38 demi-coups | 0.80 s/coup IA | 18 s | reste ~10 min
+ 41/100 niveau 1600 tour 0 London              IA Noirs  | gain    | mat                  |  76 demi-coups | 0.78 s/coup IA | 37 s | reste ~10 min
+ 42/100 niveau 1900 tour 0 Italienne           IA Noirs  | gain    | mat                  |  88 demi-coups | 0.79 s/coup IA | 44 s | reste ~10 min
+ 43/100 niveau 1900 tour 0 Française           IA Blancs | gain    | mat                  |  75 demi-coups | 0.78 s/coup IA | 37 s | reste ~10 min
+ 44/100 niveau 1900 tour 0 Sicilienne          IA Blancs | gain    | mat                  | 109 demi-coups | 0.80 s/coup IA | 56 s | reste ~10 min
+ 45/100 niveau 1900 tour 0 Sicilienne          IA Noirs  | gain    | mat                  | 110 demi-coups | 0.80 s/coup IA | 56 s | reste ~10 min
+ 46/100 niveau 1900 tour 0 Caro-Kann           IA Noirs  | gain    | mat                  |  88 demi-coups | 0.76 s/coup IA | 43 s | reste ~10 min
+ 47/100 niveau 1900 tour 0 Caro-Kann           IA Blancs | défaite | mat                  |  90 demi-coups | 0.84 s/coup IA | 48 s | reste ~10 min
+ 48/100 niveau 1900 tour 0 Française           IA Noirs  | nulle   | matériel insuffisant | 151 demi-coups | 0.81 s/coup IA | 80 s | reste ~9 min
+ 49/100 niveau 1900 tour 0 Gambit dame refusé  IA Blancs | gain    | mat                  | 123 demi-coups | 0.78 s/coup IA | 63 s | reste ~9 min
+ 50/100 niveau 1900 tour 0 Gambit dame refusé  IA Noirs  | gain    | mat                  |  70 demi-coups | 0.80 s/coup IA | 35 s | reste ~9 min
+ 51/100 niveau 1900 tour 0 Est-indienne        IA Blancs | gain    | mat                  | 119 demi-coups | 0.79 s/coup IA | 61 s | reste ~9 min
+ 52/100 niveau 1900 tour 0 Anglaise            IA Blancs | gain    | mat                  | 105 demi-coups | 0.78 s/coup IA | 52 s | reste ~9 min
+ 53/100 niveau 1900 tour 0 Espagnole           IA Blancs | gain    | mat                  |  97 demi-coups | 0.81 s/coup IA | 50 s | reste ~9 min
+ 54/100 niveau 1900 tour 0 Espagnole           IA Noirs  | gain    | mat                  |  60 demi-coups | 0.79 s/coup IA | 29 s | reste ~9 min
+ 55/100 niveau 1900 tour 0 Scandinave          IA Noirs  | gain    | mat                  |  46 demi-coups | 0.71 s/coup IA | 20 s | reste ~9 min
+ 56/100 niveau 1900 tour 0 Est-indienne        IA Noirs  | nulle   | triple répétition    | 211 demi-coups | 0.81 s/coup IA | 114 s | reste ~8 min
+ 57/100 niveau 1900 tour 0 Anglaise            IA Noirs  | défaite | mat                  | 205 demi-coups | 0.77 s/coup IA | 104 s | reste ~8 min
+ 58/100 niveau 1900 tour 0 Scandinave          IA Blancs | gain    | mat                  |  81 demi-coups | 0.81 s/coup IA | 41 s | reste ~8 min
+ 59/100 niveau 1900 tour 0 London              IA Noirs  | gain    | mat                  |  60 demi-coups | 0.82 s/coup IA | 29 s | reste ~8 min
+ 60/100 niveau 1900 tour 0 London              IA Blancs | gain    | mat                  |  69 demi-coups | 0.77 s/coup IA | 33 s | reste ~7 min
+ 61/100 niveau 2200 tour 0 Italienne           IA Blancs | gain    | mat                  |  73 demi-coups | 0.79 s/coup IA | 36 s | reste ~7 min
+ 62/100 niveau 2200 tour 0 Sicilienne          IA Blancs | gain    | mat                  |  85 demi-coups | 0.79 s/coup IA | 43 s | reste ~7 min
+ 63/100 niveau 2200 tour 0 Italienne           IA Noirs  | gain    | mat                  | 130 demi-coups | 0.81 s/coup IA | 68 s | reste ~7 min
+ 64/100 niveau 2200 tour 0 Française           IA Blancs | nulle   | matériel insuffisant |  87 demi-coups | 0.83 s/coup IA | 46 s | reste ~7 min
+ 65/100 niveau 2200 tour 0 Sicilienne          IA Noirs  | gain    | mat                  | 128 demi-coups | 0.83 s/coup IA | 68 s | reste ~7 min
+ 66/100 niveau 2200 tour 0 Caro-Kann           IA Blancs | gain    | mat                  |  85 demi-coups | 0.81 s/coup IA | 44 s | reste ~7 min
+ 67/100 niveau 2200 tour 0 Gambit dame refusé  IA Blancs | gain    | mat                  |  69 demi-coups | 0.81 s/coup IA | 35 s | reste ~6 min
+ 68/100 niveau 2200 tour 0 Française           IA Noirs  | défaite | mat                  | 121 demi-coups | 0.82 s/coup IA | 64 s | reste ~6 min
+ 69/100 niveau 2200 tour 0 Caro-Kann           IA Noirs  | gain    | mat                  | 122 demi-coups | 0.82 s/coup IA | 65 s | reste ~6 min
+ 70/100 niveau 2200 tour 0 Est-indienne        IA Noirs  | nulle   | triple répétition    |  62 demi-coups | 0.81 s/coup IA | 31 s | reste ~6 min
+ 71/100 niveau 2200 tour 0 Est-indienne        IA Blancs | gain    | mat                  |  77 demi-coups | 0.81 s/coup IA | 39 s | reste ~6 min
+ 72/100 niveau 2200 tour 0 Gambit dame refusé  IA Noirs  | gain    | mat                  | 118 demi-coups | 0.82 s/coup IA | 62 s | reste ~5 min
+ 73/100 niveau 2200 tour 0 Anglaise            IA Noirs  | gain    | mat                  | 124 demi-coups | 0.80 s/coup IA | 65 s | reste ~5 min
+ 74/100 niveau 2200 tour 0 Anglaise            IA Blancs | nulle   | triple répétition    | 163 demi-coups | 0.81 s/coup IA | 87 s | reste ~5 min
+ 75/100 niveau 2200 tour 0 Espagnole           IA Noirs  | gain    | mat                  |  96 demi-coups | 0.81 s/coup IA | 49 s | reste ~5 min
+ 76/100 niveau 2200 tour 0 Scandinave          IA Blancs | gain    | mat                  |  87 demi-coups | 0.79 s/coup IA | 44 s | reste ~5 min
+ 77/100 niveau 2200 tour 0 Scandinave          IA Noirs  | défaite | mat                  | 103 demi-coups | 0.84 s/coup IA | 55 s | reste ~5 min
+ 78/100 niveau 2200 tour 0 Espagnole           IA Blancs | défaite | mat                  | 236 demi-coups | 0.84 s/coup IA | 131 s | reste ~4 min
+ 79/100 niveau 2200 tour 0 London              IA Blancs | défaite | mat                  | 138 demi-coups | 0.81 s/coup IA | 72 s | reste ~4 min
+ 80/100 niveau 2500 tour 0 Italienne           IA Blancs | gain    | mat                  |  77 demi-coups | 0.80 s/coup IA | 39 s | reste ~4 min
+ 81/100 niveau 2200 tour 0 London              IA Noirs  | gain    | mat                  | 116 demi-coups | 0.82 s/coup IA | 61 s | reste ~4 min
+ 82/100 niveau 2500 tour 0 Sicilienne          IA Blancs | nulle   | triple répétition    |  72 demi-coups | 0.75 s/coup IA | 35 s | reste ~4 min
+ 83/100 niveau 2500 tour 0 Italienne           IA Noirs  | défaite | mat                  | 151 demi-coups | 0.82 s/coup IA | 80 s | reste ~3 min
+ 84/100 niveau 2500 tour 0 Française           IA Noirs  | gain    | mat                  | 112 demi-coups | 0.80 s/coup IA | 58 s | reste ~3 min
+ 85/100 niveau 2500 tour 0 Française           IA Blancs | défaite | mat                  | 148 demi-coups | 0.79 s/coup IA | 77 s | reste ~3 min
+ 86/100 niveau 2500 tour 0 Caro-Kann           IA Blancs | gain    | mat                  | 101 demi-coups | 0.80 s/coup IA | 52 s | reste ~3 min
+ 87/100 niveau 2500 tour 0 Sicilienne          IA Noirs  | nulle   | triple répétition    | 204 demi-coups | 0.82 s/coup IA | 111 s | reste ~3 min
+ 88/100 niveau 2500 tour 0 Gambit dame refusé  IA Noirs  | nulle   | matériel insuffisant | 109 demi-coups | 0.83 s/coup IA | 58 s | reste ~3 min
+ 89/100 niveau 2500 tour 0 Gambit dame refusé  IA Blancs | défaite | mat                  | 152 demi-coups | 0.83 s/coup IA | 83 s | reste ~2 min
+ 90/100 niveau 2500 tour 0 Caro-Kann           IA Noirs  | défaite | mat                  | 255 demi-coups | 0.77 s/coup IA | 133 s | reste ~2 min
+ 91/100 niveau 2500 tour 0 Anglaise            IA Blancs | gain    | mat                  |  89 demi-coups | 0.81 s/coup IA | 46 s | reste ~2 min
+ 92/100 niveau 2500 tour 0 Est-indienne        IA Blancs | nulle   | triple répétition    | 206 demi-coups | 0.82 s/coup IA | 112 s | reste ~2 min
+ 93/100 niveau 2500 tour 0 Anglaise            IA Noirs  | gain    | mat                  |  84 demi-coups | 0.81 s/coup IA | 42 s | reste ~2 min
+ 94/100 niveau 2500 tour 0 Espagnole           IA Blancs | nulle   | triple répétition    |  98 demi-coups | 0.86 s/coup IA | 53 s | reste ~1 min
+ 95/100 niveau 2500 tour 0 Est-indienne        IA Noirs  | nulle   | matériel insuffisant | 194 demi-coups | 0.83 s/coup IA | 107 s | reste ~1 min
+ 96/100 niveau 2500 tour 0 Espagnole           IA Noirs  | nulle   | pat                  | 114 demi-coups | 0.85 s/coup IA | 62 s | reste ~1 min
+ 97/100 niveau 2500 tour 0 Scandinave          IA Blancs | gain    | mat                  | 119 demi-coups | 0.81 s/coup IA | 62 s | reste ~1 min
+ 98/100 niveau 2500 tour 0 London              IA Blancs | défaite | mat                  | 126 demi-coups | 0.77 s/coup IA | 64 s | reste ~0 min
+ 99/100 niveau 2500 tour 0 Scandinave          IA Noirs  | défaite | mat                  | 199 demi-coups | 0.72 s/coup IA | 97 s | reste ~0 min
+100/100 niveau 2500 tour 0 London              IA Noirs  | gain    | mat                  | 204 demi-coups | 0.66 s/coup IA | 95 s | reste ~0 min
+
+Score de l'IA à 2500 : 52.5%
+
+Phase 1 : Elo ajusté 2389 ± 115 (intervalle à 95 % : 2275 à 2504)
+
+== phase 2 (affinage) : niveaux [2300, 2400, 2500] : 120 parties à jouer (0 déjà faites)
+  1/120 niveau 2300 tour 1 Sicilienne          IA Blancs | gain    | mat                  |  49 demi-coups | 0.78 s/coup IA | 23 s | reste ~46 min
+  2/120 niveau 2300 tour 1 Italienne           IA Noirs  | gain    | mat                  |  82 demi-coups | 0.79 s/coup IA | 41 s | reste ~40 min
+  3/120 niveau 2300 tour 1 Française           IA Blancs | défaite | mat                  |  66 demi-coups | 0.75 s/coup IA | 32 s | reste ~36 min
+  4/120 niveau 2300 tour 1 Sicilienne          IA Noirs  | nulle   | triple répétition    | 152 demi-coups | 0.81 s/coup IA | 81 s | reste ~39 min
+  5/120 niveau 2300 tour 1 Française           IA Noirs  | nulle   | triple répétition    |  87 demi-coups | 0.74 s/coup IA | 42 s | reste ~32 min
+  6/120 niveau 2300 tour 1 Italienne           IA Blancs | défaite | mat                  | 158 demi-coups | 0.81 s/coup IA | 84 s | reste ~27 min
+  7/120 niveau 2300 tour 1 Gambit dame refusé  IA Noirs  | gain    | mat                  | 106 demi-coups | 0.83 s/coup IA | 56 s | reste ~38 min
+  8/120 niveau 2300 tour 1 Caro-Kann           IA Blancs | défaite | mat                  | 182 demi-coups | 0.81 s/coup IA | 97 s | reste ~35 min
+  9/120 niveau 2300 tour 1 Caro-Kann           IA Noirs  | nulle   | matériel insuffisant | 156 demi-coups | 0.81 s/coup IA | 84 s | reste ~34 min
+ 10/120 niveau 2300 tour 1 Gambit dame refusé  IA Blancs | nulle   | triple répétition    | 154 demi-coups | 0.84 s/coup IA | 85 s | reste ~31 min
+ 11/120 niveau 2300 tour 1 Est-indienne        IA Blancs | gain    | mat                  |  73 demi-coups | 0.81 s/coup IA | 37 s | reste ~29 min
+ 12/120 niveau 2300 tour 1 Anglaise            IA Blancs | défaite | mat                  |  66 demi-coups | 0.79 s/coup IA | 33 s | reste ~30 min
+ 13/120 niveau 2300 tour 1 Est-indienne        IA Noirs  | nulle   | pat                  | 138 demi-coups | 0.78 s/coup IA | 72 s | reste ~31 min
+ 14/120 niveau 2300 tour 1 Espagnole           IA Blancs | gain    | mat                  |  89 demi-coups | 0.82 s/coup IA | 47 s | reste ~28 min
+ 15/120 niveau 2300 tour 1 Anglaise            IA Noirs  | nulle   | triple répétition    | 125 demi-coups | 0.84 s/coup IA | 68 s | reste ~27 min
+ 16/120 niveau 2300 tour 1 Espagnole           IA Noirs  | nulle   | triple répétition    |  96 demi-coups | 0.79 s/coup IA | 49 s | reste ~27 min
+ 17/120 niveau 2300 tour 1 Scandinave          IA Noirs  | gain    | mat                  |  84 demi-coups | 0.81 s/coup IA | 43 s | reste ~27 min
+ 18/120 niveau 2300 tour 1 Scandinave          IA Blancs | gain    | mat                  |  95 demi-coups | 0.81 s/coup IA | 50 s | reste ~26 min
+ 19/120 niveau 2300 tour 1 London              IA Blancs | gain    | mat                  | 111 demi-coups | 0.83 s/coup IA | 59 s | reste ~26 min
+ 20/120 niveau 2300 tour 1 London              IA Noirs  | nulle   | triple répétition    | 153 demi-coups | 0.82 s/coup IA | 82 s | reste ~27 min
+ 21/120 niveau 2300 tour 2 Italienne           IA Blancs | nulle   | triple répétition    | 124 demi-coups | 0.82 s/coup IA | 66 s | reste ~26 min
+ 22/120 niveau 2300 tour 2 Sicilienne          IA Blancs | gain    | mat                  | 135 demi-coups | 0.80 s/coup IA | 69 s | reste ~27 min
+ 23/120 niveau 2300 tour 2 Sicilienne          IA Noirs  | gain    | mat                  |  72 demi-coups | 0.77 s/coup IA | 35 s | reste ~26 min
+ 24/120 niveau 2300 tour 2 Française           IA Blancs | gain    | mat                  |  65 demi-coups | 0.83 s/coup IA | 33 s | reste ~24 min
+ 25/120 niveau 2300 tour 2 Italienne           IA Noirs  | gain    | mat                  | 178 demi-coups | 0.84 s/coup IA | 97 s | reste ~23 min
+ 26/120 niveau 2300 tour 2 Caro-Kann           IA Blancs | gain    | mat                  |  85 demi-coups | 0.83 s/coup IA | 45 s | reste ~25 min
+ 27/120 niveau 2300 tour 2 Française           IA Noirs  | gain    | mat                  | 100 demi-coups | 0.81 s/coup IA | 51 s | reste ~24 min
+ 28/120 niveau 2300 tour 2 Caro-Kann           IA Noirs  | gain    | mat                  | 116 demi-coups | 0.81 s/coup IA | 60 s | reste ~23 min
+ 29/120 niveau 2300 tour 2 Gambit dame refusé  IA Blancs | défaite | mat                  | 120 demi-coups | 0.85 s/coup IA | 66 s | reste ~23 min
+ 30/120 niveau 2300 tour 2 Est-indienne        IA Blancs | gain    | mat                  |  81 demi-coups | 0.80 s/coup IA | 41 s | reste ~23 min
+ 31/120 niveau 2300 tour 2 Gambit dame refusé  IA Noirs  | nulle   | triple répétition    | 106 demi-coups | 0.83 s/coup IA | 57 s | reste ~22 min
+ 32/120 niveau 2300 tour 2 Est-indienne        IA Noirs  | gain    | mat                  | 122 demi-coups | 0.81 s/coup IA | 64 s | reste ~22 min
+ 33/120 niveau 2300 tour 2 Anglaise            IA Noirs  | gain    | mat                  |  84 demi-coups | 0.82 s/coup IA | 43 s | reste ~22 min
+ 34/120 niveau 2300 tour 2 Anglaise            IA Blancs | nulle   | pat                  | 123 demi-coups | 0.83 s/coup IA | 67 s | reste ~21 min
+ 35/120 niveau 2300 tour 2 Espagnole           IA Blancs | nulle   | triple répétition    |  94 demi-coups | 0.84 s/coup IA | 50 s | reste ~21 min
+ 36/120 niveau 2300 tour 2 London              IA Blancs | défaite | mat                  |  74 demi-coups | 0.79 s/coup IA | 37 s | reste ~22 min
+ 37/120 niveau 2300 tour 2 Espagnole           IA Noirs  | gain    | mat                  | 134 demi-coups | 0.81 s/coup IA | 70 s | reste ~21 min
+ 38/120 niveau 2300 tour 2 Scandinave          IA Blancs | gain    | mat                  | 123 demi-coups | 0.81 s/coup IA | 64 s | reste ~20 min
+ 39/120 niveau 2300 tour 2 Scandinave          IA Noirs  | défaite | mat                  | 127 demi-coups | 0.79 s/coup IA | 66 s | reste ~20 min
+ 40/120 niveau 2300 tour 2 London              IA Noirs  | gain    | mat                  |  74 demi-coups | 0.83 s/coup IA | 38 s | reste ~20 min
+ 41/120 niveau 2400 tour 1 Italienne           IA Blancs | gain    | mat                  |  93 demi-coups | 0.83 s/coup IA | 49 s | reste ~20 min
+ 42/120 niveau 2400 tour 1 Italienne           IA Noirs  | défaite | mat                  | 121 demi-coups | 0.76 s/coup IA | 59 s | reste ~19 min
+ 43/120 niveau 2400 tour 1 Sicilienne          IA Blancs | défaite | mat                  | 134 demi-coups | 0.83 s/coup IA | 72 s | reste ~19 min
+ 44/120 niveau 2400 tour 1 Française           IA Blancs | gain    | mat                  |  81 demi-coups | 0.81 s/coup IA | 41 s | reste ~19 min
+ 45/120 niveau 2400 tour 1 Française           IA Noirs  | nulle   | triple répétition    |  93 demi-coups | 0.85 s/coup IA | 50 s | reste ~19 min
+ 46/120 niveau 2400 tour 1 Sicilienne          IA Noirs  | gain    | mat                  | 178 demi-coups | 0.82 s/coup IA | 96 s | reste ~18 min
+ 47/120 niveau 2400 tour 1 Caro-Kann           IA Noirs  | gain    | mat                  |  90 demi-coups | 0.79 s/coup IA | 46 s | reste ~18 min
+ 48/120 niveau 2400 tour 1 Caro-Kann           IA Blancs | défaite | mat                  | 120 demi-coups | 0.84 s/coup IA | 65 s | reste ~18 min
+ 49/120 niveau 2400 tour 1 Gambit dame refusé  IA Noirs  | défaite | mat                  |  93 demi-coups | 0.81 s/coup IA | 48 s | reste ~18 min
+ 50/120 niveau 2400 tour 1 Est-indienne        IA Blancs | gain    | mat                  |  99 demi-coups | 0.85 s/coup IA | 54 s | reste ~18 min
+ 51/120 niveau 2400 tour 1 Gambit dame refusé  IA Blancs | défaite | mat                  | 170 demi-coups | 0.85 s/coup IA | 94 s | reste ~17 min
+ 52/120 niveau 2400 tour 1 Est-indienne        IA Noirs  | gain    | mat                  | 148 demi-coups | 0.84 s/coup IA | 80 s | reste ~17 min
+ 53/120 niveau 2400 tour 1 Anglaise            IA Noirs  | gain    | mat                  |  92 demi-coups | 0.81 s/coup IA | 47 s | reste ~17 min
+ 54/120 niveau 2400 tour 1 Espagnole           IA Blancs | gain    | mat                  |  93 demi-coups | 0.80 s/coup IA | 47 s | reste ~17 min
+ 55/120 niveau 2400 tour 1 Espagnole           IA Noirs  | défaite | mat                  |  55 demi-coups | 0.83 s/coup IA | 28 s | reste ~16 min
+ 56/120 niveau 2400 tour 1 Anglaise            IA Blancs | défaite | mat                  | 162 demi-coups | 0.83 s/coup IA | 88 s | reste ~16 min
+ 57/120 niveau 2400 tour 1 Scandinave          IA Blancs | gain    | mat                  |  57 demi-coups | 0.75 s/coup IA | 26 s | reste ~15 min
+ 58/120 niveau 2400 tour 1 Scandinave          IA Noirs  | nulle   | pat                  | 134 demi-coups | 0.79 s/coup IA | 70 s | reste ~16 min
+ 59/120 niveau 2400 tour 1 London              IA Noirs  | nulle   | triple répétition    | 142 demi-coups | 0.76 s/coup IA | 72 s | reste ~15 min
+ 60/120 niveau 2400 tour 2 Italienne           IA Blancs | gain    | mat                  | 191 demi-coups | 0.82 s/coup IA | 95 s | reste ~15 min
+ 61/120 niveau 2400 tour 1 London              IA Blancs | défaite | mat                  | 232 demi-coups | 0.81 s/coup IA | 123 s | reste ~15 min
+ 62/120 niveau 2400 tour 2 Italienne           IA Noirs  | gain    | mat                  | 144 demi-coups | 0.80 s/coup IA | 75 s | reste ~15 min
+ 63/120 niveau 2400 tour 2 Sicilienne          IA Noirs  | gain    | mat                  | 118 demi-coups | 0.76 s/coup IA | 58 s | reste ~15 min
+ 64/120 niveau 2400 tour 2 Sicilienne          IA Blancs | nulle   | pat                  | 161 demi-coups | 0.83 s/coup IA | 88 s | reste ~14 min
+ 65/120 niveau 2400 tour 2 Française           IA Noirs  | gain    | mat                  | 108 demi-coups | 0.75 s/coup IA | 52 s | reste ~14 min
+ 66/120 niveau 2400 tour 2 Caro-Kann           IA Blancs | nulle   | triple répétition    |  86 demi-coups | 0.74 s/coup IA | 42 s | reste ~14 min
+ 67/120 niveau 2400 tour 2 Caro-Kann           IA Noirs  | nulle   | triple répétition    | 111 demi-coups | 0.81 s/coup IA | 58 s | reste ~14 min
+ 68/120 niveau 2400 tour 2 Française           IA Blancs | nulle   | pat                  | 213 demi-coups | 0.81 s/coup IA | 116 s | reste ~13 min
+ 69/120 niveau 2400 tour 2 Gambit dame refusé  IA Blancs | gain    | mat                  |  99 demi-coups | 0.80 s/coup IA | 51 s | reste ~13 min
+ 70/120 niveau 2400 tour 2 Gambit dame refusé  IA Noirs  | défaite | mat                  | 103 demi-coups | 0.77 s/coup IA | 51 s | reste ~13 min
+ 71/120 niveau 2400 tour 2 Est-indienne        IA Noirs  | gain    | mat                  | 112 demi-coups | 0.83 s/coup IA | 59 s | reste ~13 min
+ 72/120 niveau 2400 tour 2 Anglaise            IA Blancs | nulle   | triple répétition    | 117 demi-coups | 0.83 s/coup IA | 63 s | reste ~12 min
+ 73/120 niveau 2400 tour 2 Anglaise            IA Noirs  | défaite | mat                  | 143 demi-coups | 0.81 s/coup IA | 76 s | reste ~12 min
+ 74/120 niveau 2400 tour 2 Espagnole           IA Noirs  | nulle   | triple répétition    |  47 demi-coups | 0.77 s/coup IA | 22 s | reste ~12 min
+ 75/120 niveau 2400 tour 2 Est-indienne        IA Blancs | défaite | mat                  | 202 demi-coups | 0.82 s/coup IA | 109 s | reste ~11 min
+ 76/120 niveau 2400 tour 2 Scandinave          IA Noirs  | défaite | mat                  |  57 demi-coups | 0.79 s/coup IA | 28 s | reste ~11 min
+ 77/120 niveau 2400 tour 2 London              IA Blancs | défaite | mat                  |  54 demi-coups | 0.80 s/coup IA | 26 s | reste ~11 min
+ 78/120 niveau 2400 tour 2 Scandinave          IA Blancs | gain    | mat                  |  83 demi-coups | 0.79 s/coup IA | 42 s | reste ~11 min
+ 79/120 niveau 2500 tour 1 Italienne           IA Blancs | gain    | mat                  |  75 demi-coups | 0.80 s/coup IA | 38 s | reste ~11 min
+ 80/120 niveau 2400 tour 2 Espagnole           IA Blancs | nulle   | matériel insuffisant | 223 demi-coups | 0.81 s/coup IA | 121 s | reste ~10 min
+ 81/120 niveau 2500 tour 1 Italienne           IA Noirs  | nulle   | triple répétition    | 115 demi-coups | 0.83 s/coup IA | 61 s | reste ~10 min
+ 82/120 niveau 2400 tour 2 London              IA Noirs  | gain    | mat                  | 172 demi-coups | 0.82 s/coup IA | 93 s | reste ~10 min
+ 83/120 niveau 2500 tour 1 Sicilienne          IA Blancs | gain    | mat                  | 103 demi-coups | 0.82 s/coup IA | 54 s | reste ~9 min
+ 84/120 niveau 2500 tour 1 Sicilienne          IA Noirs  | défaite | mat                  |  79 demi-coups | 0.79 s/coup IA | 39 s | reste ~9 min
+ 85/120 niveau 2500 tour 1 Caro-Kann           IA Blancs | nulle   | triple répétition    |  60 demi-coups | 0.75 s/coup IA | 29 s | reste ~9 min
+ 86/120 niveau 2500 tour 1 Gambit dame refusé  IA Blancs | défaite | mat                  |  56 demi-coups | 0.76 s/coup IA | 27 s | reste ~9 min
+ 87/120 niveau 2500 tour 1 Française           IA Blancs | gain    | mat                  | 141 demi-coups | 0.85 s/coup IA | 77 s | reste ~8 min
+ 88/120 niveau 2500 tour 1 Française           IA Noirs  | gain    | mat                  | 118 demi-coups | 0.85 s/coup IA | 64 s | reste ~8 min
+ 89/120 niveau 2500 tour 1 Caro-Kann           IA Noirs  | défaite | mat                  | 135 demi-coups | 0.81 s/coup IA | 72 s | reste ~8 min
+ 90/120 niveau 2500 tour 1 Est-indienne        IA Blancs | gain    | mat                  | 103 demi-coups | 0.76 s/coup IA | 50 s | reste ~8 min
+ 91/120 niveau 2500 tour 1 Gambit dame refusé  IA Noirs  | nulle   | triple répétition    | 103 demi-coups | 0.85 s/coup IA | 56 s | reste ~7 min
+ 92/120 niveau 2500 tour 1 Est-indienne        IA Noirs  | défaite | mat                  | 103 demi-coups | 0.76 s/coup IA | 51 s | reste ~7 min
+ 93/120 niveau 2500 tour 1 Anglaise            IA Blancs | gain    | mat                  | 121 demi-coups | 0.80 s/coup IA | 63 s | reste ~7 min
+ 94/120 niveau 2500 tour 1 Espagnole           IA Noirs  | défaite | mat                  |  61 demi-coups | 0.86 s/coup IA | 32 s | reste ~7 min
+ 95/120 niveau 2500 tour 1 Scandinave          IA Blancs | gain    | mat                  |  83 demi-coups | 0.83 s/coup IA | 43 s | reste ~6 min
+ 96/120 niveau 2500 tour 1 Espagnole           IA Blancs | nulle   | pat                  | 137 demi-coups | 0.83 s/coup IA | 74 s | reste ~6 min
+ 97/120 niveau 2500 tour 1 Anglaise            IA Noirs  | gain    | mat                  | 166 demi-coups | 0.83 s/coup IA | 89 s | reste ~6 min
+ 98/120 niveau 2500 tour 1 Scandinave          IA Noirs  | défaite | mat                  | 119 demi-coups | 0.86 s/coup IA | 66 s | reste ~6 min
+ 99/120 niveau 2500 tour 1 London              IA Blancs | défaite | mat                  |  64 demi-coups | 0.76 s/coup IA | 31 s | reste ~5 min
+100/120 niveau 2500 tour 2 Italienne           IA Blancs | défaite | mat                  |  50 demi-coups | 0.76 s/coup IA | 23 s | reste ~5 min
+101/120 niveau 2500 tour 2 Sicilienne          IA Blancs | gain    | mat                  |  49 demi-coups | 0.77 s/coup IA | 23 s | reste ~5 min
+102/120 niveau 2500 tour 1 London              IA Noirs  | gain    | mat                  | 116 demi-coups | 0.81 s/coup IA | 60 s | reste ~4 min
+103/120 niveau 2500 tour 2 Italienne           IA Noirs  | défaite | mat                  | 159 demi-coups | 0.77 s/coup IA | 77 s | reste ~4 min
+104/120 niveau 2500 tour 2 Française           IA Blancs | gain    | mat                  | 115 demi-coups | 0.81 s/coup IA | 60 s | reste ~4 min
+105/120 niveau 2500 tour 2 Sicilienne          IA Noirs  | nulle   | triple répétition    | 169 demi-coups | 0.84 s/coup IA | 93 s | reste ~4 min
+106/120 niveau 2500 tour 2 Française           IA Noirs  | nulle   | matériel insuffisant | 213 demi-coups | 0.79 s/coup IA | 113 s | reste ~4 min
+107/120 niveau 2500 tour 2 Caro-Kann           IA Blancs | défaite | mat                  | 146 demi-coups | 0.82 s/coup IA | 78 s | reste ~3 min
+108/120 niveau 2500 tour 2 Gambit dame refusé  IA Blancs | défaite | mat                  | 128 demi-coups | 0.82 s/coup IA | 68 s | reste ~3 min
+109/120 niveau 2500 tour 2 Caro-Kann           IA Noirs  | nulle   | matériel insuffisant | 183 demi-coups | 0.83 s/coup IA | 100 s | reste ~3 min
+110/120 niveau 2500 tour 2 Gambit dame refusé  IA Noirs  | défaite | mat                  |  81 demi-coups | 0.82 s/coup IA | 42 s | reste ~3 min
+111/120 niveau 2500 tour 2 Est-indienne        IA Noirs  | nulle   | triple répétition    |  51 demi-coups | 0.69 s/coup IA | 22 s | reste ~2 min
+112/120 niveau 2500 tour 2 Anglaise            IA Noirs  | gain    | mat                  | 104 demi-coups | 0.79 s/coup IA | 53 s | reste ~2 min
+113/120 niveau 2500 tour 2 Est-indienne        IA Blancs | défaite | mat                  | 178 demi-coups | 0.74 s/coup IA | 90 s | reste ~2 min
+114/120 niveau 2500 tour 2 Espagnole           IA Blancs | gain    | mat                  | 127 demi-coups | 0.80 s/coup IA | 66 s | reste ~2 min
+115/120 niveau 2500 tour 2 Scandinave          IA Blancs | gain    | mat                  |  51 demi-coups | 0.77 s/coup IA | 24 s | reste ~1 min
+116/120 niveau 2500 tour 2 Anglaise            IA Blancs | nulle   | triple répétition    | 163 demi-coups | 0.80 s/coup IA | 87 s | reste ~1 min
+117/120 niveau 2500 tour 2 Espagnole           IA Noirs  | défaite | mat                  |  77 demi-coups | 0.76 s/coup IA | 37 s | reste ~1 min
+118/120 niveau 2500 tour 2 Scandinave          IA Noirs  | gain    | mat                  | 134 demi-coups | 0.72 s/coup IA | 65 s | reste ~1 min
+119/120 niveau 2500 tour 2 London              IA Blancs | défaite | mat                  | 126 demi-coups | 0.71 s/coup IA | 61 s | reste ~0 min
+120/120 niveau 2500 tour 2 London              IA Noirs  | défaite | mat                  | 145 demi-coups | 0.67 s/coup IA | 65 s | reste ~0 min
+
+Terminé en 52.8 min
+
+=== kaggle_sup : 220 parties, checkpoint pas [92000], Stockfish 19 ===
+niveau SF parties   V   N   D   score   Elo implicite (95 %)
+     1320      20  20   0   0  100.0%   non mesurable
+     1600      20  19   1   0   97.5%   2236 (2039 à 2800)
+     1900      20  15   2   3   80.0%   2141 (1996 à 2477)
+     2200      20  13   3   4   72.5%   2368 (2231 à 2593)
+     2300      40  21  12   7   67.5%   2427 (2339 à 2535)
+     2400      40  17  10  13   55.0%   2435 (2340 à 2535)
+     2500      60  22  16  22   50.0%   2500 (2423 à 2577)
+
+Elo estimé (échelle UCI_Elo de Stockfish, ajustement sur toutes les parties) : 2436 ± 56 (intervalle à 95 % : 2381 à 2492)
+Durée moyenne d'une partie : 57 s ; 0.80 s par coup de l'IA
+Limites : échelle CCRL Blitz de Stockfish (pas FIDE/Lichess), calibrée à 60 s + 0,6 s par coup alors que Stockfish joue ici 300 ms ; parties rejouées depuis les mêmes ouvertures non indépendantes ; intervalle donc un peu optimiste.
