@@ -17,6 +17,7 @@ checkpoints/*
 # parties de match (petites) : gardées dans git
 !docs/*.pgn
 !docs/stockfish/*.pgn
+!docs/stockfish/*/*.pgn
 *.pgn.zst
 
 # Divers

@@ -29,6 +29,7 @@ class SlowStub(Stub):
 
 def make_engine(evaluator=None, **options):
     out = io.StringIO()
+    options.setdefault("SyzygyPath", "<empty>")  # tests indépendants des tables téléchargées
     return UCIEngine(out=out, evaluator=evaluator or Stub(), options=options), out
 
 
@@ -303,3 +304,17 @@ def test_profile_arguments_set_defaults():
     main([], stdin=io.StringIO(UCI_QUIT), stdout=out)
     assert "option name Simulations type spin default 200 min 1 max 1000000" in lines(out)
     assert "option name UseClock type check default false" in lines(out)
+
+
+def test_syzygy_path_option(tmp_path):
+    engine, out = make_engine()
+    engine.handle("uci")
+    assert "option name SyzygyPath type string" in out.getvalue()
+    engine.handle(f"setoption name SyzygyPath value {tmp_path}")  # dossier sans tables : on joue sans
+    engine.handle("position startpos")
+    go(engine, "go nodes 16")
+    assert engine.tablebase is None and "bestmove" in out.getvalue()
+    engine.handle("setoption name SyzygyPath value <empty>")
+    engine.handle("position startpos")
+    go(engine, "go nodes 16")
+    assert engine.tablebase is None and engine.mcts.tablebase is None

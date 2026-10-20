@@ -46,6 +46,7 @@ import torch
 from chesszero.checkpoint import load_for_inference
 from chesszero.device import get_device
 from chesszero.mcts import MCTS, MCTSConfig, NetEvaluator, terminal_value
+from chesszero.syzygy import DEFAULT_DIR as DEFAULT_SYZYGY, Tablebase
 
 DEFAULT_CHECKPOINT = Path(__file__).resolve().parents[2] / "checkpoints" / "kaggle_sup" / "best.pt"
 MAX_THREADS = 8  # plafond voulu pour ce PC (20 threads logiques, on en garde pour le reste)
@@ -131,12 +132,16 @@ class UCIEngine:
             "BatchSize": 8,
             "ReuseTree": True,
             "Checkpoint": str(DEFAULT_CHECKPOINT),
+            # tables de finales : utilisées si le dossier en contient (« <empty> » ou vide = sans tables)
+            "SyzygyPath": str(DEFAULT_SYZYGY) if DEFAULT_SYZYGY.is_dir() else "<empty>",
         }
         self.options.update(options or {})  # valeurs par défaut d'un profil (arguments de la ligne de commande)
         self.evaluator = evaluator  # injectable (tests) ; sinon chargé depuis `Checkpoint`
         self._injected = evaluator is not None
         self.board = chess.Board()
         self.mcts: MCTS | None = None
+        self.tablebase: Tablebase | None = None
+        self._tablebase_path: str | None = None  # chemin des tables chargées (None = rien de chargé)
         self._worker: threading.Thread | None = None
         self._stop = threading.Event()
 
@@ -201,6 +206,7 @@ class UCIEngine:
         self.send(f"option name BatchSize type spin default {o['BatchSize']} min 1 max 64")
         self.send(f"option name ReuseTree type check default {str(o['ReuseTree']).lower()}")
         self.send(f"option name Checkpoint type string default {o['Checkpoint']}")
+        self.send(f"option name SyzygyPath type string default {o['SyzygyPath']}")
         self.send("uciok")
 
     def _cmd_setoption(self, args: list[str]) -> None:
@@ -255,6 +261,18 @@ class UCIEngine:
         self.evaluator = NetEvaluator(model)
         print(f"{path} (pas {meta['step']}) chargé", file=sys.stderr, flush=True)
 
+    def _ensure_tablebase(self) -> None:
+        path = str(self.options["SyzygyPath"]).strip()
+        if path == self._tablebase_path:
+            return
+        if self.tablebase is not None:
+            self.tablebase.close()
+        self.tablebase, self._tablebase_path = None, path
+        if path and path != "<empty>":
+            self.tablebase = Tablebase.open(path)
+            what = self.tablebase.describe() if self.tablebase else f"aucune table Syzygy dans {path}"
+            print(what, file=sys.stderr, flush=True)
+
     def _mcts_for(self, board: chess.Board) -> MCTS:
         """Arbre pour `board` : le sous-arbre existant si `board` prolonge sa position, sinon un neuf."""
         old = self.mcts
@@ -269,11 +287,12 @@ class UCIEngine:
                 except ValueError:
                     pass  # coup inattendu : on repart de zéro
         cfg = replace(MCTSConfig.named("kaggle"), batch_size=int(self.options["BatchSize"]))
-        return MCTS(self.evaluator, cfg, board)
+        return MCTS(self.evaluator, cfg, board, tablebase=self.tablebase)
 
     def _cmd_go(self, args: list[str]) -> None:
         go = parse_go(args)
         self._ensure_evaluator()
+        self._ensure_tablebase()
         board = self.board.copy()
         if terminal_value(board) is not None:
             self.send("bestmove 0000")

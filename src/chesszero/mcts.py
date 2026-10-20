@@ -24,6 +24,10 @@ arêtes (compteur entier `VL`, compté comme des visites perdues), retirée à l
 
 Les nœuds ne stockent pas de position : l'objet `MCTS` garde un seul `chess.Board` (avec tout
 l'historique, nécessaire pour la triple répétition) et joue / déjoue les coups pendant la descente.
+
+Tables de finales (optionnel, `tablebase=`) : une position de l'arbre couverte par les tables Syzygy devient
+une feuille de valeur exacte (comme un mat), et à la racine couverte le coup vient des tables (`best_move`).
+Voir `chesszero.syzygy`.
 """
 
 from __future__ import annotations
@@ -230,12 +234,14 @@ class MCTS:
         board: chess.Board | None = None,
         rng: np.random.Generator | None = None,
         check_invariants: bool = False,
+        tablebase=None,
     ):
         self.evaluator = evaluator
         self.config = config or MCTSConfig()
         self.board = board.copy() if board is not None else chess.Board()
         self.rng = rng if rng is not None else np.random.default_rng()
         self.check = check_invariants  # vérifie l'arbre après chaque lot (tests)
+        self.tablebase = tablebase  # chesszero.syzygy.Tablebase ou None
         self.root = Node(terminal_value(self.board))
         self.stats = {"batches": 0, "evaluated": 0, "terminal": 0, "collisions": 0, "seconds": 0.0}
 
@@ -281,7 +287,7 @@ class MCTS:
                 board.push(node.moves[a])
                 child = node.children[a]
                 if child is None:
-                    child = node.children[a] = Node(terminal_value(board))
+                    child = node.children[a] = Node(self._exact_value(board))
                 node = child
             if node.terminal is not None:
                 self._backup(path, node.terminal)
@@ -300,6 +306,13 @@ class MCTS:
         self.stats["terminal"] += n_terminal
         self.stats["collisions"] += collisions
         return len(leaves) + n_terminal
+
+    def _exact_value(self, board: chess.Board) -> float | None:
+        """Valeur exacte d'une nouvelle feuille : fin de partie, sinon tables de finales (si présentes)."""
+        value = terminal_value(board)
+        if value is None and self.tablebase is not None:
+            value = self.tablebase.value(board)
+        return value
 
     def _evaluate_and_expand(self, leaves) -> None:
         legal = [legal_moves_and_indices(b) for _, _, b in leaves]
@@ -332,10 +345,15 @@ class MCTS:
     # ---------------------------------------------------------------- choix du coup
 
     def best_move(self, temperature: float | None = None) -> chess.Move:
-        """T = 0 : coup le plus visité (égalité : plus grand prior) ; T > 0 : tirage selon N^(1/T)."""
+        """T = 0 : coup le plus visité (égalité : plus grand prior) ; T > 0 : tirage selon N^(1/T).
+        Avec des tables de finales et une racine couverte, le coup des tables est prioritaire."""
         root = self.root
         if not root.expanded or root.n_sum == 0:
             raise ValueError("aucune simulation : appeler search() d'abord")
+        if self.tablebase is not None:  # racine couverte par les tables : coup exact (gain le plus direct)
+            move = self.tablebase.choose(self.board, dict(zip(root.moves, root.N.tolist())))
+            if move is not None:
+                return move
         t = self.config.temperature if temperature is None else temperature
         if t == 0:
             a = int(np.lexsort((root.P_raw, root.N))[-1])
@@ -362,6 +380,8 @@ class MCTS:
         elif not self.board.is_legal(move):
             raise ValueError(f"coup illégal : {move} dans {self.board.fen()}")
         self.board.push(move)
+        if child is not None and child.terminal is not None and terminal_value(self.board) is None:
+            child = None  # feuille exacte des tables, pas une fin de partie : la racine doit être cherchée
         self.root = child if child is not None else Node(terminal_value(self.board))
 
     # ---------------------------------------------------------------- affichage et vérifications

@@ -1,29 +1,38 @@
 """Match contre Stockfish bridé (UCI_LimitStrength / UCI_Elo) : estimation d'Elo de l'IA.
 
-Protocole de référence (le même pour tous les checkpoints, voir docs/journal.md) :
+Deux protocoles figés (voir docs/journal.md), choisis par --protocol (défaut : v2) :
   - IA : MCTS 200 simulations par coup, lots de 8, arbre réutilisé, température 0, sans bruit ;
-  - Stockfish : `go movetime 300`, 1 thread, Hash 16 Mo, niveau fixé par UCI_Elo ;
-  - 10 ouvertures de match.py (6 demi-coups), chacune jouée avec les deux couleurs : 20 parties par
-    « tour » et par niveau ; fin de partie : règles officielles, nulle au-delà de 400 demi-coups ;
-  - phase 1 : niveaux 1320, 1600, 1900, 2200, 2500 (un tour = 20 parties chacun) ;
+  - Stockfish : `go movetime 300`, 1 thread, Hash 16 Mo, niveau fixé par UCI_Elo, sans tables de finales ;
+  - ouvertures, chacune jouée avec les deux couleurs (un « tour » = 2 parties par ouverture et par niveau) :
+      v1 : les 10 de match.py (6 demi-coups) -> 20 parties par tour ;
+      v2 : les 40 de ladder_openings.py (6 à 10 demi-coups, dont 8 débuts rares) -> 80 parties par tour ;
+    fin de partie : règles officielles, nulle au-delà de 400 demi-coups ;
+  - phase 1 : niveaux 1320, 1600, 1900, 2200, 2500 (un tour chacun) ;
     tant que l'IA marque plus de 80 % au niveau le plus haut joué, un niveau 300 Elo au-dessus
-    (2800, puis 3100, puis 3190 = plafond de UCI_Elo), 20 parties chacun ;
-  - phase 2 : Elo ajusté sur la phase 1, arrondi à 50, puis 3 niveaux (−100, 0, +100) × 2 tours
-    supplémentaires (40 parties chacun). Elo final = ajustement sur toutes les parties.
+    (2800, puis 3100, puis 3190 = plafond de UCI_Elo), un tour chacun ;
+  - phase 2 : Elo ajusté sur la phase 1, arrondi à 50, puis 3 niveaux (−100, 0, +100) × des tours
+    supplémentaires (v1 : 2 tours = 40 parties ; v2 : 1 tour = 80 parties). Elo final = ajustement sur tout.
   - 4 processus en parallèle, 2 threads torch chacun, Stockfish 1 thread : 8 threads au plus.
 
+Options de l'IA qui ne font pas partie du protocole (enregistrées à part, dans « ai ») : --checkpoint et
+--syzygy <dossier> (tables de finales, voir chesszero/syzygy.py). Deux résultats du même protocole se
+comparent donc même si l'un utilise les tables et l'autre non : c'est ainsi qu'on mesure leur effet.
+
 Commandes (à lancer avec .venv\\Scripts\\python.exe) :
-  match_stockfish.py bench                        mesure la vitesse sur 4 parties (rien n'est enregistré)
-  match_stockfish.py run --tag kaggle_sup         protocole complet ; reprend tout seul si interrompu
+  match_stockfish.py bench                        mesure la vitesse (rien n'est enregistré)
+  match_stockfish.py run --tag kaggle_sup         protocole v2 complet ; reprend tout seul si interrompu
   match_stockfish.py run --tag essai_X --checkpoint checkpoints/.../best.pt --like kaggle_sup
                                                   rejoue EXACTEMENT les mêmes parties (niveaux, tours,
                                                   ouvertures, couleurs) sur un autre checkpoint, puis compare
+  match_stockfish.py run --tag kaggle_sup_tb --syzygy tools/syzygy --like kaggle_sup    effet des tables
   match_stockfish.py report kaggle_sup            tableau par niveau + Elo estimé
   match_stockfish.py compare kaggle_sup essai_X   écart d'Elo entre deux résultats
+  match_stockfish.py endgames kaggle_sup          finales : résultat exact à l'entrée dans les tables -> score
+Un tag peut nommer un autre protocole : « v1/kaggle_sup » (sinon celui de --protocol).
 
-Résultats : docs/stockfish/<tag>.json (toutes les parties, protocole, environnement), parties en PGN
-dans docs/stockfish/<tag>.pgn. Stockfish n'est pas déterministe (le tirage des coups faibles dépend de
-l'horloge) : deux lancements du même protocole ne rejouent pas exactement les mêmes coups.
+Résultats : docs/stockfish/<protocole>/<tag>.json (toutes les parties, protocole, IA, environnement), parties
+en PGN dans docs/stockfish/<protocole>/<tag>.pgn. Stockfish n'est pas déterministe (le tirage des coups
+faibles dépend de l'horloge) : deux lancements du même protocole ne rejouent pas exactement les mêmes coups.
 """
 
 import argparse
@@ -46,16 +55,18 @@ from chesszero.rating import difference, elo_from_score, fit_elo, per_level
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from match import OPENINGS, termination  # noqa: E402  (mêmes ouvertures que le match précédent)
+from ladder_openings import OPENINGS_V2  # noqa: E402
+from match import OPENINGS, termination  # noqa: E402  (v1 : mêmes ouvertures que le match précédent)
 
 DEFAULT_STOCKFISH = ROOT / "tools" / "stockfish" / "stockfish" / "stockfish-windows-x86-64-universal.exe"
 DEFAULT_CHECKPOINT = ROOT / "checkpoints" / "kaggle_sup" / "best.pt"
+DEFAULT_SYZYGY = ROOT / "tools" / "syzygy"
 OUT_DIR = ROOT / "docs" / "stockfish"
 MAX_THREADS = 8
 
-# Tout ce qui peut changer le résultat d'une partie. Comparer deux résultats n'a de sens que si ce
-# bloc est identique (sauf --force).
-PROTOCOL = {
+# Tout ce qui peut changer le résultat d'une partie, sauf l'IA elle-même. Comparer deux résultats n'a de
+# sens que si ce bloc est identique (sauf --force). FIGÉS : ne jamais en modifier un, en créer un nouveau.
+PROTOCOL_V1 = {
     "name": "stockfish-ladder-v1",
     "simulations": 200,
     "mcts_config": "kaggle",  # section [mcts] de configs/kaggle.toml, batch_size 8
@@ -71,6 +82,13 @@ PROTOCOL = {
     "refine_rounding": 50,
     "refine_rounds": 2,
 }
+PROTOCOL_V2 = {
+    **PROTOCOL_V1,
+    "name": "stockfish-ladder-v2",
+    "openings": [list(o) for o in OPENINGS_V2],
+    "refine_rounds": 1,  # un tour = 80 parties : chaque ouverture et chaque couleur une fois par niveau
+}
+PROTOCOLS = {"v1": PROTOCOL_V1, "v2": PROTOCOL_V2}
 ELO_MIN, ELO_MAX = 1320, 3190  # plage de UCI_Elo dans Stockfish
 
 
@@ -79,13 +97,15 @@ ELO_MIN, ELO_MAX = 1320, 3190  # plage de UCI_Elo dans Stockfish
 _W: dict = {}
 
 
-def init_worker(checkpoint: str, stockfish: str, protocol: dict, torch_threads: int) -> None:
+def init_worker(checkpoint: str, stockfish: str, protocol: dict, torch_threads: int, syzygy: str | None) -> None:
     import torch
 
     from chesszero.checkpoint import load_for_inference
     from chesszero.mcts import MCTSConfig, NetEvaluator
+    from chesszero.syzygy import Tablebase
 
     torch.set_num_threads(torch_threads)
+    _W["tb"] = Tablebase(syzygy) if syzygy else None
     model, meta = load_for_inference(checkpoint, "cpu")
     cfg = replace(MCTSConfig.named(protocol["mcts_config"]), num_simulations=protocol["simulations"])
     engine = chess.engine.SimpleEngine.popen_uci(stockfish)
@@ -108,9 +128,10 @@ def play_game(task: dict) -> dict:
     board = chess.Board()
     for uci in opening.split():
         board.push_uci(uci)
-    mcts = MCTS(_W["evaluator"], _W["cfg"], board)
+    tb = _W["tb"]
+    mcts = MCTS(_W["evaluator"], _W["cfg"], board, tablebase=tb)
     game_key = f"{task['level']}/{task['round']}/{task['opening']}/{int(ai_white)}"
-    start, ai_seconds, ai_moves = time.perf_counter(), 0.0, 0
+    start, ai_seconds, ai_moves, tb_moves = time.perf_counter(), 0.0, 0, 0
     while terminal_value(board) is None and len(board.move_stack) < p["max_plies"]:
         if board.turn == ai_color:
             t = time.perf_counter()
@@ -118,6 +139,7 @@ def play_game(task: dict) -> dict:
             move = mcts.best_move(0)
             ai_seconds += time.perf_counter() - t
             ai_moves += 1
+            tb_moves += tb is not None and tb.covers(board)  # coups choisis par les tables
         else:
             move = engine.play(board, limit, game=game_key).move
         mcts.advance(move)
@@ -131,6 +153,7 @@ def play_game(task: dict) -> dict:
     return {**task, "opening_name": name, "score": score, "plies": len(board.move_stack),
             "termination": termination(board, len(board.move_stack), p["max_plies"]),
             "moves": " ".join(m.uci() for m in board.move_stack), "ai_sec_per_move": ai_seconds / max(ai_moves, 1),
+            "ai_tb_moves": int(tb_moves),
             "seconds": time.perf_counter() - start, "checkpoint_step": _W["step"], "stockfish": _W["sf_name"]}
 
 
@@ -156,22 +179,40 @@ def task_key(t: dict) -> tuple:
     return t["level"], t["round"], t["opening"], bool(t["ai_white"])
 
 
-def round_tasks(level: int, rnd: int, phase) -> list[dict]:
-    """Un tour = 10 ouvertures x 2 couleurs = 20 parties."""
+def round_tasks(protocol: dict, level: int, rnd: int, phase) -> list[dict]:
+    """Un tour = chaque ouverture du protocole x 2 couleurs (v1 : 20 parties, v2 : 80)."""
     return [{"level": level, "round": rnd, "opening": o, "ai_white": c, "phase": phase}
-            for o in range(len(OPENINGS)) for c in (True, False)]
+            for o in range(len(protocol["openings"])) for c in (True, False)]
+
+
+def parse_tag(spec: str, default_version: str) -> tuple[str, str]:
+    """« v1/kaggle_sup » -> ("v1", "kaggle_sup") ; « kaggle_sup » -> (default_version, "kaggle_sup")."""
+    version, _, tag = spec.rpartition("/")
+    version = version or default_version
+    if version not in PROTOCOLS:
+        sys.exit(f"protocole inconnu : {version} (connus : {', '.join(PROTOCOLS)})")
+    return version, tag
 
 
 class Results:
     """Fichier JSON des résultats d'un tag ; chaque partie est enregistrée dès qu'elle est finie."""
 
-    def __init__(self, tag: str):
-        self.tag = tag
-        self.path = OUT_DIR / f"{tag}.json"
-        self.pgn_path = OUT_DIR / f"{tag}.pgn"
-        self.data = {"tag": tag, "protocol": PROTOCOL, "environment": {}, "refine_levels": None, "games": []}
+    def __init__(self, spec: str, default_version: str = "v2"):
+        self.version, self.tag = parse_tag(spec, default_version)
+        self.protocol = PROTOCOLS[self.version]
+        self.label = f"{self.version}/{self.tag}"
+        self.path = OUT_DIR / self.version / f"{self.tag}.json"
+        self.pgn_path = OUT_DIR / self.version / f"{self.tag}.pgn"
+        self.data = {"tag": self.tag, "protocol": self.protocol, "ai": {"syzygy": None}, "environment": {},
+                     "refine_levels": None, "games": []}
         if self.path.exists():
             self.data = json.loads(self.path.read_text(encoding="utf-8"))
+            self.data.setdefault("ai", {"syzygy": None})  # résultats v1 : jamais de tables
+
+    @property
+    def ai(self) -> str:
+        ai = self.data["ai"]
+        return f"Syzygy {ai.get('syzygy_pieces')} pièces" if ai.get("syzygy") else "sans tables"
 
     @property
     def games(self) -> list[dict]:
@@ -231,40 +272,56 @@ def play_tasks(pool, results: Results | None, tasks: list[dict], label: str) -> 
     return out
 
 
-def make_pool(args):
+def resolve_syzygy(path: str | None) -> dict:
+    """--syzygy : bloc « ai » des résultats (dossier vérifié, nombre de pièces couvertes)."""
+    if not path:
+        return {"syzygy": None}
+    from chesszero.syzygy import Tablebase
+
+    tb = Tablebase.open(path)
+    if tb is None:
+        sys.exit(f"--syzygy : aucune table Syzygy dans {path}")
+    pieces = tb.max_pieces
+    tb.close()
+    return {"syzygy": str(Path(path).resolve()), "syzygy_pieces": pieces}
+
+
+def make_pool(args, protocol: dict, ai: dict):
     if args.workers * args.torch_threads > MAX_THREADS:
         sys.exit(f"{args.workers} workers x {args.torch_threads} threads > {MAX_THREADS} : limite de threads dépassée")
     ctx = mp.get_context("spawn")
-    return ctx.Pool(args.workers, init_worker, (str(args.checkpoint), str(args.stockfish), PROTOCOL, args.torch_threads))
+    return ctx.Pool(args.workers, init_worker,
+                    (str(args.checkpoint), str(args.stockfish), protocol, args.torch_threads, ai["syzygy"]))
 
 
-def refine_levels(fit_rating: float) -> list[int]:
-    step = PROTOCOL["refine_rounding"]
+def refine_levels(protocol: dict, fit_rating: float) -> list[int]:
+    step = protocol["refine_rounding"]
     centre = round(fit_rating / step) * step
-    levels = [min(max(centre + o, ELO_MIN), ELO_MAX) for o in PROTOCOL["refine_offsets"]]
+    levels = [min(max(centre + o, ELO_MIN), ELO_MAX) for o in protocol["refine_offsets"]]
     return sorted(set(levels))
 
 
 def run_protocol(pool, results: Results) -> None:
-    phase1 = [t for lv in PROTOCOL["phase1_levels"] for t in round_tasks(lv, 0, 1)]
+    p = results.protocol
+    phase1 = [t for lv in p["phase1_levels"] for t in round_tasks(p, lv, 0, 1)]
     play_tasks(pool, results, phase1, "phase 1 (grossière)")
     while True:  # extension : tant que l'IA écrase le niveau le plus haut joué, on monte
         top = max(g["level"] for g in results.games if g["phase"] in (1, "x"))
         score_top = results.level_score(top)
         print(f"\nScore de l'IA à {top} : {score_top:.1%}", flush=True)
-        if score_top <= PROTOCOL["extension_trigger"] or top >= ELO_MAX:
+        if score_top <= p["extension_trigger"] or top >= ELO_MAX:
             break
-        nxt = min(top + PROTOCOL["extension_step"], ELO_MAX)
-        print(f"Plus de {PROTOCOL['extension_trigger']:.0%} à {top} : niveau supplémentaire {nxt}", flush=True)
-        play_tasks(pool, results, round_tasks(nxt, 0, "x"), f"niveau supplémentaire {nxt}")
+        nxt = min(top + p["extension_step"], ELO_MAX)
+        print(f"Plus de {p['extension_trigger']:.0%} à {top} : niveau supplémentaire {nxt}", flush=True)
+        play_tasks(pool, results, round_tasks(p, nxt, 0, "x"), f"niveau supplémentaire {nxt}")
 
     if results.data["refine_levels"] is None:
         fit = fit_elo(results.pairs(phases=(1, "x")))
         print(f"\nPhase 1 : Elo ajusté {fit.describe()}", flush=True)
-        results.data["refine_levels"] = refine_levels(fit.rating)
+        results.data["refine_levels"] = refine_levels(p, fit.rating)
         results.save()
     levels = results.data["refine_levels"]
-    tasks = [t for lv in levels for r in range(1, 1 + PROTOCOL["refine_rounds"]) for t in round_tasks(lv, r, 2)]
+    tasks = [t for lv in levels for r in range(1, 1 + p["refine_rounds"]) for t in round_tasks(p, lv, r, 2)]
     play_tasks(pool, results, tasks, f"phase 2 (affinage) : niveaux {levels}")
 
 
@@ -272,7 +329,7 @@ def replay_protocol(pool, results: Results, like: Results) -> None:
     tasks = [{"level": g["level"], "round": g["round"], "opening": g["opening"], "ai_white": g["ai_white"],
               "phase": g["phase"]} for g in like.games]
     results.data["refine_levels"] = like.data["refine_levels"]
-    play_tasks(pool, results, tasks, f"rejeu exact de « {like.tag} » ({len(tasks)} parties)")
+    play_tasks(pool, results, tasks, f"rejeu exact de « {like.label} » ({len(tasks)} parties)")
 
 
 # --------------------------------------------------------------------------- rapports
@@ -280,8 +337,9 @@ def replay_protocol(pool, results: Results, like: Results) -> None:
 
 def report(results: Results) -> None:
     pairs = results.pairs()
-    print(f"\n=== {results.tag} : {len(pairs)} parties, checkpoint pas "
-          f"{sorted({g['checkpoint_step'] for g in results.games})}, {results.games[0]['stockfish']} ===")
+    print(f"\n=== {results.label} ({results.protocol['name']}, {len(results.protocol['openings'])} ouvertures) : "
+          f"{len(pairs)} parties, checkpoint pas {sorted({g['checkpoint_step'] for g in results.games})}, "
+          f"IA {results.ai}, {results.games[0]['stockfish']} ===")
     print(f"{'niveau SF':>9} {'parties':>7} {'V':>3} {'N':>3} {'D':>3} {'score':>7}   Elo implicite (95 %)")
     for r in per_level(pairs):
         elo = f"{r['elo']:.0f} ({r['low']:.0f} à {r['high']:.0f})" if r["elo"] is not None else "non mesurable"
@@ -296,7 +354,7 @@ def report(results: Results) -> None:
     print(f"Durée moyenne d'une partie : {statistics.mean(secs):.0f} s ; "
           f"{statistics.mean(g['ai_sec_per_move'] for g in results.games):.2f} s par coup de l'IA")
     print("Limites : échelle CCRL Blitz de Stockfish (pas FIDE/Lichess), calibrée à 60 s + 0,6 s par coup alors que "
-          f"Stockfish joue ici {PROTOCOL['stockfish_movetime_ms']} ms ; parties rejouées depuis les mêmes ouvertures "
+          f"Stockfish joue ici {results.protocol['stockfish_movetime_ms']} ms ; parties rejouées depuis les mêmes ouvertures "
           "non indépendantes ; intervalle donc un peu optimiste.")
 
 
@@ -304,9 +362,9 @@ def compare(a: Results, b: Results, force: bool = False) -> None:
     if a.data["protocol"] != b.data["protocol"] and not force:
         sys.exit("Protocoles différents : comparaison refusée (--force pour passer outre).")
     fa, fb = fit_elo(a.pairs()), fit_elo(b.pairs())
-    print(f"\n=== Comparaison : {a.tag} -> {b.tag} ===")
-    print(f"{a.tag:>20} : {fa.describe()}  ({fa.n} parties)")
-    print(f"{b.tag:>20} : {fb.describe()}  ({fb.n} parties)")
+    print(f"\n=== Comparaison : {a.label} -> {b.label} ===")
+    print(f"{a.label:>20} : {fa.describe()}  ({fa.n} parties, IA {a.ai})")
+    print(f"{b.label:>20} : {fb.describe()}  ({fb.n} parties, IA {b.ai})")
     try:
         d, se = difference(fa, fb)
     except ValueError as exc:
@@ -315,67 +373,134 @@ def compare(a: Results, b: Results, force: bool = False) -> None:
     verdict = "significatif à 95 %" if abs(d) > 1.96 * se else "pas significatif à 95 %"
     print(f"Différence : {d:+.0f} Elo (± {1.96 * se:.0f} à 95 %) : {verdict}")
     sa, sb = {r["level"]: r for r in per_level(a.pairs())}, {r["level"]: r for r in per_level(b.pairs())}
-    print(f"{'niveau':>7} {a.tag:>20} {b.tag:>20}")
+    print(f"{'niveau':>7} {a.label:>20} {b.label:>20}")
     for lv in sorted(set(sa) | set(sb)):
         fmt = lambda r: f"{r['score']:.0%} ({r['n']})" if r else "-"
         print(f"{lv:>7.0f} {fmt(sa.get(lv)):>20} {fmt(sb.get(lv)):>20}")
 
 
 def bench(args) -> None:
-    """4 parties en parallèle (une par worker, niveaux variés) pour estimer la durée du protocole."""
-    levels = [1320, 1900, 2200, 2500]
-    tasks = [{"level": lv, "round": 0, "opening": i, "ai_white": i % 2 == 0, "phase": "bench"}
-             for i, lv in enumerate(levels[: args.workers])]
-    with make_pool(args) as pool:
+    """Parties en parallèle (niveaux et ouvertures variés) pour estimer la durée du protocole."""
+    protocol = PROTOCOLS[args.protocol]
+    n_open = len(protocol["openings"])
+    levels = [1320, 1600, 1900, 2200, 2500, 2300, 2400, 2500]
+    tasks = [{"level": levels[i % len(levels)], "round": 0, "opening": (i * 7) % n_open, "ai_white": i % 2 == 0,
+              "phase": "bench"} for i in range(args.bench_games or args.workers)]
+    with make_pool(args, protocol, resolve_syzygy(args.syzygy)) as pool:
         start = time.perf_counter()
         games = play_tasks(pool, None, tasks, f"benchmark ({len(tasks)} parties, rien n'est enregistré)")
         wall = time.perf_counter() - start
     mean_game = statistics.mean(g["seconds"] for g in games)
     ai = statistics.mean(g["ai_sec_per_move"] for g in games)
     plies = statistics.mean(g["plies"] for g in games)
-    print(f"\nBenchmark : {wall:.0f} s pour {len(games)} parties simultanées ; partie moyenne {mean_game:.0f} s "
-          f"({plies:.0f} demi-coups, {ai:.2f} s par coup IA)")
+    print(f"\nBenchmark : {wall:.0f} s pour {len(games)} parties ({args.workers} à la fois) ; partie moyenne "
+          f"{mean_game:.0f} s ({plies:.0f} demi-coups, {ai:.2f} s par coup IA)")
     per_game = mean_game / args.workers
-    for total, what in ((220, "protocole sans extension"), (240, "avec un niveau d'extension")):
-        print(f"  {what} ({total} parties) : ~{total * per_game / 60:.0f} min")
+    per_round = 2 * n_open
+    base = per_round * (len(protocol["phase1_levels"]) + len(protocol["refine_offsets"]) * protocol["refine_rounds"])
+    for total, what in ((base, "protocole sans extension"), (base + per_round, "avec un niveau d'extension")):
+        print(f"  {protocol['name']}, {what} ({total} parties) : ~{total * per_game / 60:.0f} min")
+
+
+def endgames(results: Results, syzygy: str | None) -> None:
+    """Finales : pour chaque partie, résultat exact (tables) à la première position couverte, puis score réel.
+
+    Mesure ce que l'IA fait des finales qu'elle atteint, avec ou sans tables pendant la partie : un gain exact
+    rendu en nulle ou en perte = des points perdus en finale ; une nulle ou une perte exacte transformée en
+    mieux = des points pris sur les erreurs de Stockfish.
+    """
+    from chesszero.syzygy import Tablebase
+
+    tb = Tablebase.open(syzygy)
+    if tb is None:
+        sys.exit(f"endgames : il faut les tables Syzygy (--syzygy, défaut {DEFAULT_SYZYGY})")
+    names = {2: "gain", 1: "nulle", 0: "nulle", -1: "nulle", -2: "perte"}
+    table: dict[tuple[str, float], int] = {}
+    entered, plies_after = 0, []
+    for g in results.games:
+        board = chess.Board()
+        moves = [chess.Move.from_uci(u) for u in g["moves"].split()]
+        ai_color = chess.WHITE if g["ai_white"] else chess.BLACK
+        for i, move in enumerate(moves + [None]):
+            if tb.covers(board):
+                w = tb.wdl(board)
+                if w is not None:
+                    w = w if board.turn == ai_color else -w
+                    key = (names[w], g["score"])
+                    table[key] = table.get(key, 0) + 1
+                    entered += 1
+                    plies_after.append(len(moves) - i)
+                    break
+            if move is not None:
+                board.push(move)
+    print(f"\n=== Finales de {results.label} (IA {results.ai}) : {entered} parties sur {len(results.games)} "
+          f"entrent dans les tables ({tb.max_pieces} pièces) ===")
+    if not entered:
+        return
+    print(f"{'à l entrée':>12} {'parties':>8} {'gagnées':>8} {'nulles':>7} {'perdues':>8}   points perdus / pris")
+    lost = gained = 0.0
+    for entry, exact in (("gain", 1.0), ("nulle", 0.5), ("perte", 0.0)):
+        row = [table.get((entry, s), 0) for s in (1.0, 0.5, 0.0)]
+        n = sum(row)
+        if not n:
+            continue
+        delta = row[0] * 1.0 + row[1] * 0.5 - n * exact
+        lost += max(0.0, -delta)
+        gained += max(0.0, delta)
+        print(f"{entry:>12} {n:>8} {row[0]:>8} {row[1]:>7} {row[2]:>8}   {delta:+.1f}")
+    print(f"Points perdus par l'IA en finale (par rapport au jeu parfait) : {lost:.1f} ; pris sur les erreurs de "
+          f"Stockfish : {gained:.1f} ; demi-coups joués après l'entrée : {statistics.mean(plies_after):.0f} en moyenne")
 
 
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
-    ap.add_argument("command", choices=["bench", "run", "report", "compare"])
-    ap.add_argument("tags", nargs="*", help="report : <tag> ; compare : <tag_ancien> <tag_nouveau>")
-    ap.add_argument("--tag", default=None, help="run : nom du résultat (docs/stockfish/<tag>.json)")
+    ap.add_argument("command", choices=["bench", "run", "report", "compare", "endgames"])
+    ap.add_argument("tags", nargs="*", help="report / endgames : <tag> ; compare : <tag_ancien> <tag_nouveau>")
+    ap.add_argument("--protocol", default="v2", choices=sorted(PROTOCOLS), help="protocole (défaut v2)")
+    ap.add_argument("--tag", default=None, help="run : nom du résultat (docs/stockfish/<protocole>/<tag>.json)")
     ap.add_argument("--checkpoint", default=str(DEFAULT_CHECKPOINT))
     ap.add_argument("--stockfish", default=str(DEFAULT_STOCKFISH))
+    ap.add_argument("--syzygy", default=None,
+                    help=f"run / bench : tables de finales pour l'IA ; endgames : tables d'analyse (défaut {DEFAULT_SYZYGY})")
     ap.add_argument("--like", default=None, help="run : rejouer exactement les parties de ce tag")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--torch-threads", type=int, default=2)
+    ap.add_argument("--bench-games", type=int, default=0, help="bench : nombre de parties (défaut = --workers)")
     ap.add_argument("--force", action="store_true", help="compare / --like : ignorer les différences de protocole")
     args = ap.parse_args()
 
     if args.command == "report":
-        report(Results(args.tags[0]))
+        report(Results(args.tags[0], args.protocol))
     elif args.command == "compare":
-        compare(Results(args.tags[0]), Results(args.tags[1]), args.force)
+        compare(Results(args.tags[0], args.protocol), Results(args.tags[1], args.protocol), args.force)
+    elif args.command == "endgames":
+        for spec in args.tags:
+            endgames(Results(spec, args.protocol), args.syzygy or str(DEFAULT_SYZYGY))
     elif args.command == "bench":
         bench(args)
     else:
         if not args.tag:
             sys.exit("run : --tag est obligatoire")
-        results = Results(args.tag)
-        like = Results(args.like) if args.like else None
+        results = Results(args.tag, args.protocol)
+        ai = resolve_syzygy(args.syzygy)
+        like = Results(args.like, results.version) if args.like else None
         if like is not None:
             if not like.games:
-                sys.exit(f"« {args.like} » n'a aucun résultat")
-            if like.data["protocol"] != PROTOCOL and not args.force:
-                sys.exit(f"Le protocole de « {args.like} » diffère du protocole actuel du script : "
+                sys.exit(f"« {like.label} » n'a aucun résultat")
+            if like.version != results.version or (like.data["protocol"] != results.protocol and not args.force):
+                sys.exit(f"Le protocole de « {like.label} » diffère de celui de « {results.label} » : "
                          "le rejeu ne serait pas identique (--force pour passer outre).")
-        if results.games and results.data["protocol"] != PROTOCOL:
-            sys.exit(f"« {args.tag} » a été commencé avec un autre protocole : choisir un autre --tag.")
-        results.data["protocol"], results.data["environment"] = PROTOCOL, environment(args)
+        if results.games and results.data["protocol"] != results.protocol:
+            sys.exit(f"« {results.label} » a été commencé avec un autre protocole : choisir un autre --tag.")
+        if results.games and results.data["ai"] != ai:
+            sys.exit(f"« {results.label} » a été commencé avec d'autres options d'IA ({results.data['ai']}) : "
+                     "choisir un autre --tag.")
+        results.data["protocol"], results.data["ai"] = results.protocol, ai
+        results.data["environment"] = environment(args)
+        print(f"{results.label} : {results.protocol['name']}, IA {results.ai}", flush=True)
         start = time.perf_counter()
-        with make_pool(args) as pool:
+        with make_pool(args, results.protocol, ai) as pool:
             if like is not None:
                 replay_protocol(pool, results, like)
             else:
