@@ -341,3 +341,52 @@ dans un petit Dataset privé en gardant le dossier `kaggle_sup/`. `FULL_MINUTES 
 (sinon une coupure à 12 h peut faire échouer la version et perdre la sortie).
 - `kaggle.toml` : `total_steps = 20000` valait ~7 époques de 2,9 M de positions ; avec 23,56 M de positions une
   époque = 23 008 pas, donc 20 000 pas < 1 époque. À revoir après la mesure de débit.
+
+## Étape 4b, partie 3 — Résultats de l'essai Kaggle et réglage de l'entraînement (2026-10-20)
+
+### Essais de débit sur Kaggle (config kaggle, 10 × 128, lots de 1024, fp16)
+
+| essai | débit | GPU | attente des masques |
+|---|---|---|---|
+| **avec masques** (10 min) | **7 970 positions/s** | **94 %** | **0 %** |
+| sans masque (`--no-mask-loss`) | 8 016 positions/s (**+0,6 %**) | — | — |
+
+- Le GPU ne manque pas de données : les 3 workers de masques précalculent assez de lots à l'avance, l'attente est nulle
+  et le GPU est occupé à 94 %. Le débit mesuré (≈ 8 000 pos/s) est dans la fourchette estimée au journal (6 000 à
+  13 000 sur T4). Une époque de 23,56 M de positions dure ≈ 49 min.
+- L'essai sans masque n'apporte que +0,6 % de débit **et apprend plus lentement** (observation de l'auteur) : on
+  **garde les masques** (`mask_train_loss = true`). L'option reste dans le code, désactivée. Le précalcul des masques
+  n'a pas lieu d'être.
+- Précision atteinte au bout des 10 minutes : **non communiquée pour l'instant, à compléter** (top-1 / top-3 et
+  pertes de validation lus dans `bench/metrics.csv`).
+
+### Réglages de `configs/kaggle.toml` pour l'entraînement complet
+
+- `total_steps = 92000` : 23 008 pas par époque (23 560 129 / 1 024), soit **4,00 époques** (94,2 M de positions) ;
+  à 7 970 pos/s : 3,28 h d'entraînement pur, ~3 h 30 avec validations et sauvegardes (< `FULL_MINUTES` = 660 : une
+  seule session suffit).
+- `val_positions = 100000` (au lieu de 30 000) : sous-ensemble fixe plus grand (tiré au hasard dans les 475 048
+  positions de validation, donc issu de bien plus de parties), parce que la perte de valeur — calculée sur
+  les seules positions `value_valid = 1`, et corrélée au sein d'une même partie — était trop bruitée avec 30 000
+  positions de peu de parties. Coût : les masques de ces 100 000 positions sont calculés une fois au démarrage
+  (~4 s à 25 000 pos/s avec 3 workers, ~470 Mo de RAM) et chaque validation (tous les 1 000 pas, 92 fois) dure quelques
+  secondes de plus.
+- **Warmup et cosinus vérifiés** avec `lr_factor` sur la config réelle : `warmup_steps = 1000` (1,1 % du total) ; le taux
+  monte linéairement de 2e-6 (pas 0) à 2e-3 (pas 999, 1,0 du maximum), puis décroît en cosinus, monotone, passe par
+  1,0e-3 vers le pas 47 000 (milieu) et finit à 2,0e-5 (= 1 % du maximum) au dernier pas. Le cosinus est calculé
+  sur `total_steps - warmup_steps`, donc il s'étire tout seul sur 92 000 pas. `eval_every = 1000` et `save_every = 500`
+  restent des multiples de `log_every = 100` et divisent 92 000. Le calendrier dépend de `total_steps` : ne plus
+  le changer en cours de route, sinon une reprise suivrait une autre courbe.
+
+### Notebook : corrections
+
+- **`ModuleNotFoundError: chesszero` (cellule de comparaison)** : le paquet est installé par `pip install -e` alors que le
+  noyau tourne déjà, il n'est donc visible que des sous-processus (`scripts/train.py`). Correction : la cellule 1
+  fait `sys.path.insert(0, REPO_DIR/"src")` + `importlib.invalidate_caches()` juste après l'installation (aussi quand
+  `MANAGE_REPO = False`). Une seule cellule importe `chesszero` dans le noyau (l'import de `read_metrics` de la cellule
+  6) ; les autres n'importent que `torch` et la bibliothèque standard. Vérifié en local en cachant le paquet au noyau
+  (finder d'installation éditable et chemin `src` retirés, import qui échoue avant la cellule 1) : toutes les cellules,
+  dont la comparaison, passent.
+- **Valeurs par défaut de la cellule 0** : `RUN_BENCH = False`, `NOMASK_MINUTES = 0`, `RUN_FULL = True`
+  (92 000 pas, `FULL_MINUTES = 660`), `NO_MASK_LOSS = False`. Le notebook lance donc directement l'entraînement complet
+  (après la reprise éventuelle de la cellule 4).
