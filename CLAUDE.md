@@ -138,7 +138,7 @@ une section par étape, à compléter à la fin de chaque étape.
 ```powershell
 .venv\Scripts\python.exe -m pytest -q
 .venv\Scripts\python.exe scripts\match_stockfish.py bench   # 4 parties simultanées, estime la durée (rien n'est enregistré)
-.venv\Scripts\python.exe scripts\match_stockfish.py run --tag <nom> --checkpoint <cheminest.pt> --like kaggle_sup   # même protocole sur un autre checkpoint + comparaison
+.venv\Scripts\python.exe scripts\match_stockfish.py run --tag <nom> --checkpoint <dossier>\best.pt --like kaggle_sup   # même protocole sur un autre checkpoint + comparaison
 .venv\Scripts\python.exe scripts\match_stockfish.py report kaggle_sup   # tableau par niveau + Elo
 scripts\lancer_cutechess.bat   # (double-clic) liste des moteurs + Cute Chess pour jouer contre l'IA
 .venv\Scripts\python.exe scripts\prepare_data.py --out data\lichess_2000 --target-positions 3000000   # --max-games 1000 pour un essai
