@@ -1,6 +1,7 @@
 """Tests de l'entraînement supervisé (étape 4a) sur un mini jeu de données synthétique mais apprenable."""
 
 import random
+import time
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import replace
 
@@ -16,15 +17,18 @@ from chesszero.encoding import (
     legal_move_mask,
     pack_board,
 )
-from chesszero.model import ModelConfig
+from chesszero.model import ModelConfig, policy_value_loss
 from chesszero.train import (
     CSV_COLUMNS,
     Meter,
+    PhaseTimer,
+    GpuSampler,
     TrainConfig,
     ValSet,
     lr_factor,
     read_metrics,
     stream_batches,
+    timed_batches,
     topk_correct,
     train,
     train_indices,
@@ -182,7 +186,7 @@ def run_to_end(data_dir, out_dir, cfg=CFG, **kw):
 
 def comparable(rows):
     """Lignes du CSV sans les colonnes de temps."""
-    return [{k: v for k, v in r.items() if k not in ("pos_per_s", "elapsed_s")} for r in rows]
+    return [{k: v for k, v in r.items() if k not in ("pos_per_s", "elapsed_s", "gpu_util", "data_wait_pct", "mask_wait_pct")} for r in rows]
 
 
 def test_loss_decreases(data_dir, tmp_path):
@@ -255,3 +259,94 @@ def test_resume_with_another_network_is_refused(data_dir, tmp_path):
     run_to_end(data_dir, tmp_path)
     with pytest.raises(ValueError, match="autre réseau"):
         train(replace(SMALL, n_filters=32), CFG, data_dir, tmp_path, CPU, log=QUIET)
+
+
+# --------------------------------------------------------------------------- perte sans masque, diagnostics, budget de temps
+
+
+def test_loss_without_mask_is_plain_softmax_cross_entropy():
+    torch.manual_seed(0)
+    logits, value = torch.randn(6, 4672), torch.zeros(6)
+    moves = torch.randint(0, 4672, (6,))
+    loss, parts = policy_value_loss(logits, value, moves, torch.zeros(6), None)
+    expected = torch.nn.functional.cross_entropy(logits, moves)
+    assert parts["policy"] == pytest.approx(expected.item(), rel=1e-5)
+    legal = torch.zeros(6, 4672, dtype=torch.bool)
+    legal[torch.arange(6), moves] = True  # un seul coup légal : le masque donne une perte nulle, pas l'absence de masque
+    assert policy_value_loss(logits, value, moves, torch.zeros(6), legal)[1]["policy"] == pytest.approx(0.0, abs=1e-5)
+
+
+def test_topk_correct_without_mask():
+    logits = torch.tensor([[0.9, 0.1, 0.5, 0.3]])
+    assert topk_correct(logits, None, torch.tensor([0])) == (1, 1)
+    assert topk_correct(logits, None, torch.tensor([1])) == (0, 0)  # 4e choix
+
+
+def test_unmasked_batches_have_no_masks_and_same_content(data_dir):
+    data = load_split(data_dir, "train")
+    idx = list(train_indices(len(data["boards"]), 32, 0, 0, 4))
+    with ProcessPoolExecutor(2) as pool:
+        plain = list(stream_batches(data, idx, pool, with_masks=False))  # le pool n'est pas utilisé
+    masked = list(stream_batches(data, idx, None))
+    for a, b in zip(plain, masked):
+        assert a.legal is None
+        assert np.array_equal(a.x, b.x) and np.array_equal(a.moves, b.moves)
+
+
+def test_timer_counts_mask_time_only_when_masks_are_computed(data_dir):
+    data = load_split(data_dir, "train")
+    idx = list(train_indices(len(data["boards"]), 32, 0, 0, 4))
+    t_on, t_off = PhaseTimer(), PhaseTimer()
+    list(timed_batches(stream_batches(data, idx, None, timer=t_on), t_on))
+    list(timed_batches(stream_batches(data, idx, None, with_masks=False, timer=t_off), t_off))
+    assert 0 < t_on.mask_s <= t_on.data_s
+    assert t_off.mask_s == 0 and t_off.data_s > 0
+    t_on.compute_s = t_on.data_s  # compute = data -> 50 % d'attente
+    assert t_on.pct(t_on.data_s) == pytest.approx(50.0)
+
+
+def test_gpu_sampler_averages_injected_readings():
+    values = iter([40.0, 60.0, 80.0] + [80.0] * 1000)
+    sampler = GpuSampler(CPU, read=lambda: next(values), interval=0.01)
+    deadline = time.time() + 5
+    while sampler.mean() != sampler.mean() and time.time() < deadline:  # attend le 1er échantillon
+        time.sleep(0.01)
+    sampler.close()
+    assert 40.0 <= sampler.mean() <= 80.0
+    sampler.reset()
+    assert sampler.mean() != sampler.mean()  # nan après reset
+    assert GpuSampler(CPU).mean() != GpuSampler(CPU).mean()  # CPU : pas de mesure
+
+
+def test_training_without_mask_runs_learns_and_validates_with_masks(data_dir, tmp_path):
+    cfg = replace(CFG, total_steps=60, eval_every=60, save_every=60, mask_train_loss=False)
+    out = run_to_end(data_dir, tmp_path, cfg)
+    rows = read_metrics(tmp_path / "metrics.csv")
+    train_rows = [r for r in rows if r["split"] == "train"]
+    assert train_rows[-1]["policy_loss"] < 0.6 * train_rows[0]["policy_loss"]  # apprend sans masque
+    assert all(r["mask_wait_pct"] == 0 for r in train_rows)
+    # validation masquée : top-k parmi les coups légaux, donc au moins aussi bon que sans masque
+    assert out["final_val"]["top1"] > 0.1 and out["final_val"]["top3"] >= out["final_val"]["top1"]
+
+
+def test_diagnostic_columns_are_recorded(data_dir, tmp_path):
+    run_to_end(data_dir, tmp_path)
+    train_rows = [r for r in read_metrics(tmp_path / "metrics.csv") if r["split"] == "train"]
+    for r in train_rows:
+        assert r["pos_per_s"] > 0
+        assert 0 <= r["data_wait_pct"] <= 100 and 0 <= r["mask_wait_pct"] <= r["data_wait_pct"]
+        assert r["gpu_util"] != r["gpu_util"]  # nan : pas de GPU
+
+
+def test_time_budget_stops_cleanly_and_resumes_identically(data_dir, tmp_path):
+    ref_dir, cut_dir = tmp_path / "ref", tmp_path / "cut"
+    run_to_end(data_dir, ref_dir)
+    cut = run_to_end(data_dir, cut_dir, max_minutes=1e-9)  # budget épuisé dès le 1er pas
+    assert cut["timed_out"] and cut["step"] == 1
+    assert torch.load(cut_dir / "last.pt", weights_only=False)["step"] == 1  # sauvegardé même hors save_every
+    run_to_end(data_dir, cut_dir)
+    a = torch.load(ref_dir / "last.pt", weights_only=False)
+    b = torch.load(cut_dir / "last.pt", weights_only=False)
+    assert a["step"] == b["step"] == CFG.total_steps
+    for k in a["model"]:
+        assert torch.equal(a["model"][k], b["model"][k]), k

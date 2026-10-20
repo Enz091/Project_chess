@@ -20,4 +20,5 @@ keep_last = 3
 val_positions = 30000
 amp = "auto"             # fp16 + GradScaler sur CUDA
 num_workers = 3          # Kaggle : 4 cœurs CPU
+mask_train_loss = true   # false : perte politique sans masque (voir docs/journal.md)
 seed = 0

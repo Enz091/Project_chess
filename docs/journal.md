@@ -275,3 +275,69 @@ Commande : `scripts/train.py --config tiny --out checkpoints/tiny_sup`. 4 × 64,
   les 2 T4. Le risque réel est de perdre 0 à 40 % du débit selon la machine tirée, sans pouvoir le savoir
   avant d'avoir lancé. Une mesure de 2 minutes sur Kaggle (pos/s avec masques en ligne vs sans masque) lèverait
   le doute.
+
+## Étape 4b, partie 2 — Mesures de débit, perte sans masque, notebook Kaggle (2026-10-20)
+
+Décision de l'auteur : **mesurer d'abord** sur Kaggle ; pas de précalcul des masques pour l'instant.
+
+### Diagnostic de débit (`train.py`)
+
+- Le temps d'un pas est coupé en **attente des données** (obtenir le lot suivant : indexation, `unpack_batch`, attente
+  des masques calculés par le pool) et **calcul** (passe avant/arrière, métriques). La boucle est synchrone (les
+  `.item()` de la perte attendent le GPU), donc les deux temps s'additionnent honnêtement : un GPU affamé se voit
+  comme une attente élevée. `PhaseTimer` cumule data / masques / calcul par fenêtre de `log_every` pas ;
+  `GpuSampler` échantillonne l'utilisation du GPU toutes les 0,5 s dans un fil (pynvml, sinon `nvidia-smi`,
+  sinon « n/d » sur CPU). Taux NVML = part du temps où un noyau CUDA tournait : bas = le GPU attend, mais 100 %
+  ne prouve pas la saturation.
+- Nouvelles colonnes de `metrics.csv` : `gpu_util`, `data_wait_pct`, `mask_wait_pct` (vides si non mesurées).
+  `pos_per_s` exclut maintenant la validation et les sauvegardes (avant, la fenêtre suivant une validation était
+  sous-estimée).
+- Ligne de log : `... 1 234 pos/s | GPU 93% | attente données 4% (dont masques 2%)`.
+- `scripts/summarize_run.py <dossier>` : débit moyen/min/max, GPU, attente, durée d'une époque, **verdict**
+  (le GPU « attend » si attente > 15 % ou GPU < 80 % ; il dit si les masques en sont la cause principale).
+- `torch.backends.cudnn.benchmark = True` sur CUDA (formes fixes). Le chemin CUDA reste non testé faute de GPU.
+
+### Budget de temps : `--max-minutes`
+
+`train(..., max_minutes=)` / `scripts/train.py --max-minutes N` : après N minutes d'entraînement (chargement des
+données exclu), sauvegarde `last.pt` **au pas courant** (même hors `save_every`) et s'arrête (`timed_out`). Relancer
+reprend. Sert à l'essai de 10 minutes et à finir une session Kaggle avant la coupure des 12 h. Testé : arrêt au pas 1
+puis reprise = mêmes poids (`torch.equal`) qu'un run d'une traite.
+
+### Option perte sans masque (désactivée par défaut)
+
+- `[train] mask_train_loss = true` (tiny.toml et kaggle.toml) ; `false` ou `--no-mask-loss` : softmax sur les 4 672
+  sorties pour la perte d'entraînement (`policy_value_loss(..., legal_mask=None)`), `Batch.legal = None`, le pool de
+  masques n'est plus sollicité à l'entraînement. Les top-1/top-3 des fenêtres d'entraînement sont alors calculés
+  sans masque.
+- **Gardés avec masque** : la validation (`ValSet`, sous-ensemble et validation complète : perte masquée, top-k parmi
+  les coups légaux, donc comparable aux résultats de l'étape 4a) ; et tout ce qui sert au jeu (`masked_policy`,
+  MCTS). Les pertes « train » d'un run sans masque ne sont **pas** comparables à celles d'un run masqué (la
+  perte sans masque est un peu plus haute : de la probabilité reste sur les coups illégaux au début).
+- À décider après la mesure : si le GPU attend les masques → `mask_train_loss = false` dans `kaggle.toml`.
+  À surveiller alors : que le top-1 de validation (masqué) ne soit pas plus mauvais à pas égal.
+- Tests (56 au total) : perte sans masque = `cross_entropy` standard, top-k sans masque, lots sans masque =
+  mêmes entrées avec `legal = None`, le chronomètre ne compte les masques que s'ils sont calculés, `GpuSampler`
+  (lecture injectée), un entraînement sans masque apprend et valide avec masque, colonnes de diagnostic, budget de temps.
+
+### Notebook `notebooks/kaggle_train.ipynb`
+
+Cellules : 0 réglages (`RUN_BENCH`, `RUN_FULL`, `NO_MASK_LOSS`, durées...) ;
+1 clone + `pip install -e .` sans torch (vérifie que la version de torch n'a pas bougé) ; 2 environnement (Python
+≥ 3.11, torch, cœurs CPU, RAM, disque, GPU, test fp16 sous autocast, `nvidia-smi`) ; 3 recherche du Dataset
+(`**/train_00000.npz` sous `/kaggle/input`) ; 4 reprise ; 5 essai 10 min avec masques + résumé ; 6 essai 4 min sans
+masque + comparaison + effacement des `.pt` d'essai ; 7 entraînement complet (`RUN_FULL`).
+Exécuté en local sur un faux `/kaggle/input` (config tiny, CPU, `ALLOW_CPU`) : toutes les cellules passent ; la
+cellule de reprise choisit bien le `kaggle_sup/last.pt` du pas le plus avancé et ignore les `bench/last.pt`.
+**Jamais exécuté sur Kaggle** (GPU, pynvml, chemins réels non vérifiés).
+
+### Reprise entre deux sessions Kaggle
+
+`/kaggle/working` disparaît à la fin d'une session ; seule la **sortie d'une version sauvegardée** (Save Version →
+*Save & Run All (Commit)*) est conservée. Chaînage : dans la nouvelle session, *Add Input* → ce même notebook (sa
+dernière sortie) → la cellule 4 copie `kaggle_sup/{last,best}.pt` et `metrics.csv` dans `/kaggle/working/kaggle_sup`
+et l'entraînement reprend au pas sauvegardé. Repli manuel : télécharger `last.pt` depuis l'onglet Output, le déposer
+dans un petit Dataset privé en gardant le dossier `kaggle_sup/`. `FULL_MINUTES = 660` fait finir proprement la session
+(sinon une coupure à 12 h peut faire échouer la version et perdre la sortie).
+- `kaggle.toml` : `total_steps = 20000` valait ~7 époques de 2,9 M de positions ; avec 23,56 M de positions une
+  époque = 23 008 pas, donc 20 000 pas < 1 époque. À revoir après la mesure de débit.

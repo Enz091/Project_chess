@@ -55,11 +55,11 @@ pip install -e .        # NE PAS réinstaller torch : garder le torch CUDA de Ka
 
 ```
 src/chesszero/   device.py, checkpoint.py, encoding.py, model.py, data.py, train.py   (+ mcts, selfplay à venir)
-scripts/         points d'entrée (smoke_resume.py = démo reprise, show_encoding.py = démo encodage, bench_inference.py = vitesse du réseau, prepare_data.py = extraction Lichess (un ou plusieurs mois), make_kaggle_zip.py = archive des shards pour un Dataset Kaggle, train.py = pré-entraînement, plot_curves.py = courbes PNG, show_policy.py = meilleurs coups d'un checkpoint)
+scripts/         points d'entrée (smoke_resume.py = démo reprise, show_encoding.py = démo encodage, bench_inference.py = vitesse du réseau, prepare_data.py = extraction Lichess (un ou plusieurs mois), make_kaggle_zip.py = archive des shards pour un Dataset Kaggle, summarize_run.py = débit/GPU/attente d'un entraînement + verdict, train.py = pré-entraînement, plot_curves.py = courbes PNG, show_policy.py = meilleurs coups d'un checkpoint)
 configs/         tiny.toml (4 blocs × 64, CPU) et kaggle.toml (10 blocs × 128), section [model] ; data.toml = filtres Lichess
 tests/           pytest
 docs/            journal.md = détails, mesures et tests de chaque étape ; img/ = courbes d'entraînement
-notebooks/       notebook Kaggle (clone + lance un script)
+notebooks/       kaggle_train.ipynb = essai de débit + entraînement sur Kaggle (clone + lance des scripts)
 data/            PGN Lichess et données prétraitées (ignoré par git)
 checkpoints/     sauvegardes d'entraînement (ignoré par git)
 ```
@@ -111,7 +111,8 @@ une section par étape, à compléter à la fin de chaque étape.
   - Git : historique réécrit avec l'adresse noreply `345045991+Enz091@users.noreply.github.com` (nom d'auteur inchangé), remote `origin` ajouté, `main` poussée. Ne plus jamais mettre l'adresse personnelle dans un fichier.
   - Données : `prepare_data.py --months 2026-02 ... 2026-09 --per-source-positions 3000000` → `data/lichess_24m` : **24 035 177 positions** (train 23 560 129, val 475 048), mêmes filtres, 8 threads max, 317 s. Chaque mois ne fournit que ses premières ~650 000 parties (flux zstd non seekable). `data.extract` accepte une liste de sources (numéros de partie `source*10^8 + rang`).
   - Dataset Kaggle : `data/kaggle/lichess_24m.zip` (256 Mo, shards à la racine, Kaggle le décompresse) à téléverser sur kaggle.com/datasets.
-  - **Décision en attente** : les masques de coups légaux (9 400 pos/s/cœur ici, 3 workers sur Kaggle) suivent à peine le GPU (estimé 6-13 k pos/s sur T4). Options étudiées dans le journal : masques précalculés (liste des coups légaux, ~+1,5 Go), perte sans masque, mesure préalable sur Kaggle. Rien n'est changé dans `train.py` tant que l'auteur n'a pas choisi.
+  - Partie 2 (2026-10-20) : `train.py` mesure l'attente des données, l'attente des masques et l'utilisation du GPU (colonnes `gpu_util`, `data_wait_pct`, `mask_wait_pct` de `metrics.csv`) ; `--max-minutes N` s'arrête proprement avec `last.pt` ; option `mask_train_loss = false` / `--no-mask-loss` (perte politique sans masque, **désactivée** ; validation et jeu restent masqués) ; `notebooks/kaggle_train.ipynb` (essai de 10 min avec masques, 4 min sans, comparaison, reprise via la sortie du notebook, entraînement complet derrière `RUN_FULL`) ; `scripts/summarize_run.py`. Le notebook n'a été exécuté qu'en local (faux `/kaggle/input`, CPU) : **jamais sur Kaggle**. Pas de précalcul des masques. `total_steps = 20000` de kaggle.toml est < 1 époque de 23,56 M de positions : à revoir après la mesure.
+  - ~~Décision en attente~~ (résolue : mesurer d'abord) : les masques de coups légaux (9 400 pos/s/cœur ici, 3 workers sur Kaggle) suivent à peine le GPU (estimé 6-13 k pos/s sur T4). Options étudiées dans le journal : masques précalculés (liste des coups légaux, ~+1,5 Go), perte sans masque, mesure préalable sur Kaggle. Rien n'est changé dans `train.py` tant que l'auteur n'a pas choisi.
   - Reste : notebook Kaggle (clone + `scripts/train.py --config kaggle`) ; `kaggle.toml` n'a jamais tourné.
 - [ ] Étape 5 — MCTS
 - [ ] Étape 6 — Self-play
@@ -126,6 +127,8 @@ une section par étape, à compléter à la fin de chaque étape.
 .venv\Scripts\python.exe scripts\prepare_data.py --months 2026-02 2026-03 --per-source-positions 3000000 --out data\lichess_24m --workers 7   # plusieurs mois
 .venv\Scripts\python.exe scripts\make_kaggle_zip.py data\lichess_24m --out data\kaggle\lichess_24m.zip   # archive à téléverser sur Kaggle
 .venv\Scripts\python.exe scripts\train.py --config tiny --out checkpoints\tiny_sup   # relancer = reprendre ; --steps N pour un essai
+.venv\Scripts\python.exe scripts\summarize_run.py checkpoints\tiny_sup --skip 1   # débit, attente des données, verdict
+.venv\Scripts\python.exe scripts\train.py --config tiny --out checkpoints\essai --max-minutes 5 --no-mask-loss   # budget de temps, perte sans masque
 .venv\Scripts\python.exe scripts\plot_curves.py checkpoints\tiny_sup   # -> curves.png
 .venv\Scripts\python.exe scripts\show_policy.py checkpoints\tiny_sup\best.pt   # --fen "<FEN>" ou --moves "e2e4 e7e5"
 .venv\Scripts\python.exe scripts\bench_inference.py --configs tiny   # vitesse d'inférence

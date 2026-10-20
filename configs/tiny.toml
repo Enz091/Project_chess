@@ -20,4 +20,5 @@ keep_last = 3
 val_positions = 20000    # sous-ensemble fixe pour le suivi (la fin utilise toute la validation)
 amp = "auto"             # fp16 sur CUDA seulement
 num_workers = 2          # processus pour les masques de coups légaux
+mask_train_loss = true   # false : perte politique sans masque (voir docs/journal.md)
 seed = 0

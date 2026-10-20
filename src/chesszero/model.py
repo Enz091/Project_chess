@@ -134,10 +134,14 @@ def policy_value_loss(
     value: torch.Tensor,
     target_policy: torch.Tensor,
     target_value: torch.Tensor,
-    legal_mask: torch.Tensor,
+    legal_mask: torch.Tensor | None,
     value_valid: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, dict[str, float]]:
     """Perte = entropie croisée (politique, coups illégaux masqués) + erreur quadratique (valeur).
+
+    `legal_mask=None` : softmax sur les 4672 sorties, sans masque (option `mask_train_loss = false` de
+    l'entraînement : plus de masques à calculer ; le coup cible est légal, donc le réseau apprend quand
+    même à baisser les illégaux, mais la perte n'est plus comparable à la perte masquée).
 
     `target_policy` : soit des indices de coups (B,) entiers (pré-entraînement : le coup joué),
     soit une distribution (B, N_ACTIONS) (self-play : visites MCTS normalisées).
@@ -147,7 +151,7 @@ def policy_value_loss(
     tête valeur. La perte politique porte toujours sur toutes les positions.
     Renvoie (perte totale, {"policy": ..., "value": ...}) ; les deux termes ont le même poids.
     """
-    log_p = masked_log_softmax(logits, legal_mask)
+    log_p = F.log_softmax(logits.float(), dim=-1) if legal_mask is None else masked_log_softmax(logits, legal_mask)
     if target_policy.dim() == 1:
         policy_loss = F.nll_loss(log_p, target_policy)
     else:
