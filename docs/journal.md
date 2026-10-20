@@ -357,8 +357,23 @@ dans un petit Dataset privé en gardant le dossier `kaggle_sup/`. `FULL_MINUTES 
 - L'essai sans masque n'apporte que +0,6 % de débit **et apprend plus lentement** (observation de l'auteur) : on
   **garde les masques** (`mask_train_loss = true`). L'option reste dans le code, désactivée. Le précalcul des masques
   n'a pas lieu d'être.
-- Précision atteinte au bout des 10 minutes : **non communiquée pour l'instant, à compléter** (top-1 / top-3 et
-  pertes de validation lus dans `bench/metrics.csv`).
+- **Précision au bout des 10 minutes** (avec masques, 4 580 pas = 4,7 M de positions = 0,20 époque, validation sur le
+  sous-ensemble fixe de 30 000 positions, au dernier point de validation, pas 4 000) : perte totale **2,593**
+  (politique **1,759**, valeur **0,835**), **top-1 44,7 %**, **top-3 72,8 %**. En fin d'essai, sur la fenêtre
+  d'entraînement : top-1 45,3 %, top-3 73,8 %. Pour situer : le réseau tiny de l'étape 4a, après 5 000 pas de 256
+  (0,43 époque, 1,3 M de positions), était à 38,2 % / 64,5 % (politique 2,062 sur toute la validation) ; le
+  réseau kaggle fait déjà nettement mieux (+6,5 points de top-1, +8 de top-3) avec 0,20 époque, mais les deux
+  mesures ne sont pas sur les mêmes données de validation (autres mois, autre taille).
+- **Bruit de la perte de valeur** : 0,781 au pas 3 000 puis 0,835 au pas 4 000. Une telle remontée en 1 000 pas
+  d'un réseau qui apprend vient très probablement du bruit de mesure (30 000 positions, `value_valid = 1`
+  seulement, issues de peu de parties : les positions d'une même partie partagent le même résultat, donc le nombre
+  effectif d'exemples est bien plus petit que 30 000) et non d'une dégradation. C'est la raison du passage à
+  100 000 positions de validation. À surveiller sur le vrai entraînement : si la perte de valeur de validation
+  remonte durablement avec 100 000 positions, ce ne sera plus du bruit.
+- **Essai sans masque** (validation au pas 1 000, 30 000 positions) : top-1 **35,6 %**, top-3 **61,7 %**, contre
+  **36,3 %** et **62,6 %** avec masques au même pas, soit −0,7 point de top-1 et −0,9 point de top-3. Un seul
+  point de mesure, une seule graine : c'est un indice cohérent avec « apprend plus lentement », pas une
+  preuve ; combiné au gain de débit de seulement 0,6 %, cela suffit pour garder les masques.
 
 ### Réglages de `configs/kaggle.toml` pour l'entraînement complet
 
