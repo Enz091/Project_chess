@@ -611,7 +611,7 @@ Validation = sous-ensemble fixe de 100 000 positions, toutes les 1 000 pas (92 p
 
 ### Interface UCI (`src/chesszero/uci.py`, `scripts/uci.py`, `scripts/chesszero.bat`)
 - Le MCTS joue dans n'importe quel logiciel UCI. Options : `Simulations` (200), `MoveTime` (ms, 0 = utiliser les simulations), `Threads` (1 à 8, plafond voulu pour ce PC), `BatchSize` (8), `ReuseTree` (oui), `Checkpoint` (défaut `checkpoints/kaggle_sup/best.pt`).
-- `go movetime X` ; `go wtime/btime [winc binc movestogo]` : budget = temps restant / 30 (ou / movestogo) + 80 % de l'incrément, jamais plus de la moitié du temps restant, moins 50 ms de marge ; `go nodes N` ; `go infinite` + `stop`. Sans limite : option `MoveTime` si > 0, sinon `Simulations`. Le coup est toujours le plus visité (température 0, sans bruit).
+- `go movetime X` ; `go wtime/btime [winc binc movestogo]` : budget = temps restant / 30 (ou / movestogo) + 80 % de l'incrément, jamais plus de la moitié du temps restant, moins 50 ms de marge ; `go nodes N` ; `go infinite` + `stop`. Sans limite : option `MoveTime` si > 0, sinon `Simulations`. Le coup est toujours le plus visité (température 0, sans bruit). **(Comportement remplacé le jour même par les deux modes `UseClock` : voir « Modes de force UCI » plus bas.)**
 - La recherche tourne dans un thread, par paquets de 16 simulations : `stop`, `isready`, `quit` répondent tout de suite. Si la recherche plante, un `bestmove` légal est quand même renvoyé (le logiciel ne reste pas bloqué). `info` : profondeur de la variation principale, nodes, nps, temps, `score cp` (courbe de Leela `90·tan(1,5638·Q)`, simple convention d'affichage), pv.
 - **Réutilisation de l'arbre** : si la position reçue prolonge celle de l'arbre (notre coup + la réponse adverse), les coups sont joués dans l'arbre (`advance`) et le sous-arbre est gardé ; sinon (`ucinewgame`, autre position, option modifiée, `ReuseTree` désactivé) l'arbre repart de zéro. L'historique complet des coups reste dans l'arbre, donc les répétitions sont détectées.
 - stdout ne contient que du protocole ; les messages vont sur stderr.
@@ -674,3 +674,60 @@ Validation = sous-ensemble fixe de 100 000 positions, toutes les 1 000 pas (92 p
 - **Partie 201 (niveau 2500, sicilienne, IA Blancs, 49 demi-coups)** : victoire d'attaque. 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 e5 5.Bb5+ Nd7 6.Nf5 a6 7.Bxd7+ Qxd7 8.Nc3 Nf6 9.Bg5 Nxe4 10.Nxg7+ Bxg7 11.Nxe4 d5 12.Nf6+ Bxf6 13.Bxf6 Rg8 14.Qe2 Rxg2 15.Qxe5+ Kf8 16.O-O-O Qe6 17.Qf4 Rg4 18.Qh6+ Ke8 19.Rhe1 Re4 20.Rxe4 Qxe4 21.Bc3 Qf5 22.Bb4 b6 23.Qf8+ Kd7 24.Qd6+ Ke8 25.Qe7#. Stockfish plein donne l'avantage à l'IA à partir du demi-coup 30 (≈ +3 pions) et voit le mat à partir du demi-coup 45.
 - **Partie 40 (niveau 1900, italienne, IA Blancs, 38 demi-coups)** : une défaite contre un niveau bien plus faible. L'IA est à +6 pions (Stockfish plein) après 16.Qe4, puis joue **17.Bxe6??** et subit un mat en trois coups : 17…Qxf2+ 18.Rxf2 Rd1+ 19.Qe1 Rxe1#. Une gaffe tactique de profondeur 3 que 200 simulations n'attrapent pas : la recherche ne vérifie pas assez les échecs et sacrifices de dame adverses. C'est le type d'erreur que le self-play devrait corriger.
 - **Partie 90 (niveau 2500, Caro-Kann, IA Noirs, 255 demi-coups)** : la plus longue. Position équilibrée jusqu'au demi-coup 100 (éval ≈ 0), puis l'IA propose l'échange des dames (51…Qe7), laisse le pion h promouvoir (53.h7 puis 54.h8=Q) et Stockfish convertit dame contre cavalier en 128.Qa7#. Illustre la faiblesse en finale : le réseau, entraîné sur des coups humains, calcule mal les courses de pions lointaines à 200 simulations.
+
+## Étape 8 (suite) — Modes de force UCI (`UseClock`) et profils Cute Chess (2026-10-20)
+
+### Diagnostic : ce que faisait l'interface avant le changement
+Règle de priorité telle qu'elle était codée dans `_cmd_go` (première condition vraie) :
+1. `go nodes N` → N simulations (et, si le `go` portait aussi un temps, le temps s'ajoutait comme second plafond) ;
+2. `go infinite` ou temps de pendule / `movetime` → **le temps l'emporte, l'option `Simulations` est ignorée** ;
+3. `go` nu (aucun temps) et `MoveTime` > 0 → `MoveTime` ms ;
+4. sinon → `Simulations`.
+Avec Cute Chess, qui envoie toujours `wtime/btime` (ou `movetime`, ou `infinite`), `Simulations` et `MoveTime` n'étaient donc **jamais lus** : l'IA jouait « à la pendule ». Ce n'était pas le comportement de la mesure de référence (200 simulations fixes).
+
+Ce que Cute Chess envoie réellement (journal des commandes reçues, `CHESSZERO_UCI_LOG`) :
+- pendule 5 min + 3 s : `go wtime 303000 btime 303000 winc 3000 binc 3000` (l'incrément est ajouté d'avance) ;
+- « temps par coup » 5 s : `go movetime 5000` ; 40 coups en 60 s : `go wtime 60000 btime 60000 movestogo 40` ;
+- **pendule « infinie » : `go infinite`**, et Cute Chess attend un `bestmove` sans jamais envoyer `stop` : un moteur qui obéit à la lettre ne joue jamais (c'est ce qui bloquait un de mes essais en ligne de commande).
+
+### Vitesse mesurée (moteur UCI réel, `scripts/chesszero.bat`, position initiale et milieu de jeu)
+| threads | simulations/s | 200 simulations |
+|---|---|---|
+| 8 (défaut du moteur) | 354 (début), 348 (milieu) | 0,51 s |
+| 2 (comme dans la mesure Stockfish) | 295, 299 | 0,67 s |
+
+Budget de temps à 5 min + 3 s (formule du code : reste/30 + 0,8 × incrément, moins 50 ms, plafonné à la moitié du reste), à 350 simulations/s et en supposant que l'IA dépense tout son budget (les nœuds de l'arbre réutilisé s'ajoutent en plus) : le reste de pendule converge vers ~18 s et le budget vers ~3 s.
+
+| coup | reste (s) | budget (s) | simulations | par rapport aux 200 |
+|---|---|---|---|---|
+| 1 | 300 | 12,4 | ~4 300 | × 21 |
+| 10 | 226 | 9,9 | ~3 500 | × 17 |
+| 20 | 166 | 7,9 | ~2 800 | × 14 |
+| 40 | 94 | 5,5 | ~1 900 | × 9,6 |
+| 80 | 38 | 3,6 | ~1 300 | × 6,3 |
+
+Autres pendules (coup 1 → coup 40) : 1 min + 1 s ≈ 960 → 510 simulations ; 3 min + 2 s ≈ 2 600 → 1 200 ; 10 min + 5 s ≈ 8 400 → 3 500. **En mode pendule, l'IA joue donc avec 6 à 20 fois plus de simulations que dans la mesure de référence : son Elo n'est pas le 2436 mesuré.**
+
+### Changement : option `UseClock` (décochée par défaut) et fonction `search_limits`
+- **Force fixe (`UseClock` = false, défaut)** : exactement `Simulations` **nouvelles** simulations par coup (comme `match.py` / `match_stockfish.py` : `mcts.search(N)` ajoute N visites, les visites de l'arbre réutilisé s'y ajoutent), quelle que soit la pendule. `wtime/btime/winc/binc/movetime` sont ignorés. `go nodes N` remplace `Simulations`. **`go infinite` est traité comme une demande de `Simulations` simulations** (écart volontaire au protocole : sinon la pendule « infinie » de Cute Chess ne démarre jamais).
+- **Pendule (`UseClock` = true)** : `go movetime X` → X ms ; `go wtime…` → reste/30 (ou /movestogo) + 0,8 × incrément, ≤ la moitié du reste, moins 50 ms ; `Simulations` ignoré ; `go nodes` avec un temps → le premier des deux plafonds ; `go infinite` → jusqu'à `stop`.
+- Dans les deux modes : un `go` sans aucune limite utilise `MoveTime` (ms) si > 0, sinon `Simulations` ; `stop` et `quit` interrompent la recherche tout de suite (paquets de 16 simulations ≈ 50 ms). `MoveTime` n'a donc d'effet que sur un `go` nu, que Cute Chess n'envoie jamais.
+- Priorité exacte : `infinite` > pendule (si `UseClock`) > `nodes` > `MoveTime` (go nu) > `Simulations`.
+- Arguments de ligne de commande de `scripts/uci.py` : `--simulations N`, `--use-clock`, `--move-time`, `--threads`, `--batch-size`, `--checkpoint` : valeurs par défaut d'un profil, annoncées dans les lignes `option … default …` (le logiciel peut ensuite les changer par `setoption`). Variable d'environnement `CHESSZERO_UCI_LOG=<fichier>` : copie horodatée des commandes reçues (diagnostic).
+- Tests (`tests/test_uci.py`, 33 tests au total, dont 18 nouveaux cas) : défaut décoché et annoncé ; table de priorité des deux modes (11 cas) ; `MoveTime` seulement pour un `go` nu ; force fixe = exactement 160 simulations avec une horloge de 50 ms (évaluateur ralenti à 10 ms par appel) et 160 de plus au coup suivant, `movetime` ignoré ; mode pendule = arrêt au budget, `Simulations` ignoré ; `go infinite` répond en force fixe ; **`stop` et `quit` répondent en moins d'une seconde pendant une recherche de 1 000 000 simulations** ; arguments de profil et plafond de threads.
+
+### Profils dans Cute Chess (`scripts/lancer_cutechess.bat`)
+- Un même moteur, un petit lanceur par profil : `scripts/chesszero_50.bat`, `chesszero_200.bat`, `chesszero_800.bat` (force fixe, `--simulations N`) et `chesszero_pendule.bat` (`--use-clock`) ; la liste de moteurs contient « ChessZero - 50 sim », « ChessZero - 200 sim (référence) », « ChessZero - 800 sim », « ChessZero - pendule » et « Stockfish 19 ».
+- **Pourquoi des lanceurs et pas des arguments dans `engines.json`** : essayé en ligne de commande, Cute Chess 1.5.1 **ignore** la clé `arguments` (chaîne ou tableau) et refuse des arguments dans `command` ; `initStrings` est honorée, mais « Configure » afficherait alors 200 et pourrait écraser le profil. Avec un lanceur par profil, les valeurs par défaut annoncées par le moteur sont les bonnes.
+- Le `.bat` regénère la liste s'il ne trouve pas « 800 sim » dans le `engines.json` existant (l'ancien est sauvegardé en `engines.json.bak`).
+- Vérifié avec `cutechess-cli` (profils entre eux, pendule « infinie ») : 50 sim = 0,21 s par coup, 800 sim = 2,3 s, 200 sim = 0,55 s même avec 20 s + 1 s, pendule à 20 s + 1 s = 1,5 s. Écran de l'interface graphique non vérifié (seule la ligne de commande l'a été).
+
+### Niveaux : ce qui est mesuré et ce qui est estimé
+- **Mesuré** : 200 simulations (profil référence, 2 threads, Stockfish 300 ms) = **2436 ± 56 sur l'échelle UCI_Elo de Stockfish 19** (voir plus haut pour les limites de cette échelle) ; MCTS-200 bat la politique seule 20-0 (écart ≥ +317 Elo, borne à 95 %).
+- **Estimé, non mesuré** : 50 simulations ≈ 2200 à 2350 (ordre de grandeur : quatre fois moins de simulations ≈ −100 à −250 Elo) ; 800 simulations ≈ 2550 à 2650 (quatre fois plus ≈ +100 à +200, gain qui décroît à mesure que la recherche approche les limites du réseau) ; pendule 5 min + 3 s : plus de 800 simulations presque tout le temps, donc au moins le niveau 800, probablement au-dessus (non estimable sérieusement). Ces fourchettes viennent de l'expérience générale du passage à l'échelle du MCTS, pas de parties jouées par ce réseau. Pour les mesurer : adapter `PROTOCOL["simulations"]` (nouveau protocole = nouvelle référence, une heure environ par profil).
+- Aucun de ces profils n'est faible pour un joueur de club : même 50 simulations est annoncé > 2200 sur l'échelle de Stockfish (qui n'est pas l'échelle FIDE).
+
+### Conseils pour jouer (Cute Chess)
+- **Pendule** : en force fixe, l'IA ignore l'horloge mais **Cute Chess la décompte quand même** : une IA qui met 2,3 s par coup (800 simulations) perd au temps avec une pendule trop courte (par construction ; je n'ai pas rejoué ce cas jusqu'au bout). Choisir **« Infinite »** (aucune pendule, l'IA répond après N simulations) ou une pendule large : 10 min + 5 s, ou 5 s par coup.
+- Ne pas utiliser « Infinite » avec « ChessZero - pendule » : en mode pendule `go infinite` dure jusqu'à `stop`, que Cute Chess n'envoie jamais.
+- Ne pas monter « Threads » au-delà de 8 (plafond du moteur) ni lancer d'autres charges lourdes pendant qu'on joue.

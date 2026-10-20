@@ -6,8 +6,9 @@ import chess
 import numpy as np
 import pytest
 
-from chesszero.uci import GoParams, UCIEngine, parse_go, score_cp, time_budget
+from chesszero.uci import GoParams, UCIEngine, main, parse_go, score_cp, search_limits, time_budget
 
+UCI_QUIT = "uci" + chr(10) + "quit" + chr(10)
 BACK_RANK = "6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1"  # Ra8#
 
 
@@ -18,9 +19,17 @@ class Stub:
         return [np.full(len(i), 1.0 / len(i)) for i in legal_indices], np.zeros(len(boards))
 
 
-def make_engine():
+class SlowStub(Stub):
+    """Comme Stub, mais chaque appel dure 10 ms : le temps compte, comme avec le vrai réseau."""
+
+    def evaluate(self, boards, legal_indices):
+        time.sleep(0.01)
+        return super().evaluate(boards, legal_indices)
+
+
+def make_engine(evaluator=None, **options):
     out = io.StringIO()
-    return UCIEngine(out=out, evaluator=Stub()), out
+    return UCIEngine(out=out, evaluator=evaluator or Stub(), options=options), out
 
 
 def go(engine, command="go"):
@@ -73,8 +82,8 @@ def test_default_go_uses_simulations_option():
     assert 40 <= engine.mcts.root.n_sum < 40 + 8  # exactement 40 simulations, arrondi aux lots
 
 
-def test_movetime_is_respected():
-    engine, out = make_engine()
+def test_movetime_is_respected_with_clock_mode():
+    engine, out = make_engine(UseClock=True)
     start = time.perf_counter()
     go(engine, "go movetime 300")
     assert 0.2 < time.perf_counter() - start < 1.5
@@ -89,8 +98,8 @@ def test_movetime_option_when_go_has_no_limit():
     assert 0.15 < time.perf_counter() - start < 1.5
 
 
-def test_stop_ends_infinite_search():
-    engine, out = make_engine()
+def test_stop_ends_infinite_search_in_clock_mode():
+    engine, out = make_engine(UseClock=True)
     engine.handle("go infinite")
     time.sleep(0.2)
     assert not any(l.startswith("bestmove") for l in lines(out))
@@ -190,3 +199,107 @@ def test_score_cp_is_odd_and_monotonic():
     assert score_cp(0.3) == -score_cp(-0.3) > 0
     assert score_cp(0.5) > score_cp(0.3)
     assert abs(score_cp(1.0)) < 10_000
+
+
+# --------------------------------------------------------------------------- modes de force : UseClock
+
+
+def test_use_clock_is_off_by_default_and_advertised():
+    engine, out = make_engine()
+    assert engine.options["UseClock"] is False
+    engine.handle("uci")
+    assert "option name UseClock type check default false" in lines(out)
+    engine.handle("setoption name UseClock value true")
+    assert engine.options["UseClock"] is True
+    engine.handle("setoption name UseClock value false")
+    assert engine.options["UseClock"] is False
+
+
+@pytest.mark.parametrize("use_clock, go_cmd, expected", [
+    # (secondes, simulations) pour Simulations = 200, MoveTime = 0
+    (False, "go wtime 300000 btime 300000 winc 3000 binc 3000", (None, 200)),   # pendule ignorée
+    (False, "go movetime 5000", (None, 200)),                                      # movetime ignoré aussi
+    (False, "go wtime 1000 btime 1000 nodes 50", (None, 50)),                      # nodes explicite
+    (False, "go infinite", (None, 200)),                                           # répond quand même
+    (False, "go", (None, 200)),
+    (True, "go wtime 300000 btime 300000 winc 3000 binc 3000", (300 / 30 + 0.8 * 3 - 0.05, None)),
+    (True, "go movetime 5000", (4.95, None)),
+    (True, "go wtime 1000 btime 1000 nodes 50", (0.02, 50)),                  # budget plancher + nodes
+    (True, "go infinite", (None, None)),                                           # jusqu'à stop
+    (True, "go nodes 80", (None, 80)),
+    (True, "go", (None, 200)),
+])
+def test_search_limits_priority(use_clock, go_cmd, expected):
+    seconds, sims = search_limits(parse_go(go_cmd.split()[1:]), chess.WHITE, use_clock, 200)
+    assert sims == expected[1]
+    if expected[0] is None:
+        assert seconds is None
+    else:
+        assert seconds == pytest.approx(expected[0])
+
+
+def test_move_time_option_only_for_bare_go():
+    bare, clock = parse_go([]), parse_go("wtime 60000 btime 60000".split())
+    assert search_limits(bare, chess.WHITE, False, 200, 1500) == (pytest.approx(1.45), None)
+    assert search_limits(bare, chess.WHITE, True, 200, 1500) == (pytest.approx(1.45), None)
+    assert search_limits(clock, chess.WHITE, False, 200, 1500) == (None, 200)  # la pendule du GUI l'emporte sur MoveTime
+    assert search_limits(clock, chess.WHITE, True, 200, 1500)[1] is None and search_limits(clock, chess.WHITE, True, 200, 1500)[0] > 1.5
+
+
+def test_fixed_mode_does_exact_simulations_whatever_the_clock():
+    # horloge dérisoire (50 ms) mais 160 simulations demandées : en force fixe, elles sont toutes faites
+    engine, out = make_engine(SlowStub(), Simulations=160)
+    go(engine, "go wtime 50 btime 50 winc 0 binc 0")
+    assert engine.mcts.root.n_sum == 160
+    first = engine.mcts
+    go(engine, "go movetime 20")  # movetime ignoré lui aussi : encore 160 NOUVELLES simulations
+    assert engine.mcts is first and engine.mcts.root.n_sum == 320
+
+
+def test_clock_mode_uses_the_clock_not_simulations():
+    engine, out = make_engine(SlowStub(), Simulations=160, UseClock=True)
+    start = time.perf_counter()
+    go(engine, "go wtime 50 btime 50 winc 0 binc 0")  # budget minimal : 20 ms
+    assert time.perf_counter() - start < 0.5
+    assert 0 < engine.mcts.root.n_sum < 160  # Simulations ignoré
+    # et avec une grosse pendule : bien plus que les 160 de Simulations
+    engine, out = make_engine(Simulations=10, UseClock=True)
+    go(engine, "go wtime 3000 btime 3000 winc 0 binc 0")  # ~ 3000/30 - 0,05 = 0,05 s
+    assert engine.mcts.root.n_sum > 10
+
+
+def test_fixed_mode_infinite_clock_gets_an_answer():
+    engine, out = make_engine(Simulations=32)
+    go(engine, "go infinite")
+    assert engine.mcts.root.n_sum == 32 and bestmove(out)
+
+
+def test_fixed_mode_still_answers_stop_and_quit():
+    engine, out = make_engine(SlowStub(), Simulations=1_000_000)
+    engine.handle("go wtime 1000 btime 1000")  # l'horloge (20 ms) serait épuisée tout de suite : ignorée
+    time.sleep(0.3)
+    assert not any(l.startswith("bestmove") for l in lines(out))  # toujours en train de chercher
+    t = time.perf_counter()
+    engine.handle("stop")
+    assert time.perf_counter() - t < 1.0 and bestmove(out)
+    assert 0 < engine.mcts.root.n_sum < 1_000_000
+    # quit pendant une recherche : s'arrête aussi
+    engine.handle("go wtime 1000 btime 1000")
+    time.sleep(0.1)
+    t = time.perf_counter()
+    assert engine.handle("quit") is False
+    assert time.perf_counter() - t < 1.0
+    assert len([l for l in lines(out) if l.startswith("bestmove")]) == 2
+
+
+def test_profile_arguments_set_defaults():
+    out = io.StringIO()
+    main(["--simulations", "50", "--use-clock", "--threads", "99"], stdin=io.StringIO(UCI_QUIT), stdout=out)
+    text = lines(out)
+    assert "option name Simulations type spin default 50 min 1 max 1000000" in text
+    assert "option name UseClock type check default true" in text
+    assert "option name Threads type spin default 8 min 1 max 8" in text  # plafond
+    out = io.StringIO()
+    main([], stdin=io.StringIO(UCI_QUIT), stdout=out)
+    assert "option name Simulations type spin default 200 min 1 max 1000000" in lines(out)
+    assert "option name UseClock type check default false" in lines(out)

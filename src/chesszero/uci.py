@@ -3,12 +3,21 @@
 Protocole UCI = texte sur stdin / stdout. Le logiciel (Cute Chess, Arena...) lance ce programme, lui
 envoie `position ...` puis `go ...`, et lit `info ...` puis `bestmove ...`. Ici :
 
-  - `go movetime X`                : recherche pendant X ms ;
-  - `go wtime ... btime ... [winc binc movestogo]` : partie à la pendule, budget = temps restant / 30
-    (ou / movestogo) + 80 % de l'incrément, jamais plus de la moitié du temps restant ;
-  - `go nodes N`                   : N simulations ;
-  - `go infinite`                  : jusqu'à `stop` ;
-  - `go` sans limite               : option `MoveTime` si > 0, sinon option `Simulations`.
+Deux modes de force, choisis par l'option `UseClock` (décochée par défaut) :
+
+  FORCE FIXE (`UseClock` = false) : l'IA fait exactement `Simulations` nouvelles simulations par coup, quelle
+  que soit la pendule : `wtime/btime/winc/binc/movetime` du `go` sont ignorés. C'est le comportement de la
+  mesure de référence contre Stockfish (200 simulations). Un `go nodes N` explicite remplace `Simulations`.
+  PENDULE (`UseClock` = true) : le temps du coup se déduit de la pendule :
+    - `go movetime X`                : X ms ;
+    - `go wtime ... btime ... [winc binc movestogo]` : temps restant / 30 (ou / movestogo) + 80 % de
+      l'incrément, jamais plus de la moitié du temps restant ; `Simulations` est alors ignoré ;
+    - `go nodes N` avec un temps     : s'arrête au premier des deux.
+Dans les deux modes : un `go` sans aucune limite utilise l'option `MoveTime` (ms) si elle est > 0, sinon
+`Simulations`. `go infinite` : jusqu'à `stop` en mode pendule ; en force fixe, l'IA répond après `Simulations`
+simulations (écart volontaire au protocole : la pendule « infinie » de Cute Chess envoie `go infinite` et
+attend un coup, sinon la partie ne démarre jamais). Dans les deux modes `stop` et `quit` arrêtent la
+recherche tout de suite.
 La recherche tourne dans un thread, par petits paquets de simulations : `stop`, `isready` et `quit`
 répondent aussitôt. Le coup renvoyé est toujours le plus visité (température 0, pas de bruit).
 
@@ -21,7 +30,9 @@ stdout ne contient QUE du protocole UCI : tout message de diagnostic va sur stde
 
 from __future__ import annotations
 
+import argparse
 import math
+import os
 import sys
 import threading
 import time
@@ -83,6 +94,24 @@ def time_budget(go: GoParams, turn: chess.Color) -> float | None:
     return max(min(budget, remaining * 0.5) - OVERHEAD, 0.02)
 
 
+def search_limits(go: GoParams, turn: chess.Color, use_clock: bool, simulations: int,
+                  move_time_ms: int = 0) -> tuple[float | None, int | None]:
+    """(secondes, simulations) à ne pas dépasser pour ce `go` ; None = pas de limite de ce type.
+    Priorité : infinite > pendule (si UseClock) > nodes > MoveTime (go sans limite) > Simulations."""
+    if go.infinite:  # force fixe : on répond quand même (pendule « infinie » de Cute Chess), voir l'en-tête
+        return (None, None) if use_clock else (None, simulations)
+    nodes = max(go.nodes, 1) if go.nodes is not None else None
+    budget = time_budget(go, turn) if use_clock else None
+    if budget is not None:
+        return budget, nodes
+    if nodes is not None:
+        return None, nodes
+    has_time = go.movetime is not None or go.wtime is not None or go.btime is not None
+    if not has_time and move_time_ms > 0:
+        return max(move_time_ms / 1000 - OVERHEAD, 0.02), None
+    return None, simulations
+
+
 def score_cp(q: float) -> int:
     """Q (camp au trait, [-1, 1]) en centipions, par la courbe de Leela : 90 * tan(1,5638 * Q).
     Convention d'affichage, pas une mesure : ça ne sert qu'à remplir `score cp` pour le logiciel."""
@@ -91,17 +120,19 @@ def score_cp(q: float) -> int:
 
 
 class UCIEngine:
-    def __init__(self, out: TextIO | None = None, evaluator=None):
+    def __init__(self, out: TextIO | None = None, evaluator=None, options: dict | None = None):
         self.out = out or sys.stdout
         self._write_lock = threading.Lock()
         self.options: dict[str, object] = {
             "Simulations": 200,
+            "UseClock": False,
             "MoveTime": 0,
             "Threads": MAX_THREADS,
             "BatchSize": 8,
             "ReuseTree": True,
             "Checkpoint": str(DEFAULT_CHECKPOINT),
         }
+        self.options.update(options or {})  # valeurs par défaut d'un profil (arguments de la ligne de commande)
         self.evaluator = evaluator  # injectable (tests) ; sinon chargé depuis `Checkpoint`
         self._injected = evaluator is not None
         self.board = chess.Board()
@@ -119,7 +150,11 @@ class UCIEngine:
 
     def run(self, lines) -> None:
         """Traite les commandes jusqu'à `quit` ou la fin de l'entrée."""
+        log = os.environ.get("CHESSZERO_UCI_LOG")  # diagnostic : copie des commandes reçues du logiciel
         for line in lines:
+            if log:
+                with open(log, "a", encoding="utf-8") as f:
+                    f.write(f"{time.strftime('%H:%M:%S')} {line.strip()}\n")
             if not self.handle(line.strip()):
                 break
         self._stop_search()
@@ -158,12 +193,14 @@ class UCIEngine:
     def _cmd_uci(self) -> None:
         self.send("id name ChessZero")
         self.send("id author Projet_chess")
-        self.send("option name Simulations type spin default 200 min 1 max 1000000")
-        self.send("option name MoveTime type spin default 0 min 0 max 3600000")
-        self.send(f"option name Threads type spin default {MAX_THREADS} min 1 max {MAX_THREADS}")
-        self.send("option name BatchSize type spin default 8 min 1 max 64")
-        self.send("option name ReuseTree type check default true")
-        self.send(f"option name Checkpoint type string default {DEFAULT_CHECKPOINT}")
+        o = self.options
+        self.send(f"option name Simulations type spin default {o['Simulations']} min 1 max 1000000")
+        self.send(f"option name UseClock type check default {str(o['UseClock']).lower()}")
+        self.send(f"option name MoveTime type spin default {o['MoveTime']} min 0 max 3600000")
+        self.send(f"option name Threads type spin default {o['Threads']} min 1 max {MAX_THREADS}")
+        self.send(f"option name BatchSize type spin default {o['BatchSize']} min 1 max 64")
+        self.send(f"option name ReuseTree type check default {str(o['ReuseTree']).lower()}")
+        self.send(f"option name Checkpoint type string default {o['Checkpoint']}")
         self.send("uciok")
 
     def _cmd_setoption(self, args: list[str]) -> None:
@@ -242,17 +279,8 @@ class UCIEngine:
             self.send("bestmove 0000")
             return
         self.mcts = self._mcts_for(board)
-        budget = time_budget(go, board.turn)
-        if go.nodes is not None:
-            max_sims = max(go.nodes, 1)
-        elif go.infinite or budget is not None:
-            max_sims = None
-        elif int(self.options["MoveTime"]) > 0:
-            budget, max_sims = max(int(self.options["MoveTime"]) / 1000 - OVERHEAD, 0.02), None
-        else:
-            max_sims = int(self.options["Simulations"])
-        if go.infinite:
-            budget = None
+        budget, max_sims = search_limits(go, board.turn, bool(self.options["UseClock"]),
+                                         int(self.options["Simulations"]), int(self.options["MoveTime"]))
         self._stop.clear()
         self._worker = threading.Thread(target=self._search, args=(self.mcts, budget, max_sims), daemon=True)
         self._worker.start()
@@ -266,7 +294,8 @@ class UCIEngine:
                 mcts.search(n)
                 done += n
                 now = time.perf_counter()
-                if self._stop.is_set() or (max_sims is not None and done >= max_sims)                         or (budget is not None and now - start >= budget):
+                if (self._stop.is_set() or (max_sims is not None and done >= max_sims)
+                        or (budget is not None and now - start >= budget)):
                     break
                 if now - last_info >= 1.0:
                     self._send_info(mcts, now - start)
@@ -297,7 +326,21 @@ class UCIEngine:
 
 
 def main(argv: list[str] | None = None, stdin=None, stdout=None) -> None:
-    engine = UCIEngine(out=stdout)
+    ap = argparse.ArgumentParser(description="Moteur UCI ChessZero ; les options donnent les valeurs par défaut "
+                                 "d'un profil (le logiciel peut ensuite les changer par setoption).")
+    ap.add_argument("--simulations", type=int, help="force fixe : simulations par coup (défaut 200)")
+    ap.add_argument("--use-clock", action="store_true", help="mode pendule au lieu de la force fixe")
+    ap.add_argument("--move-time", type=int, help="ms par coup pour un `go` sans limite")
+    ap.add_argument("--threads", type=int)
+    ap.add_argument("--batch-size", type=int)
+    ap.add_argument("--checkpoint")
+    args = ap.parse_args(argv)
+    options = {"Simulations": args.simulations, "UseClock": args.use_clock or None, "MoveTime": args.move_time,
+               "Threads": args.threads, "BatchSize": args.batch_size, "Checkpoint": args.checkpoint}
+    options = {k: v for k, v in options.items() if v is not None}
+    if "Threads" in options:
+        options["Threads"] = max(1, min(options["Threads"], MAX_THREADS))
+    engine = UCIEngine(out=stdout, options=options)
     engine.run(stdin or sys.stdin)
 
 
