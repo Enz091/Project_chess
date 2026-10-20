@@ -405,3 +405,82 @@ dans un petit Dataset privé en gardant le dossier `kaggle_sup/`. `FULL_MINUTES 
 - **Valeurs par défaut de la cellule 0** : `RUN_BENCH = False`, `NOMASK_MINUTES = 0`, `RUN_FULL = True`
   (92 000 pas, `FULL_MINUTES = 660`), `NO_MASK_LOSS = False`. Le notebook lance donc directement l'entraînement complet
   (après la reprise éventuelle de la cellule 4).
+
+## Étape 4b, partie 4 — Résultat de l'entraînement complet sur Kaggle (2026-10-20)
+
+### Fichiers récupérés et rangés
+
+- Téléchargements : `best.zip`, `last.zip` (37 842 913 octets chacun) et `metrics.csv` (152 138 octets, 1 014 lignes).
+  Les deux « .zip » sont en fait des checkpoints PyTorch (le format `torch.save` est lui-même une archive zip :
+  les entrées s'appellent `ckpt_00092000.pt/...`), renommés par le navigateur. **Ils sont identiques octet pour octet**
+  (même SHA-256) : normal, au dernier pas la validation était la meilleure, donc `best.pt` est une copie de `last.pt`.
+  Aucun dossier extrait n'existait dans Téléchargements.
+- Copiés (sans extraction) en `checkpoints/kaggle_sup/best.pt`, `last.pt`, `metrics.csv` ; comparaison octet à octet
+  faite, puis les trois originaux de Téléchargements supprimés.
+- **Vérification** : les deux se chargent avec `torch.load` et `build_model(ModelConfig.named("kaggle"))`
+  (`load_state_dict` strict, 3 140 940 paramètres) ; `step = 92000` (= `total_steps`), `epoch = 3` (compteur entier,
+  4,00 époques réelles), `config.model == kaggle` et `config.train == [train] de kaggle.toml` (dont `val_positions = 100000`,
+  `mask_train_loss = true`), `best_val_loss = 2,1387`, temps écoulé 3,77 h.
+
+### Courbes et chiffres de validation
+
+Courbes : [docs/img/kaggle_sup_curves.png](img/kaggle_sup_curves.png) (`plot_curves.py checkpoints/kaggle_sup --out ...`).
+Validation = sous-ensemble fixe de 100 000 positions, toutes les 1 000 pas (92 points) ; fin = toute la validation
+(475 048 positions, 330 934 avec `value_valid = 1`).
+
+| pas | époque | perte | politique | valeur | top-1 | top-3 |
+|---|---|---|---|---|---|---|
+| 1 000 | 0,04 | 2,966 | 2,139 | 0,827 | 36,0 % | 62,6 % |
+| 5 000 | 0,22 | 2,498 | 1,731 | 0,768 | 45,5 % | 73,8 % |
+| 10 000 | 0,43 | 2,359 | 1,611 | 0,748 | 48,2 % | 76,9 % |
+| 23 000 | 1,00 | 2,261 | 1,523 | 0,737 | 50,6 % | 79,0 % |
+| 46 000 | 2,00 | 2,193 | 1,459 | 0,734 | 52,3 % | 80,6 % |
+| 69 000 | 3,00 | 2,150 | 1,421 | 0,729 | 53,0 % | 81,5 % |
+| 92 000 (sous-ensemble) | 4,00 | 2,139 | 1,410 | 0,728 | 53,6 % | 81,7 % |
+| **92 000, validation complète** | 4,00 | **2,135** | **1,407** | **0,728** | **53,45 %** | **81,85 %** |
+
+- Pour situer : tiny (étape 4a, 0,43 époque) : 2,062 / 0,784 / 38,2 % / 64,5 % sur sa propre validation de 60 902
+  positions ; le réseau kaggle gagne +15 points de top-1 et +17 de top-3 (les deux validations ne sont pas les mêmes
+  données). Valeur : toujours prédire 0 donne 0,899 sur la validation complète ; le réseau fait 0,728 (−19 %).
+- Gains par époque (moyenne des validations de l'époque) : politique 1,649 → 1,489 → 1,440 → 1,414 ; valeur 0,762 → 0,740
+  → 0,731 → 0,729 ; la dernière époque (taux d'apprentissage de 3e-4 à 2e-5) apporte encore ~0,025 nat de politique
+  (+0,6 point de top-1) mais presque rien sur la valeur.
+- Débit : médiane 7 275 pos/s sur tout le run (7 970 pendant l'essai), GPU médian 95 %, 13 640 s au total
+  (3,79 h, dont ~8 min avant le pas 100 : chargement des 98 shards et masques de validation).
+
+### La perte valeur de validation a-t-elle remonté ? Non, pas durablement
+
+- Minimum **0,7266 au pas 65 000**, valeur finale 0,7284 (+0,002) ; sur la dernière époque elle reste entre 0,7273 et
+  0,7300. Pente (régression linéaire des points de validation) : −0,00001 par 1 000 pas depuis le pas 62 000,
+  −0,00013 depuis le pas 46 000 : **plateau**, pas de remontée. Sur 91 transitions, 43 sont des hausses : c'est du bruit
+  autour d'une tendance baissière ; la plus grosse (+0,040 au pas 4 000, le 0,828 de l'essai de 10 min) est dans la
+  phase de bruit du début, et les points sont devenus bien plus stables avec 100 000 positions.
+- **Mais un début de surapprentissage de la tête valeur** : écart entraînement/validation de la perte valeur (moyenne par
+  époque) 0,012 → 0,018 → 0,025 → 0,040 (train 0,750 → 0,722 → 0,706 → 0,689 contre val 0,762 → 0,740 → 0,731 → 0,729).
+  La courbe d'entraînement fait des marches vers les pas 46 000 et 69 000 (début des époques 3 et 4 : le réseau
+  retrouve des positions déjà vues et les reconnaît). Le résultat d'une partie est une cible bruitée et partagée par
+  toutes les positions d'une même partie, donc le réseau finit par mémoriser les parties plutôt que par généraliser.
+  Politique : écart plus faible (train 1,357 contre val 1,410 en fin de run) et la validation baisse encore.
+- Conséquence : des époques supplémentaires sur ces mêmes données n'aideraient presque que la politique ; pour la
+  valeur, il faut d'autres positions (self-play, plus de parties) plutôt que plus de passes.
+
+### `show_policy` : réseau kaggle (pas 92 000) contre tiny (pas 5 000)
+
+| position | tiny | kaggle |
+|---|---|---|
+| initiale | e4 50,8 %, d4 30,4 %, Nf3 6,7 % ; valeur +0,014 | e4 51,9 %, d4 30,4 %, Nf3 6,3 % ; +0,039 |
+| 1.e4 e5 2.Nf3 (Noirs) | Nc6 65,7 % | Nc6 71,6 %, Nf6 12,0 % ; valeur −0,030 |
+| mat du couloir `6k1/5ppp/8/8/8/8/5PPP/R5K1 w` | **Ra8# 17,0 %** (1er), Ra7 15,0 % ; valeur +0,64 | Ra7 17,9 % (1er), **Ra8# 17,2 %** ; valeur +0,93 |
+| D+R contre R, mat en 1 `7k/5Q2/6K1/8/8/8/8/8 w` (Qg7#, Qh7#, Qf8#, Qe8# mattent tous) | Qf8# 29,9 %, Qe8# 9,0 %, Qh7# 5,8 % (Qg7# hors du top 5) ; valeur +0,93 | **Qg7# 44,9 %, Qh7# 41,5 %, Qf8# 7,9 %, Qe8# 1,9 %** (96 % sur des mats) ; +0,97 |
+| mat du berger `r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w` | Qxe5+ 15,2 %, Qf3 11,4 %… (**rate le mat**) ; valeur −0,02 | **Qxf7# 79,8 %**, Bxf7+ 17,3 % ; valeur +0,21 |
+| dame noire en prise `rnb1kbnr/pppp1ppp/8/4p3/4P2q/5N2/PPPP1PPP/RNBQKB1R w` | Nxh4 46,9 % ; valeur 0,00 | **Nxh4 73,4 %** ; valeur +0,41 |
+| finale roi + pion `8/8/4k3/8/4PK2/8/8/8 w` | e5 44,9 %, Ke3 40,4 % ; valeur +0,52 | e5 91,7 % ; valeur +0,26 |
+
+- Le réseau kaggle est nettement plus net sur la tactique d'un coup (capturer une dame en prise, mat du berger, mat à
+  la dame : 96 % de la probabilité sur des coups qui matent) et plus confiant sur les ouvertures courantes. La valeur
+  est mieux calibrée (+0,93 au mat du couloir, +0,41 avec une dame d'avance).
+- **Pas de progrès sur le mat du couloir** : Ra7 passe devant Ra8# (17,9 % contre 17,2 %), les deux restent faibles. Cette
+  position (aucune pièce noire hormis 3 pions) est très éloignée des parties réelles ; le réseau imite des coups
+  humains et ne calcule rien. C'est l'illustration de ce que le MCTS apportera (la recherche trouvera le mat).
+- Finale roi + pion : e5 à 91,7 % montre une forte préférence, mais **je n'ai pas vérifié** que c'est le bon coup ni
+  que la position est gagnante (pas de moteur ni de tables de finales ici) ; ne pas s'en servir comme preuve.

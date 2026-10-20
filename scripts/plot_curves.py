@@ -45,7 +45,7 @@ def main() -> None:
         x, y = series("train", key)
         ax.plot(x, y, color=TRAIN, lw=2, label="entraînement (moyenne par fenêtre)")
         x, y = series("val", key)
-        ax.plot(x, y, color=VAL, lw=2, marker="o", ms=6, mec=SURFACE, mew=1.5, label="validation (20 000 positions)")
+        ax.plot(x, y, color=VAL, lw=2, marker="o", ms=6, mec=SURFACE, mew=1.5, label="validation (sous-ensemble fixe)")
         if by["val_full"]:
             x, y = series("val_full", key)
             ax.plot(x, y, ls="", marker="D", ms=8, mfc=SURFACE, mec=VAL, mew=2, label="validation complète (fin)")
