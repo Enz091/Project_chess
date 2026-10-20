@@ -217,3 +217,61 @@ Commande : `scripts/train.py --config tiny --out checkpoints/tiny_sup`. 4 × 64,
   +0,014 ; après 1.e4 e5 2.Nf3 → Nc6 65,7 % ; sur `6k1/5ppp/8/8/8/8/5PPP/R5K1 w` (mat du couloir en un coup)
   Ra8# est le 1er choix avec 17,0 % (valeur +0,64) : le réseau a appris les ouvertures usuelles et un peu de
   tactique, mais reste faible (ce n'est qu'un réseau tiny, 13 minutes).
+
+## Étape 4b, partie 1 — GitHub, données 24 M, Dataset Kaggle (2026-10-20)
+
+### Git et GitHub
+
+- Adresse remplacée par `345045991+Enz091@users.noreply.github.com` dans la config locale, dans l'auteur et le
+  committer des 7 commits existants (`git filter-branch`, historique réécrit avant toute publication) **et** dans
+  le contenu de `CLAUDE.md` à tous les commits (l'ancienne adresse y figurait depuis l'étape 0). Vérifié après
+  `reflog expire` + `gc --prune=now` : `git log -S` sur l'ancienne adresse ne trouve rien, aucune occurrence dans
+  `.git`, dans les messages ni dans les fichiers suivis. Le **nom** d'auteur « Enzo Montani » n'a pas été touché.
+- Dépôt distant `https://github.com/Enz091/Project_chess.git`, `main` poussée (le gestionnaire d'identifiants
+  Windows avait déjà une session GitHub : aucune connexion demandée).
+
+### Extraction de 24 M de positions
+
+- `data.extract` accepte maintenant une **liste de sources** (`--months AAAA-MM ...` dans `prepare_data.py`) et un
+  quota `per_source_positions` par source. Numéros de partie = `indice_source * 100 000 000 + rang dans la source`
+  (uniques, et indépendants du nombre de workers : un premier essai basé sur un compteur global donnait des
+  numéros différents selon les workers à cause des lots lus d'avance, le test l'a détecté). Le manifeste contient
+  le détail par source. Un test de plus (`test_several_sources_with_quota`) : 48 tests au total.
+- Commande : `prepare_data.py --months 2026-02 ... 2026-09 --per-source-positions 3000000 --out data/lichess_24m
+  --workers 7` (7 workers + le processus de lecture = 8 processus). Mêmes filtres qu'à l'étape 3 (Elo ≥ 2000 des
+  deux joueurs, pas de bullet, pas de BOT, `value_valid = 0` pour les Time forfeit).
+- Résultat : **24 035 177 positions** (train 23 560 129, val 475 048), 311 517 parties gardées sur 5 364 843 lues
+  (4,45 M refusées pour l'Elo, 581 k bullet, 5 057 BOT), 1,80 Go sur disque, 1,74 Go téléchargés, **317 s**.
+  `value_valid = 1` pour 71 % des positions d'entraînement ; résultats équilibrés (+1 : 10,83 M, −1 : 10,70 M,
+  nulles : 2,03 M) ; aucune partie dans train ET val ; le mois 2026-09 redonne exactement les 3 004 035 positions de
+  l'étape 3 (déterminisme).
+- **Limite de la diversité** : le flux zstd ne permet pas de sauter dans le fichier, donc chaque mois ne
+  contribue que par ses premières ~650 000 parties (soit les premières heures du 1er du mois, ~0,5 % du mois).
+  La diversité vient des 8 mois différents (autres parties, autres adversaires, évolution des joueurs), pas
+  de la répartition dans le mois. Lire une journée entière coûterait plusieurs Go de téléchargement par mois.
+
+### Dataset Kaggle
+
+- `scripts/make_kaggle_zip.py data/lichess_24m --out data/kaggle/lichess_24m.zip` : 98 shards + `manifest.json`
+  à la racine de l'archive. Les shards se compressent ~7x : **256 Mo** à téléverser pour 1,80 Go de données.
+  Kaggle décompresse le `.zip` à la création du dataset, donc les shards seront directement dans
+  `/kaggle/input/<nom-du-dataset>/` (donc `load_split("/kaggle/input/<nom>", "train")`). RAM une fois chargé :
+  ~1,8 Go pour le train.
+
+### Les masques de coups légaux ralentiront-ils le GPU ? (mesures et estimation, rien n'est changé)
+
+- Mesuré sur ce PC (processeur au repos) : `legal_masks_from_packed` = **9 400 positions/s par cœur**
+  (30,1 coups légaux en moyenne), 25 500 pos/s avec un pool de 3 processus (retour des masques inclus),
+  `unpack_batch` 390 000 pos/s, envoi d'un lot de 1024 masques entre processus (4,8 Mo) : ~7 ms.
+- Besoin du GPU (estimation, pas de GPU ici) : le réseau kaggle fait 200 M multiplications-additions par position,
+  soit ~1,2 GFLOP pour un pas d'entraînement complet. Sur T4 en fp16 on peut raisonnablement attendre
+  **6 000 à 13 000 pos/s**, sur P100 **4 000 à 8 000**. À 10 000 pos/s, une époque de 23,6 M de positions
+  dure ~40 min.
+- Kaggle a 4 cœurs : 1 pour le processus d'entraînement (lancement des kernels CUDA, assemblage des lots) et au
+  mieux 3 workers de masques. Ces cœurs sont probablement plus lents que ceux de ce PC (hypothèse : 0,5 à
+  0,8x), soit 3 × 5 000 à 7 000 = **15 000 à 21 000 pos/s au mieux, 10 000 à 12 000 si les cœurs sont lents ou
+  contendus**. Conclusion : avec ce réseau et un T4/P100, le CPU devrait **tout juste suivre** ; ce n'est pas
+  catastrophique mais il n'y a aucune marge, et le CPU devient le goulot si le GPU est rapide ou si on utilise
+  les 2 T4. Le risque réel est de perdre 0 à 40 % du débit selon la machine tirée, sans pouvoir le savoir
+  avant d'avoir lancé. Une mesure de 2 minutes sur Kaggle (pos/s avec masques en ligne vs sans masque) lèverait
+  le doute.

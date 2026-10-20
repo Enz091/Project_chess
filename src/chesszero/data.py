@@ -45,6 +45,7 @@ from tqdm import tqdm
 from .encoding import PACKED_SIZE, move_to_index, pack_board
 
 SPLITS = ("train", "val")
+GAMES_PER_SOURCE = 100_000_000  # intervalle de numéros de partie réservé à chaque source (int32)
 # Résultat de l'en-tête -> score du point de vue des Blancs
 _RESULT_WHITE = {"1-0": 1, "0-1": -1, "1/2-1/2": 0}
 _HEADER_RE = re.compile(r'\[(\w+) "(.*)"\]')
@@ -298,11 +299,12 @@ def load_split(data_dir: str | Path, split: str) -> dict[str, np.ndarray]:
 
 
 def extract(
-    source: str,
+    source: str | list[str],
     out_dir: str | Path,
     cfg: FilterConfig = FilterConfig(),
     *,
     target_positions: int | None = None,
+    per_source_positions: int | None = None,
     max_games: int | None = None,
     shard_size: int = 250_000,
     workers: int = 1,
@@ -312,10 +314,16 @@ def extract(
 ) -> dict:
     """Lit `source`, filtre, convertit et écrit les shards dans `out_dir`. Retourne le manifeste.
 
+    `source` peut être une liste (plusieurs mois, lus l'un après l'autre) : chaque source est alors
+    lue jusqu'à `per_source_positions` positions (train + val), ou jusqu'à sa fin. Les numéros de
+    partie continuent d'une source à l'autre, donc restent uniques.
     S'arrête quand `target_positions` (train + val) est atteint, quand `max_games` parties ont été
-    LUES (avant filtrage), ou à la fin de la source. workers=1 : tout dans le processus courant.
+    LUES (avant filtrage), ou à la fin de la dernière source. workers=1 : tout dans le processus courant.
     La sortie ne dépend pas du nombre de workers (les résultats sont consommés dans l'ordre).
     """
+    sources = [source] if isinstance(source, str) else list(source)
+    if len(sources) * GAMES_PER_SOURCE > np.iinfo(np.int32).max:
+        raise ValueError(f"trop de sources ({len(sources)}) pour des numéros de partie int32")
     out_dir = Path(out_dir)
     existing = [p for s in SPLITS for p in shard_paths(out_dir, s)] + list(out_dir.glob("manifest.json"))
     if existing:
@@ -355,32 +363,61 @@ def extract(
         r = pending.popleft()
         return r.get() if pool else r
 
-    stream, counter = open_pgn(source)
-    ended = True  # passe à False si on s'arrête avant la fin de la source
+    per_source: list[dict] = []
+    ended = True  # False si la dernière source lue a été arrêtée avant sa fin
     try:
-        items: list[tuple[int, str, str]] = []
-        for text in iter_game_texts(stream):
-            stats["read"] += 1
-            headers = parse_headers(text)
-            reason = reject_reason(headers, cfg)
-            if reason:
-                rejected[reason] += 1
-            else:
-                items.append((stats["read"], split_of(headers, stats["read"], cfg.val_fraction), text))
-            if len(items) >= chunk_games:
-                submit(items)
-                items = []
-                while len(pending) >= window and not done():
+        for src_index, src in enumerate(sources):
+            start_pos, start_read, start_kept = sum(positions.values()), stats["read"], stats["kept"]
+            stream, counter = open_pgn(src)
+
+            def source_done() -> bool:
+                return done() or (
+                    per_source_positions is not None
+                    and sum(positions.values()) - start_pos >= per_source_positions
+                )
+
+            stopped = False
+            try:
+                items: list[tuple[int, str, str]] = []
+                for text in iter_game_texts(stream):
+                    stats["read"] += 1
+                    headers = parse_headers(text)
+                    reason = reject_reason(headers, cfg)
+                    if reason:
+                        rejected[reason] += 1
+                    else:
+                        # numéro stable d'une source à l'autre (ne dépend pas des lots lus d'avance)
+                        game_no = src_index * GAMES_PER_SOURCE + stats["read"] - start_read
+                        items.append((game_no, split_of(headers, game_no, cfg.val_fraction), text))
+                    if len(items) >= chunk_games:
+                        submit(items)
+                        items = []
+                        while len(pending) >= window and not source_done():
+                            consume(next_result())
+                    if source_done() or (max_games is not None and stats["read"] >= max_games):
+                        stopped = True
+                        break
+                if items and not source_done():
+                    submit(items)
+                while pending and not source_done():  # on jette ce qui dépasserait la cible
                     consume(next_result())
+            finally:
+                stream.close()
+                pending.clear()  # résultats en trop (ou d'une source finie) : jetés
+            per_source.append(
+                {
+                    "source": src,
+                    "games_read": stats["read"] - start_read,
+                    "games_kept": stats["kept"] - start_kept,
+                    "positions": sum(positions.values()) - start_pos,
+                    "bytes_read_compressed": counter.bytes_read,
+                    "reached_end": not stopped,
+                }
+            )
+            ended = not stopped
             if done() or (max_games is not None and stats["read"] >= max_games):
-                ended = False
                 break
-        if items and not done():
-            submit(items)
-        while pending and not done():  # on jette ce qui dépasserait la cible
-            consume(next_result())
     finally:
-        stream.close()
         bar.close()
         if pool:
             pool.terminate()
@@ -391,8 +428,10 @@ def extract(
     on_disk = [out_dir / s["file"] for w in writers.values() for s in w.shards]
     manifest = {
         "source": source,
+        "sources": per_source,
         "filter": asdict(cfg),
         "target_positions": target_positions,
+        "per_source_positions": per_source_positions,
         "max_games": max_games,
         "stopped_early": not ended,
         "games_read": stats["read"],
@@ -406,7 +445,7 @@ def extract(
         },
         "positions": positions,
         "shards": {s: w.shards for s, w in writers.items()},
-        "bytes_read_compressed": counter.bytes_read,
+        "bytes_read_compressed": sum(d["bytes_read_compressed"] for d in per_source),
         "bytes_on_disk": sum(p.stat().st_size for p in on_disk),
         "seconds": round(time.time() - t0, 1),
     }

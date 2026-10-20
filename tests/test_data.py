@@ -314,3 +314,25 @@ def test_max_games_and_overwrite_guard(corpus, tmp_path):
         extract(str(path), tmp_path, CFG, max_games=10, progress=False)
     m2 = extract(str(path), tmp_path, CFG, max_games=20, overwrite=True, progress=False)
     assert m2["games_read"] == 20
+
+
+def test_several_sources_with_quota(corpus, tmp_path):
+    path, _ = corpus
+    kwargs = dict(shard_size=400, per_source_positions=1000, chunk_games=5, progress=False)
+    m = extract([str(path), str(path)], tmp_path / "a", CFG, **kwargs)
+    assert len(m["sources"]) == 2
+    for s in m["sources"]:
+        assert 1000 <= s["positions"] < 1000 + 5 * 140  # quota atteint, dépasse d'au plus un lot
+        assert not s["reached_end"]
+    assert sum(s["positions"] for s in m["sources"]) == sum(m["positions"].values())
+    assert m["games_read"] == sum(s["games_read"] for s in m["sources"])
+    # numéros de partie uniques d'une source à l'autre, et aucune partie dans train ET val
+    train, val = load_split(tmp_path / "a", "train"), load_split(tmp_path / "a", "val")
+    assert not set(np.unique(train["games"])) & set(np.unique(val["games"]))
+    assert len(np.unique(train["games"])) == m["games_kept"] - len(np.unique(val["games"]))
+    # le nombre de workers ne change pas la sortie
+    extract([str(path), str(path)], tmp_path / "b", CFG, workers=2, **kwargs)
+    for split in SPLITS:
+        a, b = load_split(tmp_path / "a", split), load_split(tmp_path / "b", split)
+        for key in a:
+            assert (a[key] == b[key]).all(), (split, key)

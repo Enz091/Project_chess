@@ -20,7 +20,7 @@ avancer étape par étape, et **mettre à jour ce fichier (section Avancement) �
   Python 3.12 (le projet exige ≥ 3.11 pour `tomllib`), venv dans `.venv/`, PyTorch **version CPU**.
 - **Entraînements réels** : Kaggle (GPU), le code arrive par GitHub (`git clone`).
 - Git : branche `main`, auteur `345045991+Enz091@users.noreply.github.com` (config locale au dépôt).
-  Le dépôt GitHub n'existe pas encore.
+  Dépôt GitHub : `https://github.com/Enz091/Project_chess.git` (remote `origin`, `main` poussée).
 
 ### Installation locale
 ```powershell
@@ -55,7 +55,7 @@ pip install -e .        # NE PAS réinstaller torch : garder le torch CUDA de Ka
 
 ```
 src/chesszero/   device.py, checkpoint.py, encoding.py, model.py, data.py, train.py   (+ mcts, selfplay à venir)
-scripts/         points d'entrée (smoke_resume.py = démo reprise, show_encoding.py = démo encodage, bench_inference.py = vitesse du réseau, prepare_data.py = extraction Lichess, train.py = pré-entraînement, plot_curves.py = courbes PNG, show_policy.py = meilleurs coups d'un checkpoint)
+scripts/         points d'entrée (smoke_resume.py = démo reprise, show_encoding.py = démo encodage, bench_inference.py = vitesse du réseau, prepare_data.py = extraction Lichess (un ou plusieurs mois), make_kaggle_zip.py = archive des shards pour un Dataset Kaggle, train.py = pré-entraînement, plot_curves.py = courbes PNG, show_policy.py = meilleurs coups d'un checkpoint)
 configs/         tiny.toml (4 blocs × 64, CPU) et kaggle.toml (10 blocs × 128), section [model] ; data.toml = filtres Lichess
 tests/           pytest
 docs/            journal.md = détails, mesures et tests de chaque étape ; img/ = courbes d'entraînement
@@ -107,7 +107,12 @@ une section par étape, à compléter à la fin de chaque étape.
   - **Résultat tiny, 5 000 pas (0,43 époque), 13 min, ~1 800 pos/s** : validation complète → perte politique 2,062, perte valeur 0,784 (référence « toujours 0 » : 0,92), **top-1 38,2 %, top-3 64,5 %** (hasard : ~3 %). Pas de surapprentissage, la courbe baisse encore : plus de pas aideraient. Courbes : `docs/img/tiny_sup_curves.png`. `best.pt` = pas 5 000.
   - `scripts/show_policy.py <checkpoint> [--fen ...] [--moves "e2e4 ..."]` : 5 meilleurs coups avec probabilités et valeur (position initiale : e4 50,8 %, d4 30,4 %, Nf3 6,7 %).
   - Reste pour 4b : premier notebook Kaggle (clone + `scripts/train.py --config kaggle`), à lancer sur GPU ; `kaggle.toml` n'a jamais tourné.
-- [ ] Étape 4b — Notebook Kaggle et entraînement du réseau kaggle (GPU)
+- [ ] **Étape 4b — Notebook Kaggle et entraînement du réseau kaggle (GPU)** — partie 1 faite (2026-10-20)
+  - Git : historique réécrit avec l'adresse noreply `345045991+Enz091@users.noreply.github.com` (nom d'auteur inchangé), remote `origin` ajouté, `main` poussée. Ne plus jamais mettre l'adresse personnelle dans un fichier.
+  - Données : `prepare_data.py --months 2026-02 ... 2026-09 --per-source-positions 3000000` → `data/lichess_24m` : **24 035 177 positions** (train 23 560 129, val 475 048), mêmes filtres, 8 threads max, 317 s. Chaque mois ne fournit que ses premières ~650 000 parties (flux zstd non seekable). `data.extract` accepte une liste de sources (numéros de partie `source*10^8 + rang`).
+  - Dataset Kaggle : `data/kaggle/lichess_24m.zip` (256 Mo, shards à la racine, Kaggle le décompresse) à téléverser sur kaggle.com/datasets.
+  - **Décision en attente** : les masques de coups légaux (9 400 pos/s/cœur ici, 3 workers sur Kaggle) suivent à peine le GPU (estimé 6-13 k pos/s sur T4). Options étudiées dans le journal : masques précalculés (liste des coups légaux, ~+1,5 Go), perte sans masque, mesure préalable sur Kaggle. Rien n'est changé dans `train.py` tant que l'auteur n'a pas choisi.
+  - Reste : notebook Kaggle (clone + `scripts/train.py --config kaggle`) ; `kaggle.toml` n'a jamais tourné.
 - [ ] Étape 5 — MCTS
 - [ ] Étape 6 — Self-play
 - [ ] Étape 7 — Boucle AlphaZero
@@ -118,6 +123,8 @@ une section par étape, à compléter à la fin de chaque étape.
 ```powershell
 .venv\Scripts\python.exe -m pytest -q
 .venv\Scripts\python.exe scripts\prepare_data.py --out data\lichess_2000 --target-positions 3000000   # --max-games 1000 pour un essai
+.venv\Scripts\python.exe scripts\prepare_data.py --months 2026-02 2026-03 --per-source-positions 3000000 --out data\lichess_24m --workers 7   # plusieurs mois
+.venv\Scripts\python.exe scripts\make_kaggle_zip.py data\lichess_24m --out data\kaggle\lichess_24m.zip   # archive à téléverser sur Kaggle
 .venv\Scripts\python.exe scripts\train.py --config tiny --out checkpoints\tiny_sup   # relancer = reprendre ; --steps N pour un essai
 .venv\Scripts\python.exe scripts\plot_curves.py checkpoints\tiny_sup   # -> curves.png
 .venv\Scripts\python.exe scripts\show_policy.py checkpoints\tiny_sup\best.pt   # --fen "<FEN>" ou --moves "e2e4 e7e5"
