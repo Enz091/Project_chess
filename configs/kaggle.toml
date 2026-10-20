@@ -22,3 +22,14 @@ amp = "auto"             # fp16 + GradScaler sur CUDA
 num_workers = 3          # Kaggle : 4 cœurs CPU
 mask_train_loss = true   # false : perte politique sans masque (voir docs/journal.md)
 seed = 0
+
+# Recherche MCTS (étape 5). Bruit et température désactivés par défaut : ils serviront au self-play.
+[mcts]
+num_simulations = 200    # simulations ajoutées par recherche
+c_puct = 1.5             # poids de l'exploration (valeurs dans [-1, 1])
+batch_size = 8           # feuilles par appel au réseau ; 8 = 2x plus rapide que 1 sans changer la recherche (journal)
+virtual_loss = 1.0       # une visite virtuelle compte comme une défaite
+fpu_reduction = 0.2      # Q d'un coup jamais visité = Q(nœud, camp qui choisit) - 0,2
+dirichlet_alpha = 0.3    # bruit de la racine (valeur AlphaZero pour les échecs)
+dirichlet_epsilon = 0.0  # 0 = pas de bruit ; 0,25 en self-play
+temperature = 0.0        # 0 = coup le plus visité ; 1 en début de partie en self-play

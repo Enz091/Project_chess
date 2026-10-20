@@ -1,0 +1,240 @@
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "1"]
+[White "MCTS-200"]
+[Black "Politique seule"]
+[Result "1-0"]
+[Opening "Italienne"]
+[Termination "mat"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d4 exd4 6. cxd4 Bb4+ 7. Bd2 Bxd2+ 8. Nbxd2 d5 9. exd5 Nxd5 10. Qb3 Be6 11. O-O O-O 12. Qxb7 Na5 13. Qb5 Nxc4 14. Nxc4 Rb8 15. Qc5 Nf4 16. b3 Bxc4 17. Qxc4 Qd6 18. Rfe1 Rb4 19. Qc3 Nd5 20. Qc5 Qxc5 21. dxc5 c6 22. Ne5 Rc8 23. Nxc6 Rxc6 24. Re8# 1-0
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "2"]
+[White "Politique seule"]
+[Black "MCTS-200"]
+[Result "0-1"]
+[Opening "Italienne"]
+[Termination "mat"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d4 exd4 6. cxd4 Bb4+ 7. Nc3 Nxe4 8. O-O Bxc3 9. d5 Bf6 10. Re1 Ne7 11. Rxe4 d6 12. Bg5 Bxg5 13. Nxg5 O-O 14. Qh5 Bf5 15. Rh4 h6 16. g4 Bg6 17. Ne6 fxe6 18. dxe6 Bxh5 19. Rxh5 d5 20. Bd3 Qd6 21. Re1 Qf4 22. Re2 Qxg4+ 23. Kf1 Qxh5 24. Ke1 Qxh2 25. Kd2 Rxf2 26. Rxf2 Qxf2+ 27. Kc3 Qc5+ 28. Kd2 Rf8 29. b4 Qxb4+ 30. Kc2 Rf2+ 31. Kd1 Qd2# 0-1
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "3"]
+[White "MCTS-200"]
+[Black "Politique seule"]
+[Result "1-0"]
+[Opening "Sicilienne"]
+[Termination "mat"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Be3 e5 7. Nb3 Be6 8. f3 Be7 9. Qd2 O-O 10. O-O-O Nbd7 11. g4 b5 12. g5 Nh5 13. Nd5 Bxd5 14. exd5 Nb6 15. Na5 Rc8 16. Nc6 Qd7 17. Bxb6 Nf4 18. h4 Rxc6 19. dxc6 Qxc6 20. Be3 Rc8 21. Bxf4 exf4 22. Bd3 Qxf3 23. Rhf1 Qe3 24. Qxe3 fxe3 25. Rde1 d5 26. Rxe3 Bc5 27. Ref3 Rc7 28. h5 g6 29. hxg6 hxg6 30. Rf6 Be3+ 31. Kd1 Bxg5 32. Rxa6 Kg7 33. Rb6 Re7 34. Rxb5 d4 35. Rxg5 Kh6 36. Rg2 Kg7 37. Re2 Ra7 38. a3 Rb7 39. b3 Ra7 40. a4 f5 41. Kd2 Kf6 42. Rfe1 g5 43. Re6+ Kf7 44. Bxf5 Ra5 45. Bg6+ Kg7 46. Bd3 g4 47. Rg6+ Kf7 48. Rxg4 Kf6 49. Rxd4 Rg5 50. Rf4+ Kg7 51. Re7+ Kh6 52. Rh7# 1-0
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "4"]
+[White "Politique seule"]
+[Black "MCTS-200"]
+[Result "0-1"]
+[Opening "Sicilienne"]
+[Termination "mat"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Bg5 e6 7. f4 Be7 8. Qf3 Qc7 9. O-O-O Nbd7 10. g4 b5 11. Bxf6 Nxf6 12. g5 Nd7 13. f5 Ne5 14. Qg3 b4 15. Nce2 O-O 16. f6 Bd8 17. fxg7 Kxg7 18. h4 Bb7 19. Bg2 Rc8 20. h5 Qe7 21. h6+ Kh8 22. Kb1 Rg8 23. Rh5 Rxg5 24. Rxg5 Qxg5 25. Qxg5 Bxg5 26. Nf3 Bxh6 27. Rxd6 Nc4 28. Rd7 Bxe4 29. Rxf7 Ne3 30. Ned4 Nxc2 31. Nxc2 Bxc2+ 32. Ka1 Bg6 33. Rf6 Rc1# 0-1
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "5"]
+[White "MCTS-200"]
+[Black "Politique seule"]
+[Result "1-0"]
+[Opening "Française"]
+[Termination "mat"]
+
+1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. Bg5 Be7 5. e5 Nfd7 6. Bxe7 Qxe7 7. f4 a6 8. Nf3 c5 9. Qd2 Nc6 10. Ne2 b5 11. c3 Bb7 12. Ng3 cxd4 13. cxd4 Nb6 14. b3 Qb4 15. Be2 Qxd2+ 16. Kxd2 Rc8 17. Rhc1 O-O 18. Bd3 Nb4 19. a3 Nxd3 20. Kxd3 a5 21. Ne2 Ba6 22. Kd2 b4 23. axb4 Bxe2 24. Kxe2 axb4 25. Ne1 Ra8 26. Nd3 Rxa1 27. Rxa1 Ra8 28. Rxa8+ Nxa8 29. Nxb4 Kf8 30. Kd3 Ke7 31. Nc6+ Kd7 32. Nb4 Kc7 33. g4 Kb6 34. f5 Kb5 35. Nc2 Nb6 36. Kc3 Nd7 37. h4 Nb6 38. fxe6 fxe6 39. Na3+ Kc6 40. Kb4 Nd7 41. Ka5 Nb6 42. Ka6 Nd7 43. b4 Nb8+ 44. Ka7 Nd7 45. b5+ Kc7 46. Nc2 Nb6 47. Nb4 Nc4 48. Na6+ Kc8 49. b6 Nxb6 50. Kxb6 Kd7 51. Nc5+ Ke7 52. Kc6 h6 53. g5 hxg5 54. hxg5 Kf7 55. Kd6 Kg6 56. Nxe6 Kf5 57. Kxd5 g6 58. Kd6 Ke4 59. d5 Kf5 60. Nd4+ Kxg5 61. e6 Kf4 62. e7 g5 63. e8=Q g4 64. Qe5# 1-0
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "6"]
+[White "Politique seule"]
+[Black "MCTS-200"]
+[Result "0-1"]
+[Opening "Française"]
+[Termination "mat"]
+
+1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. f4 c5 6. Nf3 Nc6 7. Be3 Be7 8. Qd2 O-O 9. O-O-O Qa5 10. Kb1 c4 11. g4 b5 12. f5 b4 13. Ne2 c3 14. Qc1 cxb2 15. Qxb2 Nb6 16. Nc1 Na4 17. Qb3 Nc3+ 18. Ka1 Nxd1 19. Bd3 Nxe3 20. f6 gxf6 21. exf6 Bxf6 22. g5 Bg7 23. h4 Nxd4 24. Nxd4 Bxd4+ 25. Kb1 Ba6 26. h5 Bc4 27. Bxc4 dxc4 28. g6 cxb3 29. gxh7+ Kxh7 30. Nxb3 Qa3 31. Nxd4 Nc4 32. Nb3 Qb2# 0-1
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "7"]
+[White "MCTS-200"]
+[Black "Politique seule"]
+[Result "1-0"]
+[Opening "Caro-Kann"]
+[Termination "mat"]
+
+1. e4 c6 2. d4 d5 3. e5 Bf5 4. h4 h5 5. Bd3 Bxd3 6. Qxd3 e6 7. Bg5 Be7 8. Nf3 Nh6 9. Nbd2 Nf5 10. O-O-O Nd7 11. Kb1 c5 12. c4 cxd4 13. cxd5 Nc5 14. Qb5+ Kf8 15. d6 Bxg5 16. Qxc5 Bxd2 17. Rxd2 Rc8 18. Qxa7 Ra8 19. Qxb7 Rb8 20. Qc7 Qxc7 21. dxc7 Rc8 22. Rc1 Ke7 23. Nxd4 Nxd4 24. Rxd4 f6 25. exf6+ gxf6 26. b4 Rhg8 27. g3 e5 28. Rdc4 Rg4 29. b5 Rxc4 30. Rxc4 Kd7 31. b6 f5 32. b7 Rxc7 33. Rxc7+ Kxc7 34. Kc2 Kxb7 35. Kd3 Kc6 36. Kc4 e4 37. Kd4 Kd6 38. a4 Kc6 39. Ke5 Kc5 40. Kxf5 Kb4 41. Kxe4 Kxa4 42. Kf5 Kb5 43. Kg5 Kc6 44. Kxh5 Kd6 45. Kg6 Ke7 46. Kg7 Ke6 47. h5 Kf5 48. h6 Kg4 49. h7 Kf3 50. h8=Q Kxf2 51. g4 Kg3 52. g5 Kg4 53. g6 Kg5 54. Qh6+ Kf5 55. Qh7 Kg5 56. Kf7 Kf5 57. g7+ Ke5 58. g8=Q Kd6 59. Qgg6+ Ke5 60. Qhh5+ Kd4 61. Qgg4+ Ke3 62. Qhh3+ Kd2 63. Qgg2+ Ke1 64. Qhh1# 1-0
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "8"]
+[White "Politique seule"]
+[Black "MCTS-200"]
+[Result "0-1"]
+[Opening "Caro-Kann"]
+[Termination "mat"]
+
+1. e4 c6 2. d4 d5 3. e5 Bf5 4. h4 h5 5. Bd3 Bxd3 6. Qxd3 e6 7. Bg5 Be7 8. Nf3 Nh6 9. Nbd2 Nf5 10. O-O-O Nd7 11. Kb1 Bxg5 12. Nxg5 Qe7 13. f3 c5 14. c3 c4 15. Qc2 Ne3 16. Qa4 Nxd1 17. Rxd1 a6 18. f4 b5 19. Qc2 g6 20. Ndf3 a5 21. a3 b4 22. axb4 axb4 23. cxb4 Qxb4 24. Qc3 Qa4 25. Kc1 O-O 26. Kd2 Rfb8 27. Rb1 Rb3 28. Qc2 Rd3+ 29. Ke2 Qxc2+ 30. Kf1 Qxb1+ 31. Kf2 Qxb2+ 32. Kg3 Ra2 33. f5 exf5 34. e6 fxe6 35. Nxe6 Qxg2+ 36. Kf4 Qxf3+ 37. Kg5 Qg4+ 38. Kh6 Qxh4 39. Kxg6 Qf6+ 40. Kxh5 Rh2# 0-1
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "9"]
+[White "MCTS-200"]
+[Black "Politique seule"]
+[Result "1-0"]
+[Opening "Gambit dame refusé"]
+[Termination "mat"]
+
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. e3 O-O 6. Nf3 b6 7. cxd5 Nxd5 8. Bxe7 Qxe7 9. Nxd5 exd5 10. Be2 Bb7 11. O-O Nd7 12. Rc1 c5 13. dxc5 bxc5 14. Qb3 Rab8 15. Qa3 Rfc8 16. Ba6 Bxa6 17. Qxa6 Rxb2 18. Qxc8+ Nf8 19. Qxc5 Qxc5 20. Rxc5 Rxa2 21. Rxd5 a5 22. Rd8 a4 23. Ra8 g6 24. Nd4 Kg7 25. g3 a3 26. Nb5 Ne6 27. Rxa3 Rb2 28. Nd4 Ng5 29. h4 Ne4 30. Kg2 Nd2 31. Rd1 Nc4 32. Rc3 Nxe3+ 33. Rxe3 h5 34. Nf3 Ra2 35. Rd2 Ra4 36. Rd4 Ra5 37. Re5 Ra2 38. Rd7 Kf6 39. Ree7 Kf5 40. Rxf7+ Ke6 41. Ng5+ Ke5 42. Rde7+ Kd6 43. Re6+ Kd5 44. Rxg6 Ke5 45. Re6+ Kd5 46. Rf5+ Kd4 47. Re4+ Kd3 48. Rf3+ Kd2 49. Ree3 Ra1 50. Rd3+ Ke2 51. Rfe3# 1-0
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "10"]
+[White "Politique seule"]
+[Black "MCTS-200"]
+[Result "0-1"]
+[Opening "Gambit dame refusé"]
+[Termination "mat"]
+
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. e3 O-O 6. Nf3 b6 7. cxd5 Nxd5 8. Bxe7 Qxe7 9. Nxd5 exd5 10. Bd3 c5 11. O-O c4 12. Bc2 Bg4 13. h3 Bh5 14. g4 Bg6 15. Bxg6 hxg6 16. Ne5 Nd7 17. Nxd7 Qxd7 18. Qf3 f5 19. g5 Rae8 20. b3 b5 21. bxc4 bxc4 22. Rab1 Re4 23. Rfc1 f4 24. Rc3 fxe3 25. Qg3 exf2+ 26. Kg2 Qf5 27. Rf1 Rxd4 28. Rxf2 Qe4+ 29. Rcf3 Rd3 30. Qg4 Qxg4+ 31. hxg4 Rfxf3 32. Rxf3 Rxf3 33. Kxf3 Kf7 34. Ke3 Ke6 35. Kd4 Kd6 36. a4 a5 37. Kc3 Kc5 38. Kc2 d4 39. Kd2 Kb4 40. Kc2 Kxa4 41. Kb2 Kb4 42. Kc2 a4 43. Kb2 a3+ 44. Ka2 d3 45. Kb1 c3 46. Ka2 c2 47. Ka1 c1=Q+ 48. Ka2 Qb2# 0-1
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "11"]
+[White "MCTS-200"]
+[Black "Politique seule"]
+[Result "1-0"]
+[Opening "Est-indienne"]
+[Termination "mat"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. b4 a5 10. Ba3 axb4 11. Bxb4 b6 12. a4 Nd7 13. a5 bxa5 14. Rxa5 Rxa5 15. Bxa5 Nc5 16. Nd2 f5 17. Nb5 Na6 18. c5 Nxc5 19. Bxc7 Qd7 20. Bxd6 Nxe4 21. Nxe4 fxe4 22. Ba3 Rd8 23. Nd6 Bf8 24. Nxe4 Nxd5 25. Bxf8 Rxf8 26. Bc4 Rd8 27. Nf6+ Kg7 28. Nxd7 Rxd7 29. Bxd5 Bb7 30. Bxb7 Rxd1 31. Rxd1 Kf6 32. f3 Kf5 33. Be4+ Kf4 34. Kf2 g5 35. g3# 1-0
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "12"]
+[White "Politique seule"]
+[Black "MCTS-200"]
+[Result "0-1"]
+[Opening "Est-indienne"]
+[Termination "mat"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. Ne1 Ne8 10. Nd3 f5 11. f3 f4 12. c5 g5 13. cxd6 cxd6 14. Bd2 Ng6 15. Rc1 h5 16. Nb5 Rf7 17. Qc2 Bf8 18. a4 a6 19. Na3 Rg7 20. Nc4 g4 21. Ba5 Qh4 22. Nb6 g3 23. h3 Bxh3 24. gxh3 Qxh3 25. Rfd1 Qh2+ 26. Kf1 Qh1# 0-1
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "13"]
+[White "MCTS-200"]
+[Black "Politique seule"]
+[Result "1-0"]
+[Opening "Anglaise"]
+[Termination "mat"]
+
+1. c4 e5 2. Nc3 Nf6 3. g3 d5 4. cxd5 Nxd5 5. Bg2 Be6 6. Nf3 Nc6 7. O-O Be7 8. d4 exd4 9. Nxd4 Nxd4 10. Qxd4 Nxc3 11. Qxc3 O-O 12. Bxb7 Rb8 13. Bg2 Bf6 14. Qa3 Be7 15. Qxa7 Bf6 16. a4 Bxb2 17. Bxb2 Rxb2 18. Bf3 Bh3 19. Rfd1 Qe7 20. a5 c5 21. Qxe7 c4 22. a6 c3 23. a7 c2 24. Rdc1 Bc8 25. a8=Q Be6 26. Qaxf8# 1-0
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "14"]
+[White "Politique seule"]
+[Black "MCTS-200"]
+[Result "0-1"]
+[Opening "Anglaise"]
+[Termination "mat"]
+
+1. c4 e5 2. Nc3 Nf6 3. g3 d5 4. cxd5 Nxd5 5. Bg2 Nb6 6. Nf3 Nc6 7. O-O Be7 8. d3 O-O 9. Be3 Be6 10. Rc1 f5 11. Na4 e4 12. dxe4 Qxd1 13. Rfxd1 Nxa4 14. exf5 Bxf5 15. b3 Nb6 16. Nd4 Nxd4 17. Bxd4 c6 18. e4 Bg4 19. Rd2 Rad8 20. Be3 Rxd2 21. Bxd2 Rd8 22. Be3 Rd1+ 23. Rxd1 Bxd1 24. f4 Bc2 25. Kf2 Bb1 26. a4 Bb4 27. e5 Bc2 28. a5 Bxa5 29. e6 Bxb3 30. f5 Kf8 31. Bc5+ Ke8 32. g4 Nd5 33. Bxa7 Bb6+ 34. Bxb6 Nxb6 35. Ke3 Ke7 36. Kd4 Bd5 37. Bf1 Nc8 38. Ke5 Nd6 39. g5 Nxf5 40. Kxf5 Bxe6+ 41. Ke5 b5 42. Bd3 h6 43. gxh6 gxh6 44. Kd4 Kd6 45. Be2 c5+ 46. Kc3 b4+ 47. Kb2 c4 48. Kc2 Kc5 49. Kb2 Kd4 50. Kc2 Bf5+ 51. Kb2 c3+ 52. Kc1 b3 53. Bd1 b2# 0-1
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "15"]
+[White "MCTS-200"]
+[Black "Politique seule"]
+[Result "1-0"]
+[Opening "Espagnole"]
+[Termination "mat"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d5 9. exd5 Nxd5 10. Nxe5 Nxe5 11. Rxe5 c6 12. d4 Bd6 13. Re1 Qh4 14. g3 Qh3 15. Re4 Bf5 16. Rh4 Qxh4 17. gxh4 Rfe8 18. Bxd5 cxd5 19. Be3 Re6 20. Nd2 Rg6+ 21. Kh1 Re8 22. Qf3 Bg4 23. Qxd5 Bb8 24. Rg1 h5 25. h3 Bxh3 26. Rxg6 Be6 27. Rxe6 Rxe6 28. Qd8+ Kh7 29. Qxb8 Rg6 30. Qg3 Rxg3 31. fxg3 Kg6 32. Kg2 Kf5 33. Kf3 f6 34. Ne4 Ke6 35. Nc5+ Kd5 36. Nxa6 Kc4 37. Nb4 g6 38. d5 g5 39. hxg5 fxg5 40. d6 g4+ 41. Ke4 h4 42. d7 h3 43. d8=Q h2 44. Qd5# 1-0
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "16"]
+[White "Politique seule"]
+[Black "MCTS-200"]
+[Result "0-1"]
+[Opening "Espagnole"]
+[Termination "mat"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d5 9. exd5 Nxd5 10. Nxe5 Nxe5 11. Rxe5 c6 12. d4 Bd6 13. Re1 Qh4 14. g3 Qh3 15. Qf3 Bg4 16. Qg2 Qh5 17. Nd2 Rae8 18. Ne4 Bf3 19. Qf1 Rxe4 20. Rxe4 Bxe4 21. Bd1 Bf3 22. Bxf3 Qxf3 23. Bd2 Re8 24. Re1 Rxe1 25. Qxe1 h5 26. Qe8+ Bf8 27. Qxc6 h4 28. Qxa6 h3 29. Kf1 Qd1+ 30. Be1 Qd3+ 31. Kg1 Qe2 32. Qa5 Qxe1# 0-1
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "17"]
+[White "MCTS-200"]
+[Black "Politique seule"]
+[Result "1-0"]
+[Opening "Scandinave"]
+[Termination "mat"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qa5 4. d4 Nf6 5. Nf3 Bg4 6. h3 Bh5 7. g4 Bg6 8. Ne5 c6 9. h4 Be4 10. f3 Bd5 11. Bd2 Qb6 12. Nxd5 Nxd5 13. c3 Nd7 14. Nxd7 Kxd7 15. Qc2 e6 16. O-O-O Bd6 17. c4 Nb4 18. Qb3 a5 19. c5 Bxc5 20. dxc5 Qxc5+ 21. Kb1 Kc7 22. Be3 Qc2+ 23. Qxc2 Nxc2 24. Kxc2 Rad8 25. Rxd8 Rxd8 26. Bd3 b5 27. Bxh7 g6 28. h5 gxh5 29. Rxh5 Rd5 30. Rxd5 cxd5 31. Bd3 Kc6 32. f4 f6 33. g5 fxg5 34. fxg5 e5 35. g6 e4 36. Be2 d4 37. Bxd4 Kd5 38. g7 Kxd4 39. g8=Q Ke3 40. Bxb5 Kd4 41. Qc4+ Ke3 42. Qe2+ Kf4 43. Kd2 Ke5 44. Qe3 Kd5 45. Kc3 Ke5 46. Kc4 Kf5 47. Kd4 Ke6 48. Qxe4+ Kd6 49. Qe5# 1-0
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "18"]
+[White "Politique seule"]
+[Black "MCTS-200"]
+[Result "0-1"]
+[Opening "Scandinave"]
+[Termination "mat"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qa5 4. d4 Nf6 5. Nf3 Bg4 6. Be2 Nc6 7. O-O O-O-O 8. Be3 e5 9. d5 Nxd5 10. Nxd5 Rxd5 11. Qc1 e4 12. Nd2 Bxe2 13. Re1 Ba6 14. c4 Rd3 15. Nxe4 Bb4 16. Rd1 Rhd8 17. Rxd3 Rxd3 18. a3 Be7 19. b4 Qe5 20. b5 Qxe4 21. bxa6 b6 22. c5 b5 23. Rb1 Qd5 24. h3 Bf6 25. Rxb5 Rd1+ 26. Qxd1 Qxd1+ 27. Kh2 Be5+ 28. g3 Qf3 29. Rb7 h5 30. h4 Bxg3+ 31. fxg3 Qxe3 32. Kh3 Qxc5 33. a4 Qa5 34. Rb5 Qxa6 35. Rxh5 Qxa4 36. Rh8+ Kb7 37. Rh7 Qd4 38. h5 Ne5 39. Rxg7 Qd7+ 40. Kh4 Nf3# 0-1
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "19"]
+[White "MCTS-200"]
+[Black "Politique seule"]
+[Result "1-0"]
+[Opening "London"]
+[Termination "mat"]
+
+1. d4 d5 2. Bf4 Nf6 3. e3 c5 4. c3 Nc6 5. Nd2 Bf5 6. Qb3 Qb6 7. dxc5 Qxb3 8. axb3 e5 9. Bg3 Bxc5 10. b4 Bd6 11. Ngf3 O-O 12. b5 Ne7 13. Nxe5 Ne4 14. Nxe4 Bxe4 15. Nd7 Rfd8 16. Bxd6 Rxd7 17. Bc5 b6 18. Bd4 Nf5 19. f3 Bc2 20. Kd2 Bb3 21. Bxb6 Re8 22. Rxa7 Rxa7 23. Bxa7 Nd6 24. b6 Nc4+ 25. Bxc4 dxc4 26. b7 Rd8+ 27. Ke2 Bc2 28. b8=Q Rxb8 29. Bxb8 Bd3+ 30. Kd2 f6 31. Ra1 Kf7 32. Ra7+ Kg6 33. e4 Bf1 34. g3 Bg2 35. Ke3 Bf1 36. f4 Bd3 37. f5+ Kh6 38. Bf4+ g5 39. fxg6+ Kxg6 40. Kd4 h5 41. e5 fxe5+ 42. Bxe5 Kf5 43. Bf4 Kg4 44. Ra5 h4 45. Rg5+ Kh3 46. gxh4 Kxh4 47. Rg3 Kh5 48. Rxd3 cxd3 49. Kxd3 Kg4 50. Bg3 Kh3 51. c4 Kg4 52. c5 Kf5 53. c6 Ke6 54. b4 Kd5 55. c7 Kc6 56. c8=Q+ Kb5 57. Qc5+ Ka4 58. b5 Ka5 59. b6+ Ka6 60. Qc6 Ka5 61. b7 Kb4 62. b8=Q+ Ka3 63. Qa6# 1-0
+
+[Event "MCTS-200 contre Politique seule"]
+[Site "-"]
+[Date "????.??.??"]
+[Round "20"]
+[White "Politique seule"]
+[Black "MCTS-200"]
+[Result "0-1"]
+[Opening "London"]
+[Termination "mat"]
+
+1. d4 d5 2. Bf4 Nf6 3. e3 c5 4. c3 Nc6 5. Nd2 Bf5 6. Ngf3 e6 7. Be2 Bd6 8. Bg3 O-O 9. O-O h6 10. Ne5 Qc7 11. f4 Rab8 12. Bh4 Ne4 13. Nxe4 Bxe4 14. Bd3 Bxd3 15. Qxd3 f5 16. Rf3 Bxe5 17. fxe5 cxd4 18. exd4 g5 19. Bf2 b5 20. a3 a5 21. Rh3 Kg7 22. Rf1 b4 23. axb4 axb4 24. Be3 bxc3 25. bxc3 Ne7 26. Bd2 Ng6 27. Rh5 Rb2 28. Qh3 Rh8 29. Bxg5 hxg5 30. Rxg5 Rxh3 31. gxh3 Qxc3 32. h4 Qxd4+ 33. Kh1 Qe4+ 34. Kg1 Qxh4 35. Rg2 Rxg2+ 36. Kxg2 Qe4+ 37. Rf3 Nh4+ 38. Kg3 Qxf3+ 39. Kxh4 Qg4# 0-1
+

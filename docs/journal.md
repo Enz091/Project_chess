@@ -484,3 +484,125 @@ Validation = sous-ensemble fixe de 100 000 positions, toutes les 1 000 pas (92 p
   humains et ne calcule rien. C'est l'illustration de ce que le MCTS apportera (la recherche trouvera le mat).
 - Finale roi + pion : e5 à 91,7 % montre une forte préférence, mais **je n'ai pas vérifié** que c'est le bon coup ni
   que la position est gagnante (pas de moteur ni de tables de finales ici) ; ne pas s'en servir comme preuve.
+
+## Étape 5 — MCTS (2026-10-20)
+
+### Ce qui a été écrit
+
+- **`src/chesszero/mcts.py`** :
+  - `MCTSConfig` (section `[mcts]` des configs) ;
+  - `terminal_value(board)` ;
+  - `NetEvaluator` : un appel au réseau par lot, softmax sur les seuls indices des coups légaux ;
+  - `policy_best_move` : meilleur coup du réseau sans recherche ;
+  - `Node`, `MCTS` : `search`, `best_move`, `visit_distribution`, `advance`, `root_stats`, `principal_variation`, `check_tree`.
+- **Un nœud par position atteinte.** Les statistiques de ses arêtes sont des tableaux numpy (`P`, `P_raw`, `N`, `W`, `VL`), donc le score PUCT d'un nœud se calcule en une opération. Les fils sont créés quand l'arête est choisie pour la première fois.
+- **Les nœuds ne stockent pas de position.** L'objet `MCTS` garde un seul `chess.Board` avec tout l'historique, joue les coups pendant la descente (`push`) et revient en arrière avec `pop`. La feuille est copiée sans pile pour l'évaluation.
+- **PUCT** : `Q + c_puct · P · √(1 + ΣN + ΣVL) / (1 + N + VL)`. Le `1 +` sous la racine compte l'évaluation du nœud lui-même, comme AlphaZero : sans lui, la première sélection après l'expansion aurait un terme d'exploration nul pour tous les coups.
+- **Conventions de signe** :
+  - la valeur du réseau est vue par le camp au trait dans la position évaluée ;
+  - `W` et `Q` d'une arête sont vus par le camp qui **choisit** ce coup, ce qui permet de prendre directement l'argmax ;
+  - la remontée change le signe **avant** d'ajouter la valeur à l'arête qui mène à la feuille (elle appartient à l'adversaire), puis à chaque niveau.
+- **FPU (coups jamais visités)** : `Q = node.q() − fpu_reduction`, avec `node.q() = (valeur réseau du nœud + ΣW) / (1 + ΣN)`.
+  - C'est la valeur moyenne du nœud **pour le camp qui choisit dans ce nœud**.
+  - Elle est égale à l'opposé du Q de l'arête entrante (vérifié dans `check_tree`), mais elle est aussi définie à la racine, y compris après réutilisation de l'arbre. Au départ, c'est la valeur du réseau pour ce nœud.
+  - On ne compte pas la perte virtuelle dans cette valeur de base.
+- **Positions terminales** (`terminal_value`, calculée une fois à la création du nœud, avec l'historique) :
+  - mat → −1 ;
+  - pat, matériel insuffisant, 50 coups (`halfmove_clock ≥ 100`, nulle réclamable) → 0 ;
+  - **triple répétition exacte** (`is_repetition(3)`) → 0. Le test n'est fait que si `halfmove_clock ≥ 8`, car trois occurrences demandent au moins 8 demi-coups réversibles.
+  - La valeur reste valable après `advance`, car le nouvel historique prolonge celui du nœud.
+- **Évaluation par lots** :
+  - Les descentes posent une perte virtuelle : `VL += 1` sur chaque arête. Une arête en attente paraît perdue (`Q = (W − vl·VL)/(N + VL)`).
+  - Une feuille terminale est remontée tout de suite, sans réseau.
+  - Une **collision** (feuille déjà en attente dans le lot) annule la descente sans compter de simulation ; le lot se ferme après `batch_size` collisions.
+  - `VL` est un compteur entier séparé de `N`, ce qui permet de vérifier qu'il revient exactement à 0.
+- **`search(N)` ajoute exactement N simulations** (le dernier lot est tronqué). Une simulation = une feuille évaluée ou terminale remontée. La première évaluation de la racine n'en est pas une.
+- **Réutilisation de l'arbre** : `advance(move)` fait du fils la nouvelle racine, pour nos coups comme pour ceux de l'adversaire ; le reste est libéré. Une arête comptait aussi l'évaluation de son fils, donc la nouvelle racine a `N(arête) − 1` visites.
+- **Self-play, prévu mais désactivé par défaut** :
+  - bruit de Dirichlet à la racine à chaque `search`, recalculé depuis `P_raw` (il ne s'accumule pas quand un nœud redevient racine) ;
+  - température dans `best_move` (`T = 0` : max des visites, égalité départagée par le prior ; `T > 0` : tirage selon `N^(1/T)`) ;
+  - `visit_distribution()` donne le vecteur (4672,) qui servira de cible de politique.
+- **`checkpoint.load_for_inference(path, device)`** : reconstruit le réseau depuis la config du checkpoint. `show_policy.py` l'utilise.
+- **Configs, section `[mcts]`** (identique dans tiny et kaggle) : `num_simulations = 200`, `c_puct = 1.5`, `batch_size = 8`, `virtual_loss = 1`, `fpu_reduction = 0.2`, `dirichlet_alpha = 0.3`, `dirichlet_epsilon = 0` (désactivé), `temperature = 0`.
+- **Scripts** :
+  - `show_search.py` : prior, visites, Q et variante principale d'une position ;
+  - `bench_mcts.py` : simulations/s selon la taille de lot ;
+  - `match.py` : MCTS contre politique seule, PGN dans `docs/`.
+
+### Tests (`tests/test_mcts.py`, 46 tests ; 102 au total)
+
+- **Évaluateurs factices** (priors uniformes ; valeur nulle, constante, différence de matériel, ou « Blancs +0,5 »).
+- **Config** : chargement de `[mcts]` (bruit et température désactivés) ; refus d'une clé inconnue.
+- **Positions terminales** :
+  - mat, pat, roi contre roi, roi + fou contre roi, 50 coups (99 → pas encore, 100 → nulle) ;
+  - triple répétition (Nf3 Nf6 Ng1 Ng8 ×2 : nulle au 8e demi-coup, pas avant) ;
+  - recherche refusée sur une position terminale ;
+  - dans l'arbre, la répétition est détectée avec l'historique de la partie : l'arête vaut exactement 0 alors que le réseau factice dit +0,9.
+- **Comptage** : la somme des visites de la racine vaut exactement le nombre de simulations (lots de 1, 8, 16, et 64 avec 50 simulations), après une deuxième recherche, et après `advance` (`N(arête) − 1` puis `+ 50`).
+- **Perte virtuelle** :
+  - après **chaque** lot (`_run_batch` instrumenté), tous les `VL` valent 0 et aucun nœud n'est en attente ;
+  - `check_tree` détecte une perte virtuelle oubliée ;
+  - un lot de 16 trouve 16 feuilles distinctes sans collision.
+- **Signes** :
+  - une simulation avec une feuille à +0,5 donne −0,5 sur l'arête de la racine ;
+  - avec « Blancs +0,5 » partout, **toutes** les arêtes valent exactement +0,5 quand les Blancs choisissent et −0,5 quand ce sont les Noirs, à toutes les profondeurs, depuis la position initiale et depuis sa version retournée ;
+  - mat en un trouvé avec des priors uniformes, pour les Blancs et pour les Noirs ;
+  - dame en prise capturée, pour les deux camps.
+- **FPU** (dame d'avance, Blancs puis Noirs au trait) :
+  - à la racine, la FPU des coups inexplorés est **> +0,5** (≈ q − 0,2) ;
+  - au niveau suivant, où le camp qui perd choisit, elle est **< −0,5** ;
+  - la base vaut −Q de l'arête entrante.
+- **Bruit, température, réutilisation** :
+  - bruit absent par défaut (`P is P_raw`) ;
+  - avec ε = 0,25, priors modifiés, somme 1, reproductibles avec la même graine, recalculés depuis `P_raw` après `advance` ;
+  - T = 0 → coup le plus visité ; T = 1 → fréquences de tirage ≈ visites (3 000 tirages, écart < 0,03) ;
+  - `visit_distribution` est indexée comme `move_to_index` et somme à 1 ;
+  - le sous-arbre est conservé (même objet) ; un coup inexploré donne une racine vide ; un coup illégal est refusé.
+- **Vrai réseau** (sautés si `checkpoints/kaggle_sup/best.pt` est absent), lots de 1, 8 et 16, 400 simulations, arbre vérifié après chaque lot : le MCTS trouve les mats ci-dessous, et la politique seule choisit bien l'autre coup.
+- **Tests de mutation (faits à la main, code restauré)** :
+  - FPU de signe inversé (`−q − 0,2`) : les 2 tests FPU échouent ;
+  - remontée sans changement de signe : 17 tests échouent (signes, mats, dame en prise, mats du réseau).
+
+### Mats : politique seule contre recherche (réseau kaggle, lots de 8)
+
+| position | politique seule | MCTS 200 simulations | MCTS 400 simulations |
+|---|---|---|---|
+| mat du couloir `6k1/5ppp/8/8/8/8/5PPP/R5K1 w` | **Ra7** 17,9 % (Ra8# 17,2 %) | **Ra8#** 64 visites (32 %), Q = +1,000 ; Kf1 25, Ra7 25 | **Ra8#** 136 (34 %) ; Ra7 50 (Q +0,965) |
+| même position retournée, Noirs au trait | Ra2 | **Ra1#**, mêmes chiffres exactement | **Ra1#**, mêmes chiffres |
+| piège de Légal (mat en 2) `rn1qkbnr/ppp2p1p/3p2p1/4N3/2B1P3/2N5/PPPP1PPP/R1BbK2R w` (après 5...Bxd1) | **Nxf7** 59,2 % (Bxf7+ 40,1 %) ; valeur −0,16 | **Bxf7+** 189 (94,5 %), Q +0,92 ; Nxf7 Q −0,12 ; PV 6.Bxf7+ Ke7 7.Nd5# | **Bxf7+** 385 (96 %), Q +0,95 |
+| mat étouffé de Philidor (mat en 2) `1r5k/6pp/7N/3Q4/8/8/8/K7 w` | **Nf7+** 68,4 % (Qg8+ 25,2 %) | **Qg8+** 97 (48,5 %) contre Nf7+ 88 ; PV 1.Qg8+ Rxg8 2.Nf7# | **Qg8+** 232 (58 %) contre Nf7+ 153 |
+
+- Les deux mats en deux sont des positions dont j'ai vérifié par recherche exhaustive (python-chess) que le mat en deux est forcé et que le premier coup est le seul qui le force (aucun mat en un).
+- La position retournée donne exactement les mêmes visites : l'encodage « du point de vue du camp au trait » rend les deux camps identiques pour le réseau, et le signe de la remontée est le bon pour les Noirs.
+- **Pourquoi Ra8# n'a que ~1/3 des visites** : le réseau juge déjà la position gagnée (+0,93) et les autres coups gardent un Q de 0,95 à 0,97. La différence avec le mat (1,0) est petite à côté du terme d'exploration, donc les visites se répartissent. Le MCTS ne cherche pas le gain *le plus court* : gagner maintenant ou plus tard vaut +1 dans les deux cas. C'est sans importance ici, mais à garder en tête (allongement des finales gagnées, voir le match).
+- **Philidor, serré à 200 simulations** (97 contre 88) : Nf7+ Kg8 Nh6+ est un échec perpétuel, et le réseau croit de toute façon la position gagnée (+0,96, dame contre tour). Avec 400 simulations l'écart est net. Le Q de Qg8+ (0,95) reste sous 1, car la moyenne contient encore les premières évaluations du réseau, faites avant que le mat soit découvert.
+
+### Vitesse (CPU Intel, 14 threads, torch 2.14.1+cpu, réseau kaggle, 800 simulations, meilleur de 2)
+
+| lot | simulations/s (position initiale) | simulations/s (milieu de jeu) | positions/appel | part du temps dans l'évaluation | coup (milieu de jeu) |
+|---|---|---|---|---|---|
+| 1 | 220 | 222 | 1,0 | 88-89 % | Ne5 |
+| 2 | 234 | 234 | 2,0 | 90-91 % | Ne5 |
+| 4 | 316 | 304 | 4,0 | 86-87 % | Ne5 |
+| **8** | **432** | **426** | 7,9 | 83-84 % | **Ne5** |
+| 16 | 546 | 531 | 15,4 | 81-83 % | Qe2 |
+| 32 | 611 | 622 | 29,7 | 81-82 % | Qe2 |
+| 64 | 680 | 658 | 50-53 | 81-83 % | Re1 |
+
+- Le réseau prend plus de 80 % du temps à toutes les tailles. Python (descente, coups légaux, remontée) n'est pas le goulot.
+- **Qualité selon la taille de lot** (milieu de jeu `r1bq1rk1/pp2bppp/2n1pn2/2pp4/3P4/2PBPN2/PP1N1PPP/R1BQ1RK1 w`, 800 simulations) :
+  - lot 1 : Ne5 303, Qe2 247, Re1 108 ;
+  - lot 8 : Ne5 282, Qe2 243, Re1 120 (même répartition) ;
+  - lot 16 : Qe2 247, Ne5 240 (léger aplatissement, le coup change) ;
+  - lot 64 : Re1 171, Qe2 171, Ne5 100. Les visites retombent vers les priors (Re1 = 31 % de prior, c'est le coup de la politique) : avec ~13 tours de 64 feuilles, la perte virtuelle disperse la recherche.
+- **Recommandation, et valeur des configs : `batch_size = 8`** sur CPU, soit ~430 simulations/s (×2 par rapport aux lots de 1), sans perte visible de qualité. 16 est acceptable pour de gros budgets (≥ 800 simulations). Sur GPU (étape 6), les gros lots devront venir de **plusieurs parties jouées en parallèle**, pas d'une perte virtuelle plus forte dans un seul arbre.
+
+### Match : MCTS-200 contre politique seule (`scripts/match.py`, 6 min)
+
+- 10 ouvertures fixes de 6 demi-coups (italienne, sicilienne, française, Caro-Kann, gambit dame refusé, est-indienne, anglaise, espagnole, scandinave, London), chacune jouée deux fois avec les couleurs inversées. Réseau kaggle des deux côtés, lots de 8, réutilisation de l'arbre, limite de 400 demi-coups.
+- **Résultat : 20 victoires du MCTS sur 20, toutes par mat** (10 avec les Blancs, 10 avec les Noirs) ; 0,45 s par coup MCTS (~440 simulations/s).
+- **Écart Elo estimé : ≥ +317 (borne à 95 %)**. Avec 20 gains sur 20, la probabilité de gain p vérifie p ≥ 0,05^(1/20) = 0,86, soit au moins +317 Elo. Le vrai écart est sans doute bien plus grand, mais ce match ne peut pas le mesurer.
+- Parties : [docs/match_mcts200_vs_policy.pgn](match_mcts200_vs_policy.pgn). Durée : 47 à 127 demi-coups (médiane 80). Dans 17 parties, le MCTS a eu au moins 3 points de matériel d'avance avant de mater ; 7 parties comportent au moins une promotion.
+- **Partie 1 (italienne, MCTS Blancs, 24 coups)** : 12.Qxb7 gagne un pion, puis 22.Ne5 Rc8 23.Nxc6! Rxc6?? 24.Re8#. La politique reprend le cavalier et se fait mater sur la dernière rangée, le motif même qu'elle ne voit pas dans le test du mat du couloir.
+- **Partie 12 (est-indienne, MCTS Noirs, 26 coups)** : attaque classique à l'aile roi (…f5-f4, …g5-g4-g3), puis 23…Bxh3! 24.gxh3 Qxh3 25.Rfd1 Qh2+ 26.Kf1 Qh1#, sans avoir eu d'avance de matériel. La politique joue des coups « humains » à l'aile dame (Nb5, a4, Ba5, Nb6) et ne voit pas le mat venir.
+- **Partie 5 (française, MCTS Blancs, 127 demi-coups)** : une finale de cavaliers gagnée à la technique (pion de plus, roi actif, promotion puis 64.Qe5#). Elle montre aussi que les gains se convertissent lentement : il n'y a pas de bonus pour un mat plus court.

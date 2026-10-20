@@ -54,11 +54,11 @@ pip install -e .        # NE PAS réinstaller torch : garder le torch CUDA de Ka
 ## Arborescence
 
 ```
-src/chesszero/   device.py, checkpoint.py, encoding.py, model.py, data.py, train.py   (+ mcts, selfplay à venir)
-scripts/         points d'entrée (smoke_resume.py = démo reprise, show_encoding.py = démo encodage, bench_inference.py = vitesse du réseau, prepare_data.py = extraction Lichess (un ou plusieurs mois), make_kaggle_zip.py = archive des shards pour un Dataset Kaggle, summarize_run.py = débit/GPU/attente d'un entraînement + verdict, train.py = pré-entraînement, plot_curves.py = courbes PNG, show_policy.py = meilleurs coups d'un checkpoint)
-configs/         tiny.toml (4 blocs × 64, CPU) et kaggle.toml (10 blocs × 128), section [model] ; data.toml = filtres Lichess
+src/chesszero/   device.py, checkpoint.py, encoding.py, model.py, data.py, train.py, mcts.py   (+ selfplay à venir)
+scripts/         points d'entrée (smoke_resume.py = démo reprise, show_encoding.py = démo encodage, bench_inference.py = vitesse du réseau, prepare_data.py = extraction Lichess (un ou plusieurs mois), make_kaggle_zip.py = archive des shards pour un Dataset Kaggle, summarize_run.py = débit/GPU/attente d'un entraînement + verdict, train.py = pré-entraînement, plot_curves.py = courbes PNG, show_policy.py = meilleurs coups d'un checkpoint, show_search.py = ce que voit le MCTS sur une position, bench_mcts.py = simulations/s selon la taille de lot, match.py = MCTS contre politique seule)
+configs/         tiny.toml (4 blocs × 64, CPU) et kaggle.toml (10 blocs × 128), sections [model], [train], [mcts] ; data.toml = filtres Lichess
 tests/           pytest
-docs/            journal.md = détails, mesures et tests de chaque étape ; img/ = courbes d'entraînement
+docs/            journal.md = détails, mesures et tests de chaque étape ; img/ = courbes d'entraînement, match_*.pgn = parties des matchs
 notebooks/       kaggle_train.ipynb = essai de débit + entraînement sur Kaggle (clone + lance des scripts)
 data/            PGN Lichess et données prétraitées (ignoré par git)
 checkpoints/     sauvegardes d'entraînement (ignoré par git)
@@ -71,7 +71,7 @@ checkpoints/     sauvegardes d'entraînement (ignoré par git)
 2. **Réseau** : ResNet (tronc de blocs résiduels, une tête politique et une tête valeur), taille réglable par config (petit en local, plus gros sur Kaggle).
 3. **Données Lichess** : téléchargement et filtrage des parties (Elo, cadence), conversion PGN en exemples (position, coup joué, résultat) stockés en fichiers compacts.
 4. **Pré-entraînement supervisé** : boucle d'entraînement avec perte politique + perte valeur, validation et checkpoints (4a, fait en local avec tiny), puis premier notebook Kaggle (4b).
-5. **MCTS** : recherche guidée par le réseau (PUCT, bruit de Dirichlet à la racine, température), évaluation par lots.
+5. **MCTS** : recherche guidée par le réseau (PUCT, bruit de Dirichlet à la racine, température), évaluation par lots avec perte virtuelle, réutilisation de l'arbre.
 6. **Self-play** : génération de parties avec le MCTS, enregistrement des cibles (distribution de visites, résultat) dans un replay buffer.
 7. **Boucle AlphaZero** : alternance self-play et entraînement, arène nouveau contre ancien modèle, reprise après coupure Kaggle.
 8. **Évaluation et jeu** : mesure de force (contre Stockfish à niveau limité, estimation Elo), interface UCI pour jouer contre l'IA.
@@ -113,7 +113,14 @@ une section par étape, à compléter à la fin de chaque étape.
   - Données : `prepare_data.py --months 2026-02 ... 2026-09 --per-source-positions 3000000` → `data/lichess_24m` : **24 035 177 positions** (train 23 560 129, val 475 048), 317 s ; chaque mois ne donne que ses ~650 000 premières parties (flux zstd non seekable). `data.extract` accepte une liste de sources. Dataset Kaggle : `data/kaggle/lichess_24m.zip` (256 Mo, fait par `make_kaggle_zip.py`).
   - Outils : `train.py` mesure débit, attente des données / masques et utilisation du GPU (colonnes de `metrics.csv`), `--max-minutes N` (arrêt propre avec `last.pt`), `mask_train_loss` (perte sans masque, **désactivée** : +0,6 % de débit seulement, apprentissage plus lent) ; `summarize_run.py` ; `notebooks/kaggle_train.ipynb` (reprise via la sortie du notebook ; ajouter `src` à `sys.path` après `pip install -e`). Les masques à l'entraînement ne ralentissent pas le GPU (7 970 pos/s, GPU 94 %, attente 0 %). Au démarrage Kaggle, ~8 min de chargement des données et des masques de validation.
   - `kaggle.toml` : `total_steps = 92000`, `val_positions = 100000`, warmup 1 000 pas puis cosinus jusqu'à 1 % (ne plus changer `total_steps` en cours de run). Le chemin fp16/GradScaler a été exercé sur GPU Kaggle.
-- [ ] Étape 5 — MCTS
+- [x] **Étape 5 — MCTS** (2026-10-20)
+  - `mcts.py` : `MCTS(evaluator, MCTSConfig.named("kaggle"), board)`, `search(N)` (ajoute exactement N simulations), `best_move(temperature)`, `visit_distribution()` (vecteur (4672,), cible du self-play), `advance(move)` pour les coups des deux camps (le sous-arbre devient la racine), `root_stats()`, `principal_variation()`, `check_tree()`. `NetEvaluator(model)` évalue un lot en un appel au réseau ; `policy_best_move` = réseau sans recherche ; `checkpoint.load_for_inference(path, device)` recharge un modèle.
+  - **Signes** : la valeur du réseau est vue par le camp au trait dans la feuille ; `W`/`Q` d'une arête sont vus par le camp qui choisit ce coup ; la remontée change le signe avant d'ajouter la valeur à l'arête qui mène à la feuille, puis à chaque niveau. **FPU** = `node.q() − 0,2`, où `node.q()` = (valeur réseau du nœud + ΣW) / (1 + ΣN) = valeur pour le camp qui choisit dans ce nœud (= −Q de l'arête entrante, mais définie aussi à la racine). Testé, y compris par mutation.
+  - Terminaux exacts : mat −1 ; pat, matériel insuffisant, 50 coups (≥ 100 demi-coups) et **triple répétition exacte** (avec l'historique de la partie) → 0. Perte virtuelle = compteur entier `VL`, entièrement retiré après chaque lot (testé). Dirichlet et température présents mais **désactivés par défaut** (`dirichlet_epsilon = 0`, `temperature = 0`), à activer pour l'étape 6.
+  - Section `[mcts]` des configs : 200 simulations, `c_puct = 1.5`, **`batch_size = 8`**, `virtual_loss = 1`, `fpu_reduction = 0.2`, `dirichlet_alpha = 0.3`.
+  - **Vitesse CPU (réseau kaggle)** : 220 simulations/s en lots de 1, **430 en lots de 8**, 540 en lots de 16, 670 en lots de 64 ; le réseau prend plus de 80 % du temps. Au-delà de 8, la perte virtuelle aplatit les visites (en lots de 64, la recherche retombe vers les priors). Sur GPU, il faudra plutôt des lots formés de plusieurs parties en parallèle.
+  - **Résultats** : le MCTS trouve le mat du couloir (Ra8#, la politique jouait Ra7) et deux mats en deux (piège de Légal Bxf7+, la politique jouait Nxf7 ; mat étouffé Qg8+, la politique jouait Nf7+ ; serré à 200 simulations, net à 400). **Match MCTS-200 contre politique seule : 20-0, toutes par mat** (écart ≥ +317 Elo, borne à 95 %), 0,45 s par coup ; parties dans `docs/match_mcts200_vs_policy.pgn`.
+  - Limite connue : un gain immédiat et un gain lointain valent tous deux +1, donc pas de préférence pour le mat le plus court (gains convertis lentement en finale).
 - [ ] Étape 6 — Self-play
 - [ ] Étape 7 — Boucle AlphaZero
 - [ ] Étape 8 — Évaluation et jeu
@@ -131,6 +138,9 @@ une section par étape, à compléter à la fin de chaque étape.
 .venv\Scripts\python.exe scripts\plot_curves.py checkpoints\tiny_sup   # -> curves.png
 .venv\Scripts\python.exe scripts\show_policy.py checkpoints\tiny_sup\best.pt   # --fen "<FEN>" ou --moves "e2e4 e7e5"
 .venv\Scripts\python.exe scripts\bench_inference.py --configs tiny   # vitesse d'inférence
+.venv\Scripts\python.exe scripts\show_search.py checkpoints\kaggle_sup\best.pt --fen "<FEN>" --simulations 400   # recherche MCTS commentée
+.venv\Scripts\python.exe scripts\bench_mcts.py   # simulations/s selon la taille de lot (réseau kaggle)
+.venv\Scripts\python.exe scripts\match.py --pgn docs\match_mcts200_vs_policy.pgn   # MCTS-200 contre politique seule, 20 parties
 .venv\Scripts\python.exe scripts\show_encoding.py --fen "<FEN>"
 .venv\Scripts\python.exe scripts\smoke_resume.py --stop-after 60   # puis relancer sans l'option
 ```

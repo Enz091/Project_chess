@@ -14,9 +14,9 @@ import chess
 import numpy as np
 import torch
 
-from chesszero.checkpoint import load_checkpoint
+from chesszero.checkpoint import load_for_inference
 from chesszero.encoding import encode_board, index_to_move, legal_move_mask
-from chesszero.model import ModelConfig, build_model, masked_policy
+from chesszero.model import masked_policy
 
 
 def main() -> None:
@@ -28,10 +28,7 @@ def main() -> None:
     ap.add_argument("--top", type=int, default=5)
     args = ap.parse_args()
 
-    payload = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
-    model = build_model(ModelConfig(**payload["config"]["model"]))
-    meta = load_checkpoint(args.checkpoint, model, restore_rng=False)
-    model.eval()
+    model, meta = load_for_inference(args.checkpoint)
 
     board = chess.Board(args.fen)
     for uci in args.moves.split():

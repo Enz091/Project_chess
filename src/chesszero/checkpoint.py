@@ -149,3 +149,15 @@ def load_checkpoint(
         _set_rng_state(payload["rng"])
 
     return {k: payload.get(k) for k in ("step", "epoch", "config", "metrics")}
+
+
+def load_for_inference(path: str | Path, device: torch.device | str = "cpu") -> tuple[nn.Module, dict[str, Any]]:
+    """Reconstruit le réseau à partir de la config enregistrée dans le checkpoint, charge ses poids,
+    le passe en mode évaluation sur `device`. Renvoie (modèle, métadonnées : step, epoch, config, metrics)."""
+    from chesszero.model import ModelConfig, build_model  # import local : model n'a pas besoin de checkpoint
+
+    payload = torch.load(path, map_location="cpu", weights_only=False)  # nos propres fichiers seulement
+    model = build_model(ModelConfig(**payload["config"]["model"]))
+    model.load_state_dict(payload["model"])
+    model.to(device).eval()
+    return model, {k: payload.get(k) for k in ("step", "epoch", "config", "metrics")}
