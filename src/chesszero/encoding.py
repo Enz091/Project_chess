@@ -91,6 +91,30 @@ def unpack_batch(packed: np.ndarray) -> np.ndarray:
     return out[0] if single else out
 
 
+def board_from_packed(vec: np.ndarray) -> chess.Board:
+    """Inverse de `pack_board` : position VUE DU CAMP AU TRAIT (Blancs au trait, plateau retourné si
+    c'était aux Noirs). Les coups légaux y portent les mêmes indices que dans la position d'origine."""
+    board = chess.Board.empty()
+    for sq in np.nonzero(vec[:64])[0]:
+        code = int(vec[sq])
+        board.set_piece_at(int(sq), chess.Piece((code - 1) % 6 + 1, chess.WHITE if code <= 6 else chess.BLACK))
+    castle = int(vec[_IDX_CASTLE])
+    rights = 0
+    for bit, sq in enumerate([chess.H1, chess.A1, chess.H8, chess.A8]):
+        if castle >> bit & 1:
+            rights |= chess.BB_SQUARES[sq]
+    board.castling_rights = rights
+    if vec[_IDX_EP] != _NO_EP:
+        board.ep_square = int(vec[_IDX_EP])
+    board.halfmove_clock = int(vec[_IDX_HALFMOVE])
+    return board
+
+
+def legal_masks_from_packed(packed: np.ndarray) -> np.ndarray:
+    """(N, PACKED_SIZE) uint8 -> (N, N_ACTIONS) bool : masque des coups légaux de chaque position."""
+    return np.stack([legal_move_mask(board_from_packed(v)) for v in packed])
+
+
 def encode_board(board: chess.Board) -> np.ndarray:
     """Position -> tenseur (N_PLANES, 8, 8) float32, du point de vue du camp au trait."""
     return unpack_batch(pack_board(board))

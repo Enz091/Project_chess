@@ -3,3 +3,21 @@
 n_blocks = 10
 n_filters = 128
 value_hidden = 128
+
+# Pré-entraînement supervisé sur GPU Kaggle (T4 / P100).
+[train]
+batch_size = 1024        # lot plus grand pour occuper le GPU
+lr = 2e-3                # un peu plus haut qu'en tiny, car le lot est 4 fois plus grand
+weight_decay = 0.01
+warmup_steps = 1000
+min_lr_ratio = 0.01
+total_steps = 20000      # ~7 époques de 2,9 M de positions (à 1024 par lot)
+grad_clip = 1.0
+log_every = 100
+eval_every = 1000
+save_every = 500         # reprise possible après une coupure de session
+keep_last = 3
+val_positions = 30000
+amp = "auto"             # fp16 + GradScaler sur CUDA
+num_workers = 3          # Kaggle : 4 cœurs CPU
+seed = 0

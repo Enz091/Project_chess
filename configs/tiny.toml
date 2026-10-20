@@ -3,3 +3,21 @@
 n_blocks = 4
 n_filters = 64
 value_hidden = 64
+
+# Pré-entraînement supervisé sur CPU (~15 min). Valeurs standard pour AdamW + ResNet avec BatchNorm.
+[train]
+batch_size = 256         # lot : assez grand pour un gradient stable, assez petit pour beaucoup de pas
+lr = 1e-3                # taux d'apprentissage de pointe (AdamW)
+weight_decay = 0.01      # régularisation, hors BatchNorm et biais
+warmup_steps = 300       # montée linéaire du taux d'apprentissage
+min_lr_ratio = 0.01      # le cosinus descend jusqu'à lr * 0.01
+total_steps = 5000       # ~15 min sur CPU (1 440 pos/s) = 0,43 époque (une époque = ~11 500 pas)
+grad_clip = 1.0          # coupure de la norme du gradient
+log_every = 50           # ligne « train » (moyenne) tous les 50 pas
+eval_every = 500         # validation + best.pt
+save_every = 250         # last.pt (reprise)
+keep_last = 3
+val_positions = 20000    # sous-ensemble fixe pour le suivi (la fin utilise toute la validation)
+amp = "auto"             # fp16 sur CUDA seulement
+num_workers = 2          # processus pour les masques de coups légaux
+seed = 0

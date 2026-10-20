@@ -83,9 +83,9 @@ session ; tout le reste va ici. Ajouter une section à la fin de chaque étape.
   l'ordre et du nombre de workers ; aucune partie dans les deux splits (vérifié sur les vraies données).
 - **Format des shards** (`train_00000.npz`, `val_00000.npz`, 250 000 positions chacun, écriture atomique, `.npz` non
   compressé) : `boards (N,67) uint8`, `moves (N,) int16`, `results (N,) int8` (+1/0/−1 du point de vue du camp au
-  trait), `games (N,) int32` (n° de partie dans la source). 71 octets par position. `manifest.json` : config,
+  trait), `games (N,) int32` (n° de partie dans la source). `value_valid (N,) uint8` (ajouté ensuite, voir la révision plus bas). 75 octets par position. `manifest.json` : config,
   compteurs de rejets par raison, shards, octets lus/écrits, durée. Les positions restent dans l'ordre des
-  parties : l'étape 4 doit mélanger (tout tient en RAM : 3 M × 71 o ≈ 215 Mo), `data.load_split(dossier, split)`.
+  parties : l'étape 4 doit mélanger (tout tient en RAM : 3 M × 75 o ≈ 225 Mo), `data.load_split(dossier, split)`.
 - **Tests** (`tests/test_data.py`, 11 tests, 30 au total) sur un PGN synthétique au format Lichess (72 parties
   aléatoires avec commentaires `[%clk]`/`[%eval]`, dont des cas à rejeter : Elo bas, bullet, abandon, trop courte,
   FEN, résultat `*`, plus une partie à coup illégal) : compteurs de rejets exacts ; pour chaque position, à partir
@@ -95,17 +95,125 @@ session ; tout le reste va ici. Ajouter une section à la fin de chaque étape.
   lecture `.zst` + arrêt à la cible ; garde-fou d'écrasement. Test de mutation : inverser le signe du résultat
   fait bien échouer le test.
 - **Essai** (1 000 parties, `data/essai`) : 61 parties gardées (6,1 %), 5 194 positions, 0,4 Mo, 2 s.
-- **Extraction réelle** (`data/lichess_2000`, cible 3 M) :
+- **Extraction initiale** (cible 3 M, BOT inclus) : 660 723 parties lues, 38 285 gardées, 3 002 978 positions,
+  222 Mo, 39 s. Remplacée par l'extraction ci-dessous.
+
+### Révision de l'étape 3 : filtre BOT, Time forfeit, `value_valid` (2026-10-20)
+
+- **Filtre BOT** : `FilterConfig.exclude_bots = True` par défaut (`configs/data.toml`, `--include-bots` pour le
+  désactiver). Une partie est rejetée (raison `bot`) si `WhiteTitle` ou `BlackTitle` vaut `BOT`. Le test est
+  fait en dernier : « bot » ne compte que des parties qui auraient été gardées sans lui. 924 parties BOT
+  rejetées (2,4 % des parties qui passaient les autres filtres).
+- **Part des « Time forfeit »** (nouveau compteur `kept_by_termination` dans `manifest.json`, affiché par
+  `prepare_data.py`). Mesurée sur l'extraction initiale (en la relançant avec `--include-bots`, qui redonne
+  exactement 38 285 parties) : **9 069 parties sur 38 285 (23,7 %)**, soit 837 782 positions sur 3 002 978
+  (27,9 %). Sans BOT : 9 387 parties sur 38 962 (24,1 %), 865 667 positions sur 3 004 035 (28,8 %).
+- **Choix : garder ces parties pour la politique, pas pour la valeur.** Raison : quand une partie se termine
+  au drapeau, le résultat dit qui a manqué de temps, pas qui avait la meilleure position (souvent la
+  position était équilibrée, ou gagnée par le perdant). C'est une cible de valeur biaisée : parmi les positions de
+  parties « Time forfeit » il y a 3,8 % de nulles contre 10,2 % pour « Normal ». Le coup joué, lui, reste un
+  bon exemple de politique. Ignorer ces 24 % de parties pour tout aurait coûté un quart des exemples de politique.
+- **Champ `value_valid`** (`(N,) uint8`, dans chaque shard) : 1 si `Termination == "Normal"`, 0 si
+  « Time forfeit ». `data.py` ne l'invente pas après coup : il est écrit à l'extraction, constant sur toute la partie.
+  L'ancien format (sans ce champ) est refusé par `train()` avec un message qui demande de relancer l'extraction.
+- **Perte** (`model.policy_value_loss(..., value_valid=None)`) : la perte valeur est `Σ valid·(v − cible)² / Σ valid`
+  (moyenne sur les positions valides seulement ; 0 si le lot n'en contient aucune) ; la perte politique porte
+  toujours sur toutes les positions. Une position à 0 n'envoie aucun gradient à la tête valeur, ni
+  directement ni via le tronc. Même règle dans le suivi (`Meter`) : perte valeur d'entraînement et de
+  validation = moyenne sur les positions valides, pondérée par leur nombre (et non par la taille du lot) ; la
+  perte totale affichée = politique (toutes positions) + valeur (valides).
+- **Tests ajoutés** : filtre BOT (`reject_reason`, et une partie BOT dans le PGN synthétique) ; compteur
+  `kept_by_termination` = recompte indépendant des en-têtes ; `value_valid` correct pour chaque partie
+  (test de mutation : inverser la condition fait échouer le test) ; **gradient de la tête valeur** (`test_model.py`) :
+  changer la cible des positions invalides ne modifie ni la perte valeur ni aucun gradient de la tête ; le gradient
+  est identique à celui d'un lot qui ne contiendrait que les positions valides ; sans position valide le gradient
+  est nul alors que la politique apprend toujours (mutation : remplacer la moyenne pondérée par une moyenne simple
+  fait échouer le test) ; moyenne pondérée du `Meter` ; ancien format de données refusé.
+- **Extraction réelle** (`data/lichess_2000`, cible 3 M, BOT exclus, `value_valid`) :
 
   | | |
   |---|---|
-  | Parties lues | 660 723 |
-  | Rejetées (en-têtes) | Elo 553 759 · bullet 65 228 · time_control 97 · result 76 · termination 63 |
-  | Rejetées après lecture | trop courtes 515 |
-  | Parties gardées | 38 285 (5,8 % des lues) |
-  | Positions | 3 002 978 (train 2 941 812 · val 61 166 = 2,04 %) |
-  | Flux lu (compressé) | 213,8 Mo |
-  | Taille sur disque | 222,2 Mo (13 shards) |
-  | Durée | 39 s (≈ 77 000 pos/s, 14 workers) |
+  | Parties lues | 686 052 |
+  | Rejetées (en-têtes) | Elo 574 941 · bullet 67 739 · bot 924 · time_control 102 · result 79 · termination 67 |
+  | Rejetées après lecture | trop courtes 538 |
+  | Parties gardées | 38 962 (5,7 % des lues) : Normal 29 575 (75,9 %), Time forfeit 9 387 (24,1 %) |
+  | Positions | 3 004 035 (train 2 943 133 · val 60 902 = 2,03 %) |
+  | Positions à `value_valid = 1` | train 2 095 600 (71,2 %) · val 42 768 (70,2 %) |
+  | Flux lu (compressé) | 222,0 Mo |
+  | Taille sur disque | 225,3 Mo |
+  | Durée | 45 s |
 
-  Résultats équilibrés (−1 : 45 %, 0 : 9 %, +1 : 46 %), indice de coup max 4660 < 4672.
+  Résultats des positions valides : −1 : 44,6 %, 0 : 10,2 %, +1 : 45,2 %. Indice de coup max < 4672.
+
+## Étape 4a — Pré-entraînement supervisé, réseau tiny en local (2026-10-20)
+
+### Ce qui a été écrit
+
+- `src/chesszero/train.py` (boucle et suivi), `scripts/train.py` (point d'entrée), `scripts/plot_curves.py`
+  (courbes PNG), `scripts/show_policy.py` (les meilleurs coups du réseau pour une position),
+  `tests/test_train.py`. Extensions : `encoding.board_from_packed` / `legal_masks_from_packed`,
+  `checkpoint.py` accepte un `scaler`, section `[train]` dans `tiny.toml` et `kaggle.toml`.
+- **Données** : `load_split` en RAM ; à l'époque `e`, permutation de `default_rng([seed, e])`, dernier lot
+  incomplet écarté. Le lot du pas `s` ne dépend que de `s` : la reprise n'a aucun état de lecture à restaurer.
+- **Masques de coups légaux** : la perte et les précisions ne portent que sur les coups légaux, donc il faut
+  un masque par position. Reconstruire la position depuis le format compact et appeler python-chess donne ~7 000
+  positions/s, plus lent que le réseau sur GPU. Un pool de processus (`num_workers`) calcule les masques
+  quelques lots à l'avance ; les lots sont identiques avec ou sans pool (testé). Le sous-ensemble de
+  validation calcule ses masques une seule fois.
+- **Optimiseur** (valeurs standard, détaillées dans `configs/*.toml`) : AdamW, `lr` de pointe 1e-3 (tiny, lots de
+  256) et 2e-3 (kaggle, lots de 1024) ; décroissance de poids 0,01 sur les poids de convolutions/couches
+  linéaires seulement (pas BatchNorm ni biais) ; coupure du gradient à la norme 1 ; montée linéaire sur 300 pas
+  (1000 en kaggle) car les moments d'Adam et les statistiques BatchNorm sont instables au début, puis
+  cosinus jusqu'à 1 % du maximum.
+- **Précision mixte** : fp16 + `GradScaler` seulement si le device est CUDA (`amp = "auto"`), perte toujours en
+  float32. Les GPU de Kaggle (T4/P100) n'ont pas de bf16 efficace. L'état du `GradScaler` est dans le checkpoint.
+  Non exercée ici (pas de GPU) : le chemin CUDA est écrit mais pas testé.
+- **Suivi** : `metrics.csv` (colonnes `step, epoch, split, loss, policy_loss, value_loss, top1, top3, lr,
+  pos_per_s, elapsed_s`). Lignes `train` : moyenne sur les `log_every` derniers pas, avec BatchNorm en mode
+  entraînement. Lignes `val` : sous-ensemble fixe de 20 000 positions de validation (mode eval), tous les
+  `eval_every` pas. Ligne `val_full` : toute la validation (60 902 positions) à la fin. top1 / top3 = le coup
+  joué est le 1er choix / parmi les 3 premiers, classement parmi les coups légaux.
+- **Checkpoints** : évaluation et sauvegarde coïncident, donc `best.pt` est exactement l'état de la
+  meilleure perte de validation (sur le sous-ensemble). `last.pt` tous les `save_every` pas. Au redémarrage, les
+  lignes du CSV postérieures au checkpoint repris sont supprimées. Reprise refusée si le réseau a changé.
+
+### Tests (`tests/test_train.py`, 47 tests au total)
+
+Mini jeu de données synthétique mais apprenable (640 + 96 positions de parties aléatoires ; cible de coup = le coup
+légal d'indice minimal, cible de valeur = signe de la différence de matériel, 30 % de positions à
+`value_valid = 0`), réseau 1 bloc × 16 filtres :
+la perte politique est divisée par plus de 2 en 60 pas, la précision monte de plus de 20 points, la perte valeur
+baisse, la validation (positions jamais vues) bat le hasard ; **une reprise après coupure donne exactement les mêmes
+poids (`torch.equal`) et le même CSV qu'un run d'une traite** (coupure au pas 13, checkpoint au pas 10) ; lignes
+CSV postérieures au checkpoint supprimées ; `best.pt` = meilleure validation ; un run terminé n'est pas
+ré-entraîné ; reprise avec un autre réseau refusée ; masque depuis le format compact = masque de la vraie position
+(Blancs et Noirs au trait) ; lots identiques avec et sans pool ; courbe de taux d'apprentissage ; `topk_correct`.
+Mutations vérifiées : repartir du pas 0 à la reprise fait échouer le test de reprise ; oublier le masque dans
+`topk_correct` fait échouer son test.
+
+### Entraînement réel (tiny, 5 000 pas, CPU)
+
+Commande : `scripts/train.py --config tiny --out checkpoints/tiny_sup`. 4 × 64, 352 460 paramètres, lots de 256,
+5 000 pas = 1,28 M de positions = 0,43 époque (une époque = 11 496 pas). **784 s (13 min)**, ~1 800 positions/s
+(1 440 au début, mesurées avec le réseau et les masques ; passer de 14 à 8 threads ne change rien).
+
+| pas | perte pol. (val) | perte val. (val) | top-1 (val) | top-3 (val) |
+|---|---|---|---|---|
+| 500 | 2,512 | 0,869 | 28,2 % | 51,2 % |
+| 1 000 | 2,374 | 0,852 | 31,5 % | 55,4 % |
+| 2 000 | 2,232 | 0,817 | 34,5 % | 59,6 % |
+| 3 000 | 2,145 | 0,809 | 35,9 % | 62,3 % |
+| 4 000 | 2,087 | 0,792 | 37,2 % | 63,8 % |
+| 5 000 | 2,069 | 0,784 | 37,8 % | 64,4 % |
+| **5 000, toute la validation** | **2,062** | **0,784** | **38,2 %** | **64,5 %** |
+
+- Référence pour la politique : au hasard parmi ~30 coups légaux, perte ≈ 3,4 et top-1 ≈ 3 %. Pour la valeur :
+  prédire toujours 0 donne une MSE de 0,92 sur les positions valides ; le réseau fait 0,784 (−15 %), ce qui est
+  modeste mais normal : le résultat d'une partie est une cible très bruitée à partir d'une seule position.
+- Pas de surapprentissage (moins d'une demi-époque) : la validation suit l'entraînement ; la courbe baisse encore
+  à la fin même avec le taux d'apprentissage au minimum, donc davantage de pas aideraient. `best.pt` = pas 5 000.
+- Courbes : [docs/img/tiny_sup_curves.png](img/tiny_sup_curves.png).
+- `show_policy.py` sur `best.pt` : position initiale → e4 50,8 %, d4 30,4 %, Nf3 6,7 %, c4 5,4 %, f4 1,0 %, valeur
+  +0,014 ; après 1.e4 e5 2.Nf3 → Nc6 65,7 % ; sur `6k1/5ppp/8/8/8/8/5PPP/R5K1 w` (mat du couloir en un coup)
+  Ra8# est le 1er choix avec 17,0 % (valeur +0,64) : le réseau a appris les ouvertures usuelles et un peu de
+  tactique, mais reste faible (ce n'est qu'un réseau tiny, 13 minutes).

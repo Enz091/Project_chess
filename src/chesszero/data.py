@@ -14,6 +14,10 @@ Contenu d'un shard (tableaux alignés, une ligne par position) :
   moves   (N,)    int16   indice du coup joué (`encoding.move_to_index`), dans [0, 4672)
   results (N,)    int8    +1 / 0 / -1 : résultat final du point de vue du camp AU TRAIT
   games   (N,)    int32   numéro de partie (sert à vérifier qu'aucune partie n'est dans train ET val)
+  value_valid (N,) uint8  1 si le résultat est fiable comme cible de valeur (Termination « Normal »),
+                          0 si la partie s'est finie au drapeau (« Time forfeit ») : le résultat dit alors
+                          qui a manqué de temps, pas qui était mieux. Le coup joué reste une bonne cible
+                          de politique ; la perte de valeur ignore ces positions (voir `model.policy_value_loss`).
 """
 
 from __future__ import annotations
@@ -57,6 +61,7 @@ class FilterConfig:
     min_plies: int = 20  # parties plus courtes (en demi-coups) écartées
     min_estimated_seconds: int = 180  # base + 40 * incrément ; < 180 s = bullet chez Lichess
     allowed_terminations: tuple[str, ...] = ("Normal", "Time forfeit")  # exclut Abandoned, etc.
+    exclude_bots: bool = True  # écarte les parties où un joueur a le titre BOT (moteurs)
     val_fraction: float = 0.02  # part des PARTIES réservée à la validation
 
     @classmethod
@@ -172,6 +177,9 @@ def reject_reason(headers: dict[str, str], cfg: FilterConfig) -> str | None:
         return "time_control"
     if seconds < cfg.min_estimated_seconds:
         return "bullet"
+    # En dernier : « bot » ne compte que les parties qui auraient été gardées sans ce filtre.
+    if cfg.exclude_bots and "BOT" in (headers.get("WhiteTitle"), headers.get("BlackTitle")):
+        return "bot"
     return None
 
 
@@ -185,7 +193,7 @@ def split_of(headers: dict[str, str], game_no: int, val_fraction: float) -> str:
 
 
 def game_to_arrays(text: str, game_no: int, min_plies: int) -> tuple | str:
-    """Rejoue une partie. Retourne (boards, moves, results, games) ou une raison de rejet."""
+    """Rejoue une partie. Retourne (boards, moves, results, games, value_valid) ou une raison de rejet."""
     game = chess.pgn.read_game(io.StringIO(text))
     if game is None or game.errors:  # coup illégal ou illisible : on jette toute la partie
         return "parse_error"
@@ -204,7 +212,8 @@ def game_to_arrays(text: str, game_no: int, min_plies: int) -> tuple | str:
         indices[i] = move_to_index(move, board)
         results[i] = white_score if board.turn == chess.WHITE else -white_score
         board.push(move)
-    return boards, indices, results, np.full(n, game_no, dtype=np.int32)
+    value_valid = np.full(n, game.headers.get("Termination") == "Normal", dtype=np.uint8)
+    return boards, indices, results, np.full(n, game_no, dtype=np.int32), value_valid
 
 
 def process_chunk(args: tuple[list[tuple[int, str, str]], int]):
@@ -219,6 +228,9 @@ def process_chunk(args: tuple[list[tuple[int, str, str]], int]):
         else:
             parts[split].append(out)
             stats["kept"] += 1
+            termination = parse_headers(text).get("Termination", "?")
+            stats[f"games:{termination}"] += 1
+            stats[f"positions:{termination}"] += len(out[0])
     arrays = {}
     for split, lst in parts.items():
         if lst:
@@ -229,10 +241,10 @@ def process_chunk(args: tuple[list[tuple[int, str, str]], int]):
 # --------------------------------------------------------------------------- écriture / lecture
 
 
-def _write_shard(path: Path, boards, moves, results, games) -> None:
+def _write_shard(path: Path, boards, moves, results, games, value_valid) -> None:
     tmp = path.with_name(path.name + ".tmp")
     with open(tmp, "wb") as f:
-        np.savez(f, boards=boards, moves=moves, results=results, games=games)
+        np.savez(f, boards=boards, moves=moves, results=results, games=games, value_valid=value_valid)
     os.replace(tmp, path)  # atomique, comme pour les checkpoints
 
 
@@ -387,6 +399,11 @@ def extract(
         "games_rejected_by_header": dict(rejected),
         "games_rejected_after_parse": {k: stats[k] for k in ("parse_error", "too_short") if stats[k]},
         "games_kept": stats["kept"],
+        # parties / positions gardées, par type de fin de partie (Normal, Time forfeit)
+        "kept_by_termination": {
+            "games": {k[6:]: v for k, v in sorted(stats.items()) if k.startswith("games:")},
+            "positions": {k[10:]: v for k, v in sorted(stats.items()) if k.startswith("positions:")},
+        },
         "positions": positions,
         "shards": {s: w.shards for s, w in writers.items()},
         "bytes_read_compressed": counter.bytes_read,

@@ -4,6 +4,7 @@ min_elo = 2000                                   # Elo minimum des DEUX joueurs
 min_plies = 20                                   # parties plus courtes écartées (demi-coups)
 min_estimated_seconds = 180                      # base + 40 * incrément ; < 180 s = bullet
 allowed_terminations = ["Normal", "Time forfeit"]  # exclut Abandoned, Rules infraction...
+exclude_bots = true                              # écarte les parties où un joueur a le titre BOT
 val_fraction = 0.02                              # part des PARTIES en validation
 
 [output]

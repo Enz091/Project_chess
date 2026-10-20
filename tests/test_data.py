@@ -33,10 +33,10 @@ from chesszero.encoding import (
 )
 
 CFG = FilterConfig(val_fraction=0.25)  # beaucoup de validation pour que les deux splits existent
-KINDS = ["ok", "ok", "ok", "low_elo", "bullet", "abandoned", "short", "fen", "no_result"]
+KINDS = ["ok", "ok", "ok", "low_elo", "bullet", "abandoned", "short", "fen", "no_result", "bot"]
 EXPECTED_REASON = {  # kind -> raison de rejet attendue (None = partie gardée)
     "ok": None, "low_elo": "elo", "bullet": "bullet", "abandoned": "termination",
-    "short": "too_short", "fen": "variant", "no_result": "result",
+    "short": "too_short", "fen": "variant", "no_result": "result", "bot": "bot",
 }
 
 
@@ -83,6 +83,8 @@ def make_game(i, kind, rng):
         "TimeControl": "60+0" if kind == "bullet" else rng.choice(["600+0", "180+2", "300+3"]),
         "Termination": "Abandoned" if kind == "abandoned" else rng.choice(["Normal", "Time forfeit"]),
     })
+    if kind == "bot":
+        game.headers["BlackTitle"] = "BOT"
     if kind == "fen":
         game.headers["SetUp"], game.headers["FEN"] = "1", chess.STARTING_FEN
     node = game
@@ -172,6 +174,16 @@ def test_reject_reason_cases():
     assert reject_reason(headers(BlackElo="1700"), replace(cfg, min_elo=1500)) is None
 
 
+def test_bot_filter():
+    cfg = FilterConfig()
+    assert cfg.exclude_bots  # activé par défaut
+    assert reject_reason(headers(WhiteTitle="BOT"), cfg) == "bot"
+    assert reject_reason(headers(BlackTitle="BOT"), cfg) == "bot"
+    assert reject_reason(headers(WhiteTitle="GM", BlackTitle="IM"), cfg) is None  # autres titres : gardés
+    assert reject_reason(headers(WhiteTitle="BOT"), replace(cfg, exclude_bots=False)) is None
+    assert reject_reason(headers(WhiteTitle="BOT", BlackElo="1500"), cfg) == "elo"  # le bot ne masque rien
+
+
 def test_parse_headers_stops_at_moves():
     h = parse_headers('[Event "x"]\n[White "a [b]"]\n\n1. e4 { [%clk 0:01:00] } e5 *\n')
     assert h == {"Event": "x", "White": "a [b]"}
@@ -190,6 +202,11 @@ def test_counts(corpus, extracted):
     assert m["games_rejected_after_parse"]["too_short"] == expected["too_short"]
     assert m["games_rejected_after_parse"]["parse_error"] == 1
     assert m["games_kept"] == expected[None] > 10
+    kept_by_term = m["kept_by_termination"]
+    assert sum(kept_by_term["games"].values()) == m["games_kept"]
+    assert sum(kept_by_term["positions"].values()) == sum(m["positions"].values())
+    assert kept_by_term["games"] == dict(Counter(
+        parse_headers(g.text)["Termination"] for g in games if g.reason is None))
     assert not m["stopped_early"]
 
 
@@ -222,7 +239,9 @@ def test_positions_valid_legal_and_signed(corpus, extracted):
 
         # 3. Relecture indépendante des parties : mêmes positions, mêmes coups, bon signe.
         i = 0
+        assert data["value_valid"].dtype == np.uint8 and len(data["value_valid"]) == n
         for g in (g for g in kept if g.split == split):
+            start = i
             board = chess.Board()
             score = {"1-0": (1, -1), "0-1": (-1, 1), "1/2-1/2": (0, 0)}[g.result]  # (Blancs, Noirs)
             seen = set()
@@ -234,6 +253,9 @@ def test_positions_valid_legal_and_signed(corpus, extracted):
                 board.push(move)
                 i += 1
             assert seen == ({1, -1} if g.result != "1/2-1/2" else {0})  # signes opposés pour les 2 camps
+            # value_valid : 1 pour toute la partie si elle s'est finie en « Normal », 0 si « Time forfeit »
+            expected_valid = int(parse_headers(g.text)["Termination"] == "Normal")
+            assert (data["value_valid"][start:i] == expected_valid).all()
         assert i == n  # aucune position en trop
 
 

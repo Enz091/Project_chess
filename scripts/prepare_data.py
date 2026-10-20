@@ -30,6 +30,7 @@ def main() -> None:
     ap.add_argument("--min-elo", type=int)
     ap.add_argument("--min-plies", type=int)
     ap.add_argument("--val-fraction", type=float)
+    ap.add_argument("--include-bots", action="store_true", help="garder les parties avec un joueur BOT")
     ap.add_argument("--shard-size", type=int)
     ap.add_argument("--workers", type=int, default=max(1, min(14, (os.cpu_count() or 2) - 2)))
     ap.add_argument("--overwrite", action="store_true", help="écraser un dossier déjà rempli")
@@ -37,6 +38,8 @@ def main() -> None:
 
     cfg = FilterConfig.from_toml(args.config)
     overrides = {k: getattr(args, k) for k in ("min_elo", "min_plies", "val_fraction") if getattr(args, k) is not None}
+    if args.include_bots:
+        overrides["exclude_bots"] = False
     cfg = replace(cfg, **overrides)
     with open(args.config, "rb") as f:
         shard_size = args.shard_size or tomllib.load(f).get("output", {}).get("shard_size", 250_000)
@@ -56,6 +59,9 @@ def main() -> None:
     print(f"Rejetées (en-têtes)  : {m['games_rejected_by_header']}")
     print(f"Rejetées (après lecture) : {m['games_rejected_after_parse']}")
     print(f"Parties gardées      : {m['games_kept']:,}")
+    kt = m["kept_by_termination"]
+    for term, n in kt["games"].items():
+        print(f"  gardées « {term} » : {n:,} parties ({n / m['games_kept']:.1%}), {kt['positions'][term]:,} positions")
     print(f"Positions            : {p['train'] + p['val']:,} (train {p['train']:,}, val {p['val']:,})")
     print(f"Flux lu (compressé)  : {m['bytes_read_compressed'] / 1e6:,.1f} Mo")
     print(f"Taille sur disque    : {m['bytes_on_disk'] / 1e6:,.1f} Mo")

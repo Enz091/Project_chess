@@ -75,6 +75,7 @@ def save_checkpoint(
     optimizer: torch.optim.Optimizer | None = None,
     scheduler: Any | None = None,
     *,
+    scaler: Any | None = None,
     step: int,
     epoch: int = 0,
     config: dict | None = None,
@@ -92,6 +93,7 @@ def save_checkpoint(
         "model": _unwrap(model).state_dict(),
         "optimizer": optimizer.state_dict() if optimizer is not None else None,
         "scheduler": scheduler.state_dict() if scheduler is not None else None,
+        "scaler": scaler.state_dict() if scaler is not None else None,  # précision mixte (GradScaler)
         "rng": _rng_state(),
         "config": config or {},
         "metrics": metrics or {},
@@ -123,6 +125,7 @@ def load_checkpoint(
     optimizer: torch.optim.Optimizer | None = None,
     scheduler: Any | None = None,
     *,
+    scaler: Any | None = None,
     restore_rng: bool = True,
 ) -> dict[str, Any]:
     """Recharge un checkpoint dans le modèle (et l'optimiseur/scheduler s'ils sont fournis).
@@ -140,6 +143,8 @@ def load_checkpoint(
         optimizer.load_state_dict(payload["optimizer"])
     if scheduler is not None and payload.get("scheduler") is not None:
         scheduler.load_state_dict(payload["scheduler"])
+    if scaler is not None and payload.get("scaler"):
+        scaler.load_state_dict(payload["scaler"])
     if restore_rng and "rng" in payload:
         _set_rng_state(payload["rng"])
 

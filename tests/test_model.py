@@ -127,6 +127,57 @@ def test_loss_ignores_logits_of_illegal_moves():
     assert torch.isclose(base, other)
 
 
+def _value_head_grads(model, x, mask, idx, v, value_valid):
+    """Gradients de la tête valeur (value_conv + value_fc) pour une perte donnée. Modèle en mode eval :
+    les positions du lot sont alors indépendantes entre elles (pas de statistiques de lot)."""
+    model.zero_grad()
+    logits, value = model(x)
+    loss, parts = policy_value_loss(logits, value, idx, v, mask, value_valid)
+    loss.backward()
+    head = list(model.value_conv.parameters()) + list(model.value_fc.parameters())
+    return [p.grad.clone() for p in head], parts
+
+
+def test_invalid_value_positions_send_no_gradient_to_value_head():
+    """Une position à value_valid = 0 ne contribue pas au gradient de la tête valeur,
+    quelle que soit sa cible de valeur ; la perte de valeur est la moyenne sur les positions valides."""
+    torch.manual_seed(0)
+    model = ChessNet(SMALL).eval()
+    x, mask = batch_from(random_boards(8, seed=6))
+    rng = np.random.default_rng(1)
+    idx = torch.tensor([rng.choice(np.flatnonzero(m)) for m in mask.numpy()])
+    v = torch.tensor(rng.uniform(-1, 1, 8), dtype=torch.float32)
+    valid = torch.tensor([1, 1, 1, 1, 0, 0, 0, 0], dtype=torch.uint8)
+
+    grads, parts = _value_head_grads(model, x, mask, idx, v, valid)
+    assert any(g.abs().sum() > 0 for g in grads)  # les positions valides, elles, font bien apprendre la tête
+
+    # 1. On change complètement la cible des positions invalides : rien ne bouge.
+    v_changed = v.clone()
+    v_changed[4:] = -torch.sign(v[4:]) * 1.0 + 0.5
+    grads2, parts2 = _value_head_grads(model, x, mask, idx, v_changed, valid)
+    assert parts2["value"] == parts["value"]
+    assert all(torch.equal(a, b) for a, b in zip(grads, grads2))
+
+    # 2. Même gradient que si le lot ne contenait QUE les positions valides.
+    grads3, parts3 = _value_head_grads(model, x[:4], mask[:4], idx[:4], v[:4], None)
+    assert parts3["value"] == pytest.approx(parts["value"], rel=1e-5)
+    assert all(torch.allclose(a, b, atol=1e-7) for a, b in zip(grads, grads3))
+
+    # 3. Aucune position valide : perte de valeur nulle, gradient nul sur la tête valeur...
+    none_valid = torch.zeros(8, dtype=torch.uint8)
+    grads4, parts4 = _value_head_grads(model, x, mask, idx, v, none_valid)
+    assert parts4["value"] == 0.0 and all(g.abs().sum() == 0 for g in grads4)
+    # ... mais la politique, elle, apprend sur toutes les positions.
+    assert model.policy_head[-1].weight.grad.abs().sum() > 0
+
+    # 4. La perte politique ne dépend pas de value_valid.
+    logits, value = model(x)
+    p_all = policy_value_loss(logits, value, idx, v, mask, none_valid)[1]["policy"]
+    p_ref = policy_value_loss(logits, value, idx, v, mask)[1]["policy"]
+    assert p_all == p_ref
+
+
 def test_overfit_50_positions():
     """Le réseau tiny doit mémoriser 50 positions (coup et résultat aléatoires) : perte ~ 0.
 

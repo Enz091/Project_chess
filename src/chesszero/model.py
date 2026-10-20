@@ -135,12 +135,16 @@ def policy_value_loss(
     target_policy: torch.Tensor,
     target_value: torch.Tensor,
     legal_mask: torch.Tensor,
+    value_valid: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, dict[str, float]]:
     """Perte = entropie croisée (politique, coups illégaux masqués) + erreur quadratique (valeur).
 
     `target_policy` : soit des indices de coups (B,) entiers (pré-entraînement : le coup joué),
     soit une distribution (B, N_ACTIONS) (self-play : visites MCTS normalisées).
     `target_value` : (B,) dans [-1, 1].
+    `value_valid` : (B,) 0/1 (ou bool), optionnel. Les positions à 0 ne comptent PAS dans la perte de
+    valeur (moyenne sur les positions à 1 seulement ; 0 si aucune) et n'envoient aucun gradient à la
+    tête valeur. La perte politique porte toujours sur toutes les positions.
     Renvoie (perte totale, {"policy": ..., "value": ...}) ; les deux termes ont le même poids.
     """
     log_p = masked_log_softmax(logits, legal_mask)
@@ -148,5 +152,10 @@ def policy_value_loss(
         policy_loss = F.nll_loss(log_p, target_policy)
     else:
         policy_loss = -(target_policy * log_p).sum(dim=-1).mean()
-    value_loss = F.mse_loss(value.float(), target_value.float())
+    squared_error = (value.float() - target_value.float()) ** 2
+    if value_valid is None:
+        value_loss = squared_error.mean()
+    else:
+        weight = value_valid.float()
+        value_loss = (weight * squared_error).sum() / weight.sum().clamp(min=1.0)
     return policy_loss + value_loss, {"policy": policy_loss.item(), "value": value_loss.item()}
