@@ -44,7 +44,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from chesszero.encoding import N_ACTIONS, move_to_index, pack_board, unpack_batch
+from chesszero.encoding import N_ACTIONS, move_indices, pack_board, unpack_batch_torch
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -112,7 +112,7 @@ def terminal_value(board: chess.Board) -> float | None:
 
 def legal_moves_and_indices(board: chess.Board) -> tuple[list[chess.Move], np.ndarray]:
     moves = list(board.legal_moves)
-    return moves, np.fromiter((move_to_index(m, board) for m in moves), dtype=np.int64, count=len(moves))
+    return moves, move_indices(moves, board)
 
 
 # --------------------------------------------------------------------------- évaluateurs
@@ -140,15 +140,22 @@ class NetEvaluator:
 
     @torch.inference_mode()
     def evaluate(self, boards, legal_indices):
+        """Positions compactes (67 octets) envoyées au device et décodées là ; logits des coups légaux
+        rassemblés et normalisés (softmax) sur le device : seules les probabilités utiles reviennent."""
         start = time.perf_counter()
-        x = torch.from_numpy(unpack_batch(np.stack([pack_board(b) for b in boards]))).to(self.device)
-        logits, values = self.model(x)
-        logits = logits.float().cpu().numpy()
-        priors = []
-        for row, idx in zip(logits, legal_indices):
-            z = row[idx].astype(np.float64)
-            p = np.exp(z - z.max())
-            priors.append(p / p.sum())
+        packed = torch.from_numpy(np.stack([pack_board(b) for b in boards])).to(self.device)
+        lengths = [len(i) for i in legal_indices]
+        index = np.zeros((len(boards), max(lengths)), dtype=np.int64)
+        for row, idx in enumerate(legal_indices):
+            index[row, :len(idx)] = idx
+        index_t = torch.from_numpy(index).to(self.device)
+        valid = torch.arange(index.shape[1], device=self.device).unsqueeze(0) < torch.tensor(
+            lengths, device=self.device).unsqueeze(1)
+        with torch.autocast("cuda", dtype=torch.float16, enabled=self.device.type == "cuda"):
+            logits, values = self.model(unpack_batch_torch(packed))
+        z = logits.float().gather(1, index_t).masked_fill(~valid, float("-inf"))
+        probs = torch.softmax(z, dim=1).cpu().numpy().astype(np.float64)
+        priors = [row[:n] / row[:n].sum() for row, n in zip(probs, lengths)]
         self.calls += 1
         self.positions += len(boards)
         self.seconds += time.perf_counter() - start
@@ -216,9 +223,13 @@ class Node:
         return q
 
     def select(self, c_puct: float, virtual_loss: float, fpu_reduction: float) -> int:
+        """argmax de Q + U ; même calcul que `edge_q` + terme d'exploration, en moins d'opérations numpy."""
         n_eff = self.N + self.VL
-        u = c_puct * self.P * math.sqrt(1 + self.n_sum + self.vl_sum) / (1 + n_eff)
-        return int(np.argmax(self.edge_q(virtual_loss, fpu_reduction) + u))
+        if self.vl_sum == 0 and self.n_sum == 0:  # aucune visite : Q = FPU partout, seul U départage
+            return int(np.argmax(self.P))
+        q = np.where(n_eff > 0, (self.W - virtual_loss * self.VL) / np.maximum(n_eff, 1),
+                     self.fpu_value(fpu_reduction))
+        return int(np.argmax(q + (c_puct * math.sqrt(1 + self.n_sum + self.vl_sum)) * self.P / (1 + n_eff)))
 
 
 # --------------------------------------------------------------------------- recherche
@@ -254,9 +265,8 @@ class MCTS:
         n = self.config.num_simulations if num_simulations is None else num_simulations
         start = time.perf_counter()
         if not self.root.expanded:
-            self._evaluate_and_expand([([], self.root, self.board.copy(stack=False))])
-        if self.config.dirichlet_epsilon > 0:
-            self._add_root_noise()
+            self._evaluate([self.root_leaf()])
+        self.prepare_root()
         done = 0
         while done < n:
             done += self._run_batch(min(self.config.batch_size, n - done))
@@ -264,6 +274,16 @@ class MCTS:
                 self.check_tree()
         self.stats["seconds"] += time.perf_counter() - start
         return self.root
+
+    def root_leaf(self) -> tuple:
+        """La racine non développée, sous forme de feuille à évaluer (chemin vide)."""
+        moves, idx = legal_moves_and_indices(self.board)
+        return [], self.root, self.board.copy(stack=False), moves, idx
+
+    def prepare_root(self) -> None:
+        """Avant les simulations d'un coup : bruit de Dirichlet sur la racine (self-play), si activé."""
+        if self.config.dirichlet_epsilon > 0:
+            self._add_root_noise()
 
     def _add_root_noise(self) -> None:
         """P = (1 - eps) * P_raw + eps * Dir(alpha), recalculé à partir de P_raw (pas de cumul)."""
@@ -274,8 +294,17 @@ class MCTS:
     def _run_batch(self, target: int) -> int:
         """Collecte jusqu'à `target` feuilles (perte virtuelle), les évalue en un lot, remonte.
         Renvoie le nombre de simulations faites (feuilles évaluées + feuilles terminales)."""
+        leaves, n_terminal = self.collect(target)
+        if leaves:
+            self._evaluate(leaves)
+        return len(leaves) + n_terminal
+
+    def collect(self, target: int) -> tuple[list[tuple], int]:
+        """Descentes jusqu'à `target` simulations. Les feuilles terminales (ou exactes) sont remontées tout
+        de suite ; les autres sont renvoyées, perte virtuelle posée, en attente de `apply`.
+        Renvoie (feuilles à évaluer : (chemin, nœud, position, coups, indices), nombre de feuilles terminales)."""
         cfg, board = self.config, self.board
-        leaves: list[tuple[list, Node, chess.Board]] = []
+        leaves: list[tuple] = []
         n_terminal = collisions = 0
         while len(leaves) + n_terminal < target and collisions < cfg.batch_size:
             node, path = self.root, []
@@ -297,15 +326,14 @@ class MCTS:
                 collisions += 1
             else:
                 node.pending = True
-                leaves.append((path, node, board.copy(stack=False)))
+                moves, idx = legal_moves_and_indices(board)
+                leaves.append((path, node, board.copy(stack=False), moves, idx))
             for _ in path:
                 board.pop()
-        if leaves:
-            self._evaluate_and_expand(leaves)
         self.stats["batches"] += 1
         self.stats["terminal"] += n_terminal
         self.stats["collisions"] += collisions
-        return len(leaves) + n_terminal
+        return leaves, n_terminal
 
     def _exact_value(self, board: chess.Board) -> float | None:
         """Valeur exacte d'une nouvelle feuille : fin de partie, sinon tables de finales (si présentes)."""
@@ -314,10 +342,13 @@ class MCTS:
             value = self.tablebase.value(board)
         return value
 
-    def _evaluate_and_expand(self, leaves) -> None:
-        legal = [legal_moves_and_indices(b) for _, _, b in leaves]
-        priors, values = self.evaluator.evaluate([b for _, _, b in leaves], [idx for _, idx in legal])
-        for (path, node, _), (moves, idx), p, v in zip(leaves, legal, priors, values):
+    def _evaluate(self, leaves) -> None:
+        priors, values = self.evaluator.evaluate([leaf[2] for leaf in leaves], [leaf[4] for leaf in leaves])
+        self.apply(leaves, priors, values)
+
+    def apply(self, leaves, priors, values) -> None:
+        """Développe les feuilles évaluées et remonte leur valeur (retire la perte virtuelle)."""
+        for (path, node, _, moves, idx), p, v in zip(leaves, priors, values):
             node.expand(moves, idx, p, float(v))
             node.pending = False
             self._backup(path, float(v))
@@ -429,3 +460,50 @@ class MCTS:
                     assert math.isclose(node.W[a] / node.N[a], -child.q(), abs_tol=1e-9), "Q(arête) != -q(fils)"
                 stack.append(child)
         return count
+
+
+# --------------------------------------------------------------------------- plusieurs arbres à la fois
+
+
+def search_batched(trees: Sequence[MCTS], evaluator: Evaluator, num_simulations: int,
+                   leaves_per_tree: int | None = None) -> None:
+    """Ajoute `num_simulations` simulations à chaque arbre en regroupant les feuilles de TOUS les arbres
+    dans un même appel au réseau (self-play : beaucoup de parties en parallèle, gros lots pour le GPU).
+
+    Chaque arbre ne pose que `leaves_per_tree` feuilles par tour (défaut : son `batch_size`) : la perte
+    virtuelle reste faible dans chaque arbre même si le lot total est grand. Chaque arbre fait exactement
+    ce que ferait `search` avec des lots de `leaves_per_tree` ; seul l'ordre des appels au réseau change.
+    """
+    def run(leaves_by_tree):
+        flat = [leaf for _, leaves in leaves_by_tree for leaf in leaves]
+        if not flat:
+            return
+        priors, values = evaluator.evaluate([leaf[2] for leaf in flat], [leaf[4] for leaf in flat])
+        start = 0
+        for tree, leaves in leaves_by_tree:
+            tree.apply(leaves, priors[start:start + len(leaves)], values[start:start + len(leaves)])
+            start += len(leaves)
+
+    t0 = time.perf_counter()
+    for tree in trees:
+        if tree.root.terminal is not None:
+            raise ValueError(f"position terminale, rien à chercher : {tree.board.fen()}")
+    run([(t, [t.root_leaf()]) for t in trees if not t.root.expanded])
+    for tree in trees:
+        tree.prepare_root()
+    remaining = [num_simulations] * len(trees)
+    while True:
+        batch = []
+        for i, tree in enumerate(trees):
+            if remaining[i] > 0:
+                leaves, n_terminal = tree.collect(min(leaves_per_tree or tree.config.batch_size, remaining[i]))
+                remaining[i] -= len(leaves) + n_terminal
+                batch.append((tree, leaves))
+        if not batch:
+            break
+        run(batch)
+        for tree, _ in batch:
+            if tree.check:
+                tree.check_tree()
+    for tree in trees:
+        tree.stats["seconds"] += (time.perf_counter() - t0) / len(trees)

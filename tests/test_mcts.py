@@ -352,3 +352,79 @@ def test_network_search_finds_mates(net, fen, mate, policy_choice, batch_size):
     assert mcts.root.n_sum == 400
     top = mcts.root_stats()
     assert top[0]["q"] > 0.85 and top[0]["visits"] > top[1]["visits"]
+
+
+# --------------------------------------------------------------------------- plusieurs arbres (étape 6a)
+
+
+def test_search_batched_matches_individual_searches():
+    from chesszero.mcts import search_batched
+
+    fens = [chess.STARTING_FEN, LEGAL_MATE, QUEEN_UP, SMOTHERED]
+    cfg = MCTSConfig(num_simulations=150, batch_size=4, dirichlet_epsilon=0.25)
+    solo = []
+    for i, fen in enumerate(fens):
+        m = MCTS(StubEvaluator(material), cfg, chess.Board(fen), rng=np.random.default_rng(i))
+        m.search()
+        solo.append(m)
+    calls = []
+
+    class Counting(StubEvaluator):
+        def evaluate(self, boards, legal_indices):
+            calls.append(len(boards))
+            return super().evaluate(boards, legal_indices)
+
+    ev = Counting(material)
+    many = [MCTS(ev, cfg, chess.Board(fen), rng=np.random.default_rng(i), check_invariants=True)
+            for i, fen in enumerate(fens)]
+    search_batched(many, ev, 150)
+    for a, b in zip(solo, many):
+        np.testing.assert_array_equal(a.root.N, b.root.N)
+        np.testing.assert_allclose(a.root.W, b.root.W)
+        assert a.best_move(0) == b.best_move(0)
+    assert max(calls) > 4  # les feuilles de plusieurs arbres partent dans le même appel
+
+
+def test_net_evaluator_matches_reference_computation():
+    """Décodage sur le device + softmax rassemblé = ancien calcul (décodage numpy, softmax par position)."""
+    import torch
+
+    from chesszero.encoding import pack_board, unpack_batch
+    from chesszero.mcts import legal_moves_and_indices
+    from chesszero.model import ModelConfig, build_model
+
+    torch.manual_seed(0)
+    model = build_model(ModelConfig.named("tiny")).eval()
+    boards = [chess.Board(f) for f in (chess.STARTING_FEN, LEGAL_MATE, QUEEN_UP, SMOTHERED, BACK_RANK)]
+    boards.append(chess.Board("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3"))  # en passant
+    idx = [legal_moves_and_indices(b)[1] for b in boards]
+    priors, values = NetEvaluator(model).evaluate(boards, idx)
+    with torch.no_grad():
+        ref_logits, ref_values = model(torch.from_numpy(unpack_batch(np.stack([pack_board(b) for b in boards]))))
+    for p, row, i in zip(priors, ref_logits.numpy(), idx):
+        z = row[i].astype(np.float64)
+        ref = np.exp(z - z.max())
+        np.testing.assert_allclose(p, ref / ref.sum(), rtol=1e-5, atol=1e-7)
+        assert abs(p.sum() - 1) < 1e-9
+    np.testing.assert_allclose(values, ref_values.numpy(), rtol=1e-6, atol=1e-6)
+
+
+def test_unpack_batch_torch_matches_numpy():
+    import torch
+
+    from chesszero.encoding import pack_board, unpack_batch, unpack_batch_torch
+
+    rng = np.random.default_rng(3)
+    packed = []
+    for _ in range(20):
+        board = chess.Board()
+        for _ in range(int(rng.integers(0, 80))):
+            moves = list(board.legal_moves)
+            if not moves:
+                break
+            board.push(moves[int(rng.integers(len(moves)))])
+        packed.append(pack_board(board))
+    packed.append(pack_board(chess.Board("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3")))
+    packed.append(pack_board(chess.Board("4k3/8/8/8/8/8/8/4K3 w - - 150 200")))  # compteur plafonné à 100
+    packed = np.stack(packed)
+    np.testing.assert_array_equal(unpack_batch_torch(torch.from_numpy(packed)).numpy(), unpack_batch(packed))

@@ -156,3 +156,64 @@ def test_pack_unpack_batch_matches_encode():
     batch = unpack_batch(packed)
     for i, b in enumerate(boards):
         np.testing.assert_array_equal(batch[i], encode_board(b))
+
+
+# --------------------------------------------------------------------------- versions rapides (étape 6a)
+
+
+def _pack_board_reference(board):
+    """Ancienne version de pack_board (boucle sur les pièces), gardée comme référence."""
+    from chesszero.encoding import _IDX_CASTLE, _IDX_EP, _IDX_HALFMOVE, _NO_EP, PACKED_SIZE
+
+    me = board.turn
+    flip = 56 if me == chess.BLACK else 0
+    out = np.zeros(PACKED_SIZE, dtype=np.uint8)
+    for sq, piece in board.piece_map().items():
+        out[sq ^ flip] = piece.piece_type + (0 if piece.color == me else 6)
+    castle = 0
+    for bit, (color, kingside) in enumerate([(me, True), (me, False), (not me, True), (not me, False)]):
+        has = board.has_kingside_castling_rights if kingside else board.has_queenside_castling_rights
+        castle |= int(has(color)) << bit
+    out[_IDX_CASTLE] = castle
+    ep = board.ep_square if board.has_legal_en_passant() else None
+    out[_IDX_EP] = _NO_EP if ep is None else ep ^ flip
+    out[_IDX_HALFMOVE] = min(board.halfmove_clock, 255)
+    return out
+
+
+def _random_positions(n_games=60, seed=0):
+    rng = np.random.default_rng(seed)
+    special = ["rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3",  # en passant
+               "8/1P4k1/8/8/8/8/5Kp1/7R b - - 0 1",  # promotions et sous-promotions (prise ou non)
+               "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"]  # roques
+    for fen in special:
+        yield chess.Board(fen)
+    for _ in range(n_games):
+        board = chess.Board()
+        for _ in range(int(rng.integers(10, 160))):
+            moves = list(board.legal_moves)
+            if not moves:
+                break
+            board.push(moves[int(rng.integers(len(moves)))])
+            yield board.copy(stack=False)
+
+
+def test_fast_pack_board_matches_reference():
+    from chesszero.encoding import pack_board
+
+    count = 0
+    for board in _random_positions():
+        np.testing.assert_array_equal(pack_board(board), _pack_board_reference(board))
+        count += 1
+    assert count > 3000
+
+
+def test_move_indices_matches_move_to_index():
+    from chesszero.encoding import move_indices
+
+    seen_underpromo = False
+    for board in _random_positions(n_games=30, seed=1):
+        moves = list(board.legal_moves)
+        seen_underpromo |= any(m.promotion not in (None, chess.QUEEN) for m in moves)
+        np.testing.assert_array_equal(move_indices(moves, board), [move_to_index(m, board) for m in moves])
+    assert seen_underpromo

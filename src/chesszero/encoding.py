@@ -38,14 +38,23 @@ def _oriented(board: chess.Board) -> chess.Board:
     return board if board.turn == chess.WHITE else board.mirror()
 
 
+_CODES = np.arange(1, 13, dtype=np.uint8)[:, None]  # code de chaque plan de pièces (mes P..K, puis adverses)
+
+
 def pack_board(board: chess.Board) -> np.ndarray:
-    """Position -> vecteur uint8 de PACKED_SIZE octets (format de stockage sur disque)."""
+    """Position -> vecteur uint8 de PACKED_SIZE octets (format de stockage sur disque).
+
+    Les cases sont remplies à partir des 12 masques de bits de python-chess (un entier de 64 bits par
+    couleur et type de pièce), décompressés en une fois par numpy : pas de boucle sur les pièces.
+    """
     me = board.turn
     flip = 56 if me == chess.BLACK else 0
-    out = np.zeros(PACKED_SIZE, dtype=np.uint8)
-    for sq, piece in board.piece_map().items():
-        mine = piece.color == me
-        out[sq ^ flip] = piece.piece_type + (0 if mine else 6)
+    masks = [board.pieces_mask(pt, color) for color in (me, not me) for pt in chess.PIECE_TYPES]
+    if flip:
+        masks = [chess.flip_vertical(m) for m in masks]
+    bits = np.unpackbits(np.array(masks, dtype=np.uint64).view(np.uint8).reshape(12, 8), axis=1, bitorder="little")
+    out = np.empty(PACKED_SIZE, dtype=np.uint8)
+    out[:64] = (bits * _CODES).sum(axis=0)  # au plus un bit par case : la somme donne le code
 
     castle = 0
     for bit, (color, kingside) in enumerate(
@@ -89,6 +98,22 @@ def unpack_batch(packed: np.ndarray) -> np.ndarray:
 
     out = out.reshape(n, N_PLANES, 8, 8)
     return out[0] if single else out
+
+
+def unpack_batch_torch(packed):
+    """Comme `unpack_batch`, mais sur un tenseur torch uint8 (N, PACKED_SIZE) et sur son device (GPU en
+    self-play) : on transfère 67 octets par position au lieu des 18 x 64 flottants du tenseur décodé."""
+    import torch
+
+    n = packed.shape[0]
+    squares = packed[:, :64].long()
+    codes = torch.arange(1, 13, device=packed.device).view(1, 12, 1)
+    pieces = (squares.unsqueeze(1) == codes).float()  # (N, 12, 64)
+    bits = torch.arange(4, device=packed.device).view(1, 4)
+    castle = ((packed[:, _IDX_CASTLE].long().unsqueeze(1) >> bits) & 1).float().unsqueeze(2).expand(n, 4, 64)
+    ep = torch.nn.functional.one_hot(packed[:, _IDX_EP].long(), 65)[:, :64].float().unsqueeze(1)  # 64 = aucune
+    half = (packed[:, _IDX_HALFMOVE].float().clamp(max=100) / 100).view(n, 1, 1).expand(n, 1, 64)
+    return torch.cat([pieces, castle, ep, half], dim=1).view(n, N_PLANES, 8, 8)
 
 
 def board_from_packed(vec: np.ndarray) -> chess.Board:
@@ -165,6 +190,29 @@ def move_to_index(move: chess.Move, board: chess.Board) -> int:
     else:
         raise ValueError(f"coup non encodable : {move} (dc={dc}, dr={dr})")
     return frm * N_MOVE_PLANES + plane
+
+
+# Table précalculée (repère du camp au trait) : _MOVE_TABLE[départ * 64 + arrivée] = indice du coup
+# (déplacement de dame ou saut de cavalier, promotion en dame comprise), -1 si impossible.
+# Les sous-promotions passent par `move_to_index`. Liste Python : plus rapide qu'un tableau numpy
+# pour des accès un par un.
+_MOVE_TABLE = [-1] * (64 * 64)
+for _frm in range(64):
+    for _to in range(64):
+        _delta = (chess.square_file(_to) - chess.square_file(_frm), chess.square_rank(_to) - chess.square_rank(_frm))
+        _plane = _QUEEN_PLANE.get(_delta, _KNIGHT_PLANE.get(_delta))
+        if _plane is not None:
+            _MOVE_TABLE[_frm * 64 + _to] = _frm * N_MOVE_PLANES + _plane
+
+
+def move_indices(moves: list[chess.Move], board: chess.Board) -> np.ndarray:
+    """Indices (int64) d'une liste de coups légaux de `board` : même résultat que `move_to_index`, en plus rapide."""
+    flip = 56 if board.turn == chess.BLACK else 0
+    table = _MOVE_TABLE
+    return np.fromiter(
+        (table[((m.from_square ^ flip) << 6) | (m.to_square ^ flip)]
+         if m.promotion is None or m.promotion == chess.QUEEN else move_to_index(m, board) for m in moves),
+        dtype=np.int64, count=len(moves))
 
 
 def index_to_move(index: int, board: chess.Board) -> chess.Move:

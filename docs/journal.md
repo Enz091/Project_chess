@@ -731,3 +731,77 @@ Autres pendules (coup 1 → coup 40) : 1 min + 1 s ≈ 960 → 510 simulations ;
 - **Pendule** : en force fixe, l'IA ignore l'horloge mais **Cute Chess la décompte quand même** : une IA qui met 2,3 s par coup (800 simulations) perd au temps avec une pendule trop courte (par construction ; je n'ai pas rejoué ce cas jusqu'au bout). Choisir **« Infinite »** (aucune pendule, l'IA répond après N simulations) ou une pendule large : 10 min + 5 s, ou 5 s par coup.
 - Ne pas utiliser « Infinite » avec « ChessZero - pendule » : en mode pendule `go infinite` dure jusqu'à `stop`, que Cute Chess n'envoie jamais.
 - Ne pas monter « Threads » au-delà de 8 (plafond du moteur) ni lancer d'autres charges lourdes pendant qu'on joue.
+
+## Avant l'étape 6 — Protocole de mesure v2 et tables de finales Syzygy (2026-10-20)
+
+### Protocole v2 (`stockfish-ladder-v2`, `scripts/match_stockfish.py` + `scripts/ladder_openings.py`)
+- **Seul changement par rapport à v1 : les ouvertures** (et, en conséquence, le nombre de tours d'affinage). Le reste est identique : 200 simulations, `[mcts]` de `kaggle.toml`, Stockfish 19 à 300 ms / 1 thread / Hash 16 / sans tables, niveaux 1320-2500, extension +300 au-delà de 80 %, affinage centré sur l'Elo de la phase 1 (−100, 0, +100), 4 processus × 2 threads torch, 400 demi-coups au plus. Un test (`tests/test_ladder.py`) vérifie que v1 est exactement le protocole archivé et que v2 n'en diffère que par `name`, `openings` et `refine_rounds`.
+- **40 ouvertures, 6 à 10 demi-coups** : 32 lignes courantes (15 en 1.e4, 14 en 1.d4, 3 de flanc) et 8 débuts rares (1.b4, 1.g4, 1.f4, 1.b3, 1.Nc3, 1…Nc6, 1…b6, Budapest). Critère : écart de moins d'un pion selon Stockfish 19 plein (8 threads, 2 s). Écartées pour cette raison : l'Englund (+1,79) et le Saint-Georges (+1,07) ; Tchigorine et Taimanov écartées pour revenir à 40. La London de v1 y est à l'identique.
+- **Un tour = 80 parties** (40 × 2 couleurs) : affinage en **1 tour** (80 parties par niveau, contre 40 en v1), chaque ouverture et chaque couleur une fois par niveau. Total sans extension : 640 parties (400 en phase 1 + 240 en affinage).
+- **Résultats et IA séparés du protocole** : `docs/stockfish/<v1|v2>/<tag>.json` ; bloc `ai` = options de l'IA hors protocole (`syzygy`, `syzygy_pieces`). Tags de la forme `v1/kaggle_sup` acceptés partout. La mesure v1 est archivée dans `docs/stockfish/v1/` (rapport inchangé : 2436 ± 56).
+- Durée estimée avant lancement (16 parties variées, rien enregistré) : 135 à 160 min ; **réel : 142,3 min**.
+
+### Tables Syzygy (`src/chesszero/syzygy.py`, `tools/syzygy/`, hors git)
+- **Téléchargement** : 3, 4 et 5 pièces, 290 fichiers, **984,0 Mo** (WDL 396 Mo + DTZ 588 Mo), depuis le miroir Lichess `https://tablebase.lichess.ovh/tables/standard/3-4-5-wdl/` et `.../3-4-5-dtz/` ; **les 290 sommes SHA-256 sont conformes** au fichier `sha256` publié à côté. Pour mémoire : 6 pièces = 160 Go, 7 pièces ≈ 18 To.
+- **Dans l'arbre** (`MCTS(..., tablebase=)`) : une nouvelle feuille à ≤ 5 pièces sans droit de roque reçoit une valeur exacte (+1 / 0 / −1) sans appel au réseau. Règle des 50 coups : avec un compteur `c` > 0, un gain n'est retenu que si `|DTZ| + c ≤ 100` (comme Stockfish), sinon gain « maudit » = nulle. Cache des sondages par (position, compteur). Si la racine avance dans une feuille exacte qui n'est pas une fin de partie, elle redevient une racine à chercher.
+- **À la racine couverte** : `Tablebase.choose` (logique `root_probe` de Stockfish) : mat immédiat, sinon coup gagnant de plus petite DTZ ; en nulle, le coup non perdant le plus visité par le MCTS ; en perte, la défense la plus longue. **Ce n'est pas le mat le plus court** (Syzygy ne donne pas la distance au mat) : c'est la conversion garantie dans la limite des 50 coups.
+- Vitesse : sondage WDL ≈ 0,05 à 1,5 ms ; classement des coups d'une racine ≈ 1 à 60 ms ; **≈ 2 s la première fois qu'un fichier est ouvert** (une fois par processus). Sans effet sur la mesure (nombre de simulations fixe).
+- UCI : option `SyzygyPath` (défaut `tools/syzygy` s'il existe, `<empty>` sinon) : les profils Cute Chess jouent avec les tables.
+- Tests (`tests/test_syzygy.py`, 15) : faux sondeur (couverture, 50 coups, cache, table absente, mat en un, plus petite DTZ, nulle parmi les coups non perdants, défense la plus longue, feuilles exactes et racine dans le MCTS) ; vraies tables (position d'exemple de python-chess : perte, DTZ −53 ; KBN contre K mené au mat en suivant les tables des deux côtés).
+
+### Mesure de référence v2 — tag `v2/kaggle_sup` (réseau kaggle pas 92 000, IA avec Syzygy 5 pièces, Stockfish sans)
+Lancée depuis une copie figée du dépôt (`git worktree`, commit `e7e9980`) pour que le travail de l'étape 6a ne la touche pas ; aucune autre charge lourde pendant le match. 640 parties, 142,3 min ; partie moyenne 53 s, 106 demi-coups, 0,80 s par coup de l'IA.
+
+| niveau Stockfish | parties | V | N | D | score | Elo implicite (95 %) |
+|---|---|---|---|---|---|---|
+| 1320 | 80 | 79 | 1 | 0 | 99,4 % | 2201 (2010 à 2520) |
+| 1600 | 80 | 74 | 0 | 6 | 92,5 % | 2036 (1926 à 2306) |
+| 1900 | 80 | 63 | 10 | 7 | 85,0 % | 2201 (2121 à 2321) |
+| 2200 | 80 | 45 | 8 | 27 | 61,3 % | 2280 (2208 à 2359) |
+| 2250 | 80 | 51 | 9 | 20 | 69,4 % | 2392 (2320 à 2479) |
+| 2350 | 80 | 48 | 13 | 19 | 68,1 % | 2482 (2412 à 2564) |
+| 2450 | 80 | 41 | 14 | 25 | 60,0 % | 2520 (2452 à 2595) |
+| 2500 | 80 | 37 | 19 | 24 | 58,1 % | 2557 (2491 à 2628) |
+
+- **Elo estimé : 2427 ± 37 (intervalle à 95 % : 2390 à 2464)**, échelle UCI_Elo de Stockfish 19. Phase 1 seule : 2367 ± 63, d'où l'affinage à 2250 / 2350 / 2450. Extension non déclenchée (58,1 % à 2500).
+- **Comparaison avec v1** (2436 ± 56, sans tables, 10 ouvertures) : −10 Elo (± 67), pas significatif. Les deux changements (ouvertures, tables) ne sont pas séparables ; d'après l'analyse des finales ci-dessous, les tables ne pèsent presque rien.
+- Fins : 438 gains et 128 défaites (tous par mat), 74 nulles (44 triples répétitions, 17 pats, 13 matériels insuffisants).
+- Par couleur : Blancs 2468 ± 54, Noirs 2388 ± 51 (écart d'environ 2 écarts-types : les ouvertures retenues donnent en moyenne +0,3 aux Blancs). Courantes (32) 2422 ± 41, rares (8) 2446 ± 81 : **pas de faiblesse visible sur les débuts rares**. Par ouverture (16 parties chacune, très bruité) : plus dures est-indienne classique 59 %, Benoni, française avance, gambit dame accepté, Larsen 62 % ; meilleures viennoise 94 %, Réti 91 %, Nimzowitsch, Pirc autrichienne, polonaise 88 %.
+- **Le modèle Elo s'ajuste mal à la forme des résultats** : l'Elo implicite monte avec le niveau (2036 à 1600, 2557 à 2500). Un ajustement avec une pente libre (`p = 1/(1+10^((S−R)/(400·k)))`) est bien meilleur (log-vraisemblance +25,9 pour un paramètre de plus ; rapport de vraisemblance 51,8 ≫ 3,84) avec **k ≈ 2,1** et un point à 50 % vers **2555**, extrapolé au-delà du plus haut niveau joué. Lecture : l'IA perd un peu contre tout le monde (gaffes, voir ci-dessous) et Stockfish bridé fait des erreurs aléatoires que l'IA punit même aux niveaux hauts. **Conséquence : le chiffre unique (2427) dépend des niveaux joués ; il reste comparable entre checkpoints mesurés sur la même échelle (`--like`), mais ce n'est pas une force absolue.** Le même motif était visible en v1 (80 % à 1900 pour 95,6 % attendus).
+- **Défaites contre 1600 et 1900 (13 parties)** : longues (67 à 196 demi-coups) ; dans 11 sur 13, l'IA avait été à +1 pion ou mieux (Stockfish plein, 0,1 s). Le coup décisif (première chute ≥ 2 pions qui fait passer sous −1,5) tombe **en milieu de jeu** (15 à 27 pièces) dans 12 sur 13, entre les demi-coups 24 et 75 : gaffes tactiques, pas des problèmes de finale. C'est la cible principale du self-play.
+
+### Finales : `match_stockfish.py endgames` (résultat exact à l'entrée dans les tables → résultat réel)
+
+| mesure | parties à ≤ 5 pièces | gain exact → G / N / P | nulle exacte → G / N / P | perte exacte → G / N / P | points perdus / pris |
+|---|---|---|---|---|---|
+| v1 (sans tables) | 41 / 220 | 12 → 11 / 1 / 0 | 15 → 1 / 14 / 0 | 14 → 0 / 0 / 14 | 0,5 / 0,5 |
+| v2 (avec tables) | 109 / 640 | 52 → 52 / 0 / 0 | 33 → 2 / 31 / 0 | 24 → 0 / 0 / 24 | 0 / 1,0 |
+
+- **En v1, les tables n'auraient sauvé qu'environ 0,5 point sur 220 parties (≈ 1 Elo).** Avec les tables, la conversion des finales gagnées est parfaite (52 sur 52) ; elles ont choisi 1 404 coups de l'IA dans 103 parties. Leur intérêt réel est ailleurs : arbitrage exact et rapide des fins de partie en self-play, cibles de valeur exactes, et fin des gains « jamais convertis » (limite de l'étape 5).
+- Limite de l'analyse : elle ne voit pas l'effet des tables comme feuilles exactes dans l'arbre pour des finales à 6-7 pièces ; d'après l'Elo (−10 ± 67), cet effet est petit.
+
+## Étape 6a — Vitesse du MCTS pour le self-play (2026-10-21)
+
+### Profil avant (faux réseau, milieu de jeu, 2 400 simulations, lots de 8)
+Coups légaux + indices des coups 40 % (dont `move_to_index` 13 %), encodage `pack_board` 14 %, sélection PUCT (numpy sur de petits tableaux) 14 %, softmax par position dans l'évaluateur ≈ 10 %, `push`/`pop` ≈ 12 %.
+
+### Changements (résultats identiques, vérifiés par tests)
+- `encoding.pack_board` : lit les 12 masques de bits de python-chess et les décompresse d'un coup (`np.unpackbits`) au lieu de parcourir `piece_map()`. Test : identique à l'ancienne version sur plus de 3 000 positions aléatoires et des positions spéciales (en passant, roques, promotions).
+- `encoding.move_indices` : table précalculée (départ, arrivée) → indice ; sous-promotions par `move_to_index`. Test : identique à `move_to_index` coup par coup.
+- `Node.select` : même calcul en moins d'opérations numpy (raccourci exact quand aucune visite : argmax des priors).
+- **Recherche en deux temps** : `MCTS.collect(k)` (descentes ; feuilles terminales ou exactes remontées tout de suite ; feuilles à évaluer renvoyées avec leurs coups légaux) puis `MCTS.apply(feuilles, priors, valeurs)`. **`search_batched(arbres, évaluateur, N, feuilles_par_arbre)`** ajoute N simulations à chaque arbre en envoyant les feuilles de tous les arbres dans un même appel au réseau. Test : visites et valeurs **identiques** à des `search` séparés (avec bruit de Dirichlet), lots réellement regroupés.
+- `NetEvaluator.evaluate` : envoie les positions compactes (67 octets) au device, les décode là (`encoding.unpack_batch_torch`, testé identique à `unpack_batch`), rassemble les logits des coups légaux et fait le softmax sur le device (fp16 automatique sur CUDA) ; seules les probabilités utiles reviennent. Test : mêmes priors et valeurs que l'ancien calcul (écart < 1e-5).
+- `scripts/bench_selfplay.py` : débit du self-play (P processus × G parties, `search_batched`, bruit et température 1 ; `--stub` = faux réseau pour le coût CPU seul), avec estimation des parties par heure pour 200 simulations par coup et deux réglages de « playout cap randomization ». À lancer sur Kaggle en 6e.
+
+### Mesures (i9-13900H, un thread torch par processus)
+
+| | ancien code | nouveau code |
+|---|---|---|
+| un arbre, lots de 8, faux réseau : position initiale / milieu / finale (simulations/s, 1 cœur) | 5 749 / 3 299 / 5 779 | 6 695 / 3 660 / 6 348 (+10 à +16 %) |
+| 64 parties en parallèle, 4 feuilles par arbre (lots de 254), faux réseau, 1 processus | — | 3 569 |
+| idem, 3 processus | — | **10 490** (3 497 par processus : montée linéaire) |
+
+- Le gain CPU pur est modeste (le softmax, désormais sur le GPU, n'est pas dans le faux réseau). Après optimisation, le profil est dominé par la sélection (≈ 29 %), les coups légaux de python-chess (≈ 27 %) et `push` (≈ 21 %) : il ne reste plus de gros gain facile en Python.
+- Essai avec le vrai réseau sur CPU (16 parties, lots de 61) : la chaîne complète fonctionne ; sur CPU le réseau prend 97 % du temps (attendu : sur GPU, c'est l'inverse).
+- **Estimation Kaggle (à mesurer en 6e)** : cœur Xeon environ 2 à 2,5 fois plus lent → 1 400 à 1 750 simulations/s par processus, 2 500 à 4 500 au total avec 3 processus et le coût réel des appels GPU, soit **450 à 800 parties/h à 200 simulations par coup** (100 demi-coups).
+- Non fait (gain incertain, à décider après la mesure Kaggle) : recouvrement CPU / GPU (deux moitiés de parties en alternance).
