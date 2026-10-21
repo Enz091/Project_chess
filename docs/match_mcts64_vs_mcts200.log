@@ -1,0 +1,87 @@
+MCTS-64 (A) contre MCTS-200 (B) : 80 parties, tables oui
+  1/80 Sicilienne Najdorf           A Blancs | B gagne | mat                  |  68 demi-coups | 32 s
+  2/80 Sicilienne Alapin            A Blancs | nulle   | triple répétition    | 109 demi-coups | 57 s
+  3/80 Sicilienne Najdorf           A Noirs  | B gagne | mat                  | 113 demi-coups | 58 s
+  4/80 Sicilienne Alapin            A Noirs  | B gagne | mat                  | 115 demi-coups | 63 s
+  5/80 Sicilienne Rossolimo         A Blancs | B gagne | mat                  |  66 demi-coups | 34 s
+  6/80 Sicilienne Rossolimo         A Noirs  | B gagne | mat                  |  37 demi-coups | 17 s
+  7/80 Française avance             A Noirs  | B gagne | mat                  |  71 demi-coups | 37 s
+  8/80 Française Winawer            A Blancs | B gagne | mat                  | 120 demi-coups | 55 s
+  9/80 Française Winawer            A Noirs  | B gagne | mat                  | 131 demi-coups | 65 s
+ 10/80 Française avance             A Blancs | B gagne | mat                  | 134 demi-coups | 66 s
+ 11/80 Caro-Kann classique          A Blancs | A gagne | mat                  | 117 demi-coups | 52 s
+ 12/80 Caro-Kann classique          A Noirs  | B gagne | mat                  | 127 demi-coups | 56 s
+ 13/80 Espagnole Berlin             A Noirs  | B gagne | mat                  |  85 demi-coups | 48 s
+ 14/80 Espagnole Berlin             A Blancs | B gagne | mat                  |  98 demi-coups | 61 s
+ 15/80 Italienne Giuoco piano       A Noirs  | B gagne | mat                  |  87 demi-coups | 71 s
+ 16/80 Italienne Giuoco piano       A Blancs | B gagne | mat                  | 122 demi-coups | 80 s
+ 17/80 Écossaise                    A Blancs | B gagne | mat                  | 108 demi-coups | 71 s
+ 18/80 Écossaise                    A Noirs  | nulle   | triple répétition    | 119 demi-coups | 82 s
+ 19/80 Petrov                       A Noirs  | B gagne | mat                  |  73 demi-coups | 36 s
+ 20/80 Petrov                       A Blancs | B gagne | mat                  | 112 demi-coups | 56 s
+ 21/80 Alekhine moderne             A Blancs | B gagne | mat                  |  62 demi-coups | 28 s
+ 22/80 Alekhine moderne             A Noirs  | nulle   | triple répétition    |  44 demi-coups | 20 s
+ 23/80 Pirc autrichienne            A Blancs | B gagne | mat                  | 156 demi-coups | 69 s
+ 24/80 Scandinave Qd6               A Noirs  | B gagne | mat                  |  73 demi-coups | 36 s
+ 25/80 Scandinave Qd6               A Blancs | B gagne | mat                  | 118 demi-coups | 62 s
+ 26/80 Gambit du roi accepté        A Blancs | B gagne | mat                  |  94 demi-coups | 47 s
+ 27/80 Viennoise                    A Blancs | nulle   | triple répétition    |  29 demi-coups | 13 s
+ 28/80 Pirc autrichienne            A Noirs  | B gagne | mat                  | 223 demi-coups | 109 s
+ 29/80 Viennoise                    A Noirs  | B gagne | mat                  |  59 demi-coups | 29 s
+ 30/80 Gambit du roi accepté        A Noirs  | B gagne | mat                  |  95 demi-coups | 48 s
+ 31/80 Gambit dame refusé orthodoxe A Blancs | B gagne | mat                  | 106 demi-coups | 54 s
+ 32/80 Gambit dame accepté          A Noirs  | B gagne | mat                  |  69 demi-coups | 34 s
+ 33/80 Gambit dame accepté          A Blancs | B gagne | mat                  | 138 demi-coups | 52 s
+ 34/80 Gambit dame refusé orthodoxe A Noirs  | B gagne | mat                  | 151 demi-coups | 81 s
+ 35/80 Slave                        A Blancs | B gagne | mat                  | 108 demi-coups | 55 s
+ 36/80 Slave                        A Noirs  | B gagne | mat                  | 137 demi-coups | 55 s
+ 37/80 Semi-slave                   A Blancs | nulle   | triple répétition    |  90 demi-coups | 46 s
+ 38/80 Semi-slave                   A Noirs  | B gagne | mat                  | 157 demi-coups | 70 s
+ 39/80 Nimzo-indienne               A Noirs  | B gagne | mat                  |  93 demi-coups | 44 s
+ 40/80 Nimzo-indienne               A Blancs | nulle   | triple répétition    | 109 demi-coups | 53 s
+ 41/80 Ouest-indienne               A Blancs | B gagne | mat                  | 118 demi-coups | 56 s
+ 42/80 Grünfeld échange             A Blancs | nulle   | triple répétition    |  27 demi-coups | 10 s
+ 43/80 Est-indienne classique       A Noirs  | B gagne | mat                  |  71 demi-coups | 31 s
+ 44/80 Est-indienne classique       A Blancs | B gagne | mat                  | 106 demi-coups | 51 s
+ 45/80 Ouest-indienne               A Noirs  | B gagne | mat                  | 103 demi-coups | 52 s
+ 46/80 Benoni moderne               A Blancs | B gagne | mat                  |  80 demi-coups | 39 s
+ 47/80 Benoni moderne               A Noirs  | B gagne | mat                  | 111 demi-coups | 45 s
+ 48/80 Grünfeld échange             A Noirs  | B gagne | mat                  | 133 demi-coups | 69 s
+ 49/80 Gambit Benko                 A Blancs | B gagne | mat                  | 158 demi-coups | 71 s
+ 50/80 Gambit Benko                 A Noirs  | B gagne | mat                  |  95 demi-coups | 46 s
+ 51/80 Catalane                     A Blancs | B gagne | mat                  |  82 demi-coups | 40 s
+ 52/80 Catalane                     A Noirs  | B gagne | mat                  |  87 demi-coups | 44 s
+ 53/80 Hollandaise Leningrad        A Blancs | B gagne | mat                  |  66 demi-coups | 34 s
+ 54/80 Hollandaise Leningrad        A Noirs  | B gagne | mat                  |  95 demi-coups | 47 s
+ 55/80 London                       A Blancs | B gagne | mat                  |  70 demi-coups | 37 s
+ 56/80 Trompowsky                   A Blancs | B gagne | mat                  | 136 demi-coups | 61 s
+ 57/80 Trompowsky                   A Noirs  | B gagne | mat                  | 121 demi-coups | 65 s
+ 58/80 London                       A Noirs  | B gagne | mat                  |  91 demi-coups | 48 s
+ 59/80 Anglaise quatre cavaliers    A Blancs | B gagne | mat                  |  56 demi-coups | 28 s
+ 60/80 Anglaise symétrique          A Noirs  | nulle   | triple répétition    |  89 demi-coups | 45 s
+ 61/80 Anglaise symétrique          A Blancs | B gagne | mat                  | 114 demi-coups | 60 s
+ 62/80 Anglaise quatre cavaliers    A Noirs  | B gagne | mat                  | 111 demi-coups | 45 s
+ 63/80 Réti                         A Blancs | B gagne | mat                  | 136 demi-coups | 65 s
+ 64/80 Polonaise 1.b4               A Noirs  | B gagne | mat                  |  75 demi-coups | 38 s
+ 65/80 Réti                         A Noirs  | B gagne | mat                  | 141 demi-coups | 71 s
+ 66/80 Polonaise 1.b4               A Blancs | B gagne | mat                  | 110 demi-coups | 60 s
+ 67/80 Grob 1.g4                    A Blancs | B gagne | mat                  |  92 demi-coups | 46 s
+ 68/80 Bird 1.f4                    A Blancs | B gagne | mat                  | 120 demi-coups | 46 s
+ 69/80 Grob 1.g4                    A Noirs  | nulle   | triple répétition    | 109 demi-coups | 61 s
+ 70/80 Larsen 1.b3                  A Blancs | B gagne | mat                  |  44 demi-coups | 20 s
+ 71/80 Bird 1.f4                    A Noirs  | B gagne | mat                  | 107 demi-coups | 58 s
+ 72/80 Larsen 1.b3                  A Noirs  | B gagne | mat                  |  73 demi-coups | 38 s
+ 73/80 Dunst 1.Nc3                  A Noirs  | B gagne | mat                  |  97 demi-coups | 48 s
+ 74/80 Dunst 1.Nc3                  A Blancs | B gagne | mat                  | 118 demi-coups | 64 s
+ 75/80 Nimzowitsch 1...Nc6          A Blancs | B gagne | mat                  | 110 demi-coups | 58 s
+ 76/80 Nimzowitsch 1...Nc6          A Noirs  | B gagne | mat                  |  75 demi-coups | 38 s
+ 77/80 Owen 1...b6                  A Blancs | nulle   | triple répétition    |  71 demi-coups | 37 s
+ 78/80 Owen 1...b6                  A Noirs  | B gagne | mat                  | 111 demi-coups | 48 s
+ 79/80 Budapest                     A Noirs  | nulle   | triple répétition    | 106 demi-coups | 46 s
+ 80/80 Budapest                     A Blancs | B gagne | mat                  | 128 demi-coups | 54 s
+
+MCTS-64 contre MCTS-200 : 6.5 / 80 (8.1%) ; A : 1 gains, 11 nulles, 68 défaites
+Écart d'Elo de A par rapport à B : 0 ± 76 (intervalle à 95 % : -76 à 76)
+Durée : 17.0 min
+
+[Corrigé après coup] L'écart affiché ci-dessus (0 ± 76) était faux : fit_elo est borné à [0, 4500] et B était placé à 0. Écart réel de A par rapport à B : -421 (± 139 à 95 %).

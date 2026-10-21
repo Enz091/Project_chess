@@ -1,0 +1,20 @@
+Lecture de https://database.lichess.org/standard/lichess_db_standard_rated_2026-01.pgn.zst
+  400000 parties lues, 27781 gardées, 23792 positions distinctes, 128 Mo lus, 97 s
+  2000000 parties lues, 137627 gardées, 112782 positions distinctes, 653 Mo lus, 315 s
+  3600000 parties lues, 254177 gardées, 198914 positions distinctes, 1180 Mo lus, 494 s
+4859418 parties lues, 340250 gardées, 337772 coupes valides, 261047 positions distinctes (629 s)
+  valeurs : 1024/261047 (540 pos/s, reste ~8.0 min)
+  valeurs : 21504/261047 (542 pos/s, reste ~7.4 min)
+  valeurs : 41984/261047 (544 pos/s, reste ~6.7 min)
+  valeurs : 62464/261047 (536 pos/s, reste ~6.2 min)
+  valeurs : 82944/261047 (537 pos/s, reste ~5.5 min)
+  valeurs : 103424/261047 (538 pos/s, reste ~4.9 min)
+  valeurs : 123904/261047 (538 pos/s, reste ~4.2 min)
+  valeurs : 144384/261047 (538 pos/s, reste ~3.6 min)
+  valeurs : 164864/261047 (538 pos/s, reste ~3.0 min)
+  valeurs : 185344/261047 (539 pos/s, reste ~2.3 min)
+  valeurs : 205824/261047 (539 pos/s, reste ~1.7 min)
+  valeurs : 226304/261047 (539 pos/s, reste ~1.1 min)
+  valeurs : 246784/261047 (539 pos/s, reste ~0.4 min)
+  valeurs : 261047/261047 (539 pos/s, reste ~0.0 min)
+Livre : 239361 positions (21686 écartées par la valeur, |v| > 0.3) -> C:\Users\Asus\Documents\Projet_chess\books\lichess_2000.tsv.gz ; demi-coups {8: 9866, 9: 12234, 10: 14582, 11: 16486, 12: 18144, 13: 19455, 14: 20746, 15: 21067, 16: 21515, 17: 21663, 18: 21615, 19: 21368, 20: 20620} ; premiers coups {'e2e4': 119580, 'd2d4': 73646, 'g1f3': 15600, 'c2c4': 13675, 'b2b3': 3767, 'f2f4': 2873}

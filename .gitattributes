@@ -17,5 +17,6 @@
 *.npy binary
 *.zip binary
 *.zst binary
+*.gz binary
 *.rtbw binary
 *.rtbz binary

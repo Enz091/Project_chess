@@ -1,0 +1,76 @@
+{
+ "sources": [
+  "https://database.lichess.org/standard/lichess_db_standard_rated_2026-01.pgn.zst"
+ ],
+ "filter": {
+  "min_elo": 2000,
+  "min_plies": 20,
+  "min_estimated_seconds": 180,
+  "allowed_terminations": [
+   "Normal",
+   "Time forfeit"
+  ],
+  "exclude_bots": true,
+  "val_fraction": 0.02
+ },
+ "min_ply": 8,
+ "max_ply": 20,
+ "max_abs_value": 0.3,
+ "checkpoint": "best.pt",
+ "games_read": 4859418,
+ "games_kept": 340250,
+ "valid_cuts": 337772,
+ "distinct_positions": 261047,
+ "positions_in_book": 225945,
+ "rejected_by_value": 21686,
+ "rejections": {
+  "rejet_elo": 3989267,
+  "rejet_bullet": 518302,
+  "rejet_val": 6621,
+  "rejet_termination": 807,
+  "rejet_time_control": 809,
+  "rejet_bot": 2935,
+  "rejet_result": 427
+ },
+ "plies": {
+  "8": 9694,
+  "9": 11973,
+  "10": 14183,
+  "11": 15867,
+  "12": 17354,
+  "13": 18438,
+  "14": 19553,
+  "15": 19726,
+  "16": 20094,
+  "17": 20206,
+  "18": 19982,
+  "19": 19819,
+  "20": 19056
+ },
+ "first_moves": {
+  "e2e4": 111938,
+  "d2d4": 69540,
+  "g1f3": 15270,
+  "c2c4": 12859,
+  "b2b3": 3571,
+  "f2f4": 2839,
+  "g2g3": 2607,
+  "e2e3": 1859,
+  "b1c3": 1277,
+  "d2d3": 1196,
+  "b2b4": 972,
+  "g2g4": 628
+ },
+ "value_quantiles": {
+  "0.05": -0.26596546173095703,
+  "0.25": -0.08488161861896515,
+  "0.5": 0.006420300807803869,
+  "0.75": 0.10135088860988617,
+  "0.95": 0.28770485520362854
+ },
+ "seconds": 1116,
+ "excluded_openings": "stockfish-ladder-v2 (40 ouvertures de scripts/ladder_openings.py)",
+ "excluded_through": 13404,
+ "excluded_on_path": 12,
+ "after_value_filter": 239361
+}
