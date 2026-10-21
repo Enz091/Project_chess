@@ -18,6 +18,13 @@ Utilisation par la recherche (`MCTS(..., tablebase=...)`) :
 
 Règle des 50 coups avec un compteur non nul (comme Stockfish, `Tablebases::root_probe`) : un gain de DTZ `d`
 depuis une position de compteur `c` n'est sûr que si `d + c <= 100`, sinon c'est une nulle.
+
+Mode « WDL seul » (`wdl_only=True`, self-play sur Kaggle : 396 Mo au lieu de 984) : sans DTZ, on ne peut pas
+vérifier la règle des 50 coups quand le compteur n'est pas nul ; ces positions sont donc déclarées NON couvertes
+(le réseau les évalue). Ce n'est pas une gêne en self-play : le nombre de pièces ne baisse que par une prise,
+donc la première position à ≤ 5 pièces d'une partie ou d'une variante suit toujours une prise (compteur 0), où
+la WDL est exacte. Le choix du coup à la racine (DTZ) est désactivé dans ce mode. Dans les deux modes, un gain
+« maudit » (+1) ou une perte « bénie » (−1) valent 0 : nulle par la règle des 50 coups.
 """
 
 from __future__ import annotations
@@ -36,12 +43,15 @@ class Tablebase:
     """Accès aux tables. `prober` (tests) remplace les fichiers : objet avec `probe_wdl` et `probe_dtz`."""
 
     def __init__(self, directory: str | Path | None = None, *, max_pieces: int = 5, prober=None,
-                 cache_size: int = 500_000):
+                 cache_size: int = 500_000, wdl_only: bool = False):
+        self.wdl_only = wdl_only
         if prober is None:
             directory = Path(directory if directory is not None else DEFAULT_DIR)
-            prober = chess.syzygy.open_tablebase(str(directory))
-            # pièces couvertes = plus grand nombre de pièces pour lequel les DEUX sortes de tables existent
-            have = {len(name) - 1 for name in prober.wdl} & {len(name) - 1 for name in prober.dtz}
+            prober = chess.syzygy.open_tablebase(str(directory), load_dtz=not wdl_only)
+            # pièces couvertes = plus grand nombre de pièces pour lequel les tables nécessaires existent toutes
+            have = {len(name) - 1 for name in prober.wdl}
+            if not wdl_only:
+                have &= {len(name) - 1 for name in prober.dtz}
             max_pieces = min(max_pieces, max(have, default=0))
             self.directory = directory
         else:
@@ -53,12 +63,12 @@ class Tablebase:
         self.probes = 0  # positions de l'arbre résolues par les tables (statistique)
 
     @classmethod
-    def open(cls, directory: str | Path | None = None, max_pieces: int = 5) -> Tablebase | None:
+    def open(cls, directory: str | Path | None = None, max_pieces: int = 5, wdl_only: bool = False) -> Tablebase | None:
         """Ouvre les tables si le dossier en contient, sinon None."""
         directory = Path(directory if directory is not None else DEFAULT_DIR)
         if not directory.is_dir():
             return None
-        tb = cls(directory, max_pieces=max_pieces)
+        tb = cls(directory, max_pieces=max_pieces, wdl_only=wdl_only)
         return tb if tb.max_pieces >= 3 else None
 
     def close(self) -> None:
@@ -66,12 +76,13 @@ class Tablebase:
             self.prober.close()
 
     def describe(self) -> str:
-        return f"Syzygy {self.max_pieces} pièces ({self.directory})"
+        return f"Syzygy {self.max_pieces} pièces{' (WDL seul)' if self.wdl_only else ''} ({self.directory})"
 
     # ---------------------------------------------------------------- sondage d'une position
 
     def covers(self, board: chess.Board) -> bool:
-        return chess.popcount(board.occupied) <= self.max_pieces and not board.castling_rights
+        return (chess.popcount(board.occupied) <= self.max_pieces and not board.castling_rights
+                and not (self.wdl_only and board.halfmove_clock > 0))
 
     def wdl(self, board: chess.Board) -> int | None:
         """Résultat exact pour le camp au trait (2, 1, 0, -1, -2), compteur des 50 coups compris, ou None."""
@@ -108,9 +119,10 @@ class Tablebase:
         """Pour chaque coup légal : (coup, DTZ comptée depuis `board` en incluant ce coup, mat immédiat ?).
 
         DTZ > 0 : le coup gagne, prochaine remise à zéro dans DTZ demi-coups ; < 0 : il perd ; 0 : nulle.
-        Même calcul que Stockfish (`root_probe`). None si la position n'est pas couverte ou si une table manque.
+        Même calcul que Stockfish (`root_probe`). None si la position n'est pas couverte ou si une table manque
+        (toujours None en mode WDL seul : il faut la DTZ).
         """
-        if not self.covers(board):
+        if self.wdl_only or not self.covers(board):
             return None
         from chesszero.mcts import terminal_value  # import local : mcts importe ce module
 

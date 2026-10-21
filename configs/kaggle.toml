@@ -33,3 +33,26 @@ fpu_reduction = 0.2      # Q d'un coup jamais visité = Q(nœud, camp qui choisi
 dirichlet_alpha = 0.3    # bruit de la racine (valeur AlphaZero pour les échecs)
 dirichlet_epsilon = 0.0  # 0 = pas de bruit ; 0,25 en self-play
 temperature = 0.0        # 0 = coup le plus visité ; 1 en début de partie en self-play
+
+# Self-play (étape 6c), plan validé le 2026-10-21 (voir CLAUDE.md et docs/journal.md).
+[selfplay]
+simulations = 200              # nouvelles simulations par coup, toutes enregistrées (pas de playout cap randomization)
+leaves_per_tree = 4            # feuilles par arbre et par appel au réseau (lots de games_per_worker x 4)
+games_per_worker = 64          # parties menées ensemble par processus (à ajuster après la mesure Kaggle, 6e)
+dirichlet_alpha = 0.3
+dirichlet_epsilon = 0.25       # bruit neuf à la racine à chaque coup
+temperature = 1.0
+temperature_plies = 30         # tirage selon les visites tant que le demi-coup de la partie est < 30
+temperature_min_visit_ratio = 0.1  # seulement parmi les coups à >= 10 % des visites du meilleur
+book_fraction = 0.9            # 90 % des parties partent du livre, 10 % de la position initiale
+resign_threshold = -0.90       # Q racine ET Q du meilleur coup sous ce seuil...
+resign_consecutive = 3         # ... pendant 3 coups d'affilée du même camp...
+resign_min_ply = 20            # ... à partir du demi-coup 20
+no_resign_fraction = 0.10      # parties de contrôle (sans abandon) : mesure des faux abandons
+max_plies = 400                # nulle au-delà
+tablebase_pieces = 5           # arbitrage par les tables dès 5 pièces (WDL seul suffit)
+shard_games = 100              # un fichier tous les 100 parties...
+shard_minutes = 10.0           # ... ou toutes les 10 minutes
+buffer_positions = 500000      # fenêtre du tampon gardée d'une session à l'autre
+stop_new_games_minutes = 20.0  # plus de nouvelles parties 20 min avant la fin du budget
+hard_stop_minutes = 5.0        # arrêt 5 min avant la fin (parties inachevées perdues)
