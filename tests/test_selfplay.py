@@ -227,3 +227,20 @@ def test_deadlines_stop_new_games_and_drop_unfinished(tmp_path):
     stats = run_selfplay(Stub(), cfg, cfg.mcts_config(MCTSConfig()), writer, np.random.default_rng(0), "t",
                          soft_deadline=now - 1, hard_deadline=now - 1)
     assert stats["games"] == 0 and writer.written == []
+
+
+# --------------------------------------------------------------------------- indicateur des répétitions précoces
+
+
+def test_repetition_stats_by_ply_and_material():
+    from chesszero.selfplay import T_MATE, T_REPETITION, repetition_stats
+
+    shuffle = "g1f3 g8f6 f3g1 f6g8 g1f3 g8f6 f3g1 f6g8"  # position initiale vue 3 fois : demi-coup 8, matériel 78
+    data = {"game_uid": np.array(["a", "b", "c"]), "result_white": np.array([0, 0, 1], dtype=np.int8),
+            "termination": np.array([T_REPETITION, T_MAX_PLIES, T_MATE], dtype=np.uint8),
+            "game_moves": np.array([shuffle, "e2e4", "f2f3 e7e5 g2g4 d8h4"])}
+    s = repetition_stats([data])
+    assert s["games"] == 3 and s["draws"] == 2 and s["repetition_draws"] == 1
+    assert s["share_of_games"] == pytest.approx(1 / 3) and s["share_of_draws"] == pytest.approx(0.5)
+    assert s["by_ply"]["< 60"] == 1 and sum(s["by_ply"].values()) == 1
+    assert s["by_material"][">= 60 (presque complet)"] == 1 and s["median_material"] == 78

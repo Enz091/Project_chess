@@ -406,6 +406,54 @@ def run_selfplay(evaluator, cfg: SelfPlayConfig, mcts_cfg: MCTSConfig, writer: S
     return stats
 
 
+# --------------------------------------------------------------------------- statistiques de session
+
+PIECE_POINTS = {chess.PAWN: 1, chess.KNIGHT: 3, chess.BISHOP: 3, chess.ROOK: 5, chess.QUEEN: 9, chess.KING: 0}
+PLY_BINS = [(0, 60, "< 60"), (60, 100, "60-99"), (100, 150, "100-149"), (150, 200, "150-199"), (200, 10**6, ">= 200")]
+MATERIAL_BINS = [(60, 999, ">= 60 (presque complet)"), (40, 60, "40-59"), (20, 40, "20-39"), (0, 20, "< 20 (finale)")]
+
+
+def material_points(board: chess.Board) -> int:
+    """Matériel des deux camps en points (P 1, N/B 3, R 5, Q 9) : 78 dans la position initiale."""
+    return sum(PIECE_POINTS[p.piece_type] for p in board.piece_map().values())
+
+
+def repetition_stats(shards: list[dict]) -> dict:
+    """Indicateur des répétitions précoces : parties nulles par triple répétition, réparties par demi-coup de la
+    fin et par matériel restant. Sert à décider (après les premières sessions Kaggle) s'il faut traiter la double
+    répétition comme une nulle dans l'arbre."""
+    games = draws = 0
+    reps: list[tuple[int, int]] = []  # (demi-coups, matériel restant)
+    for data in shards:
+        for g in range(len(data["game_uid"])):
+            games += 1
+            draws += int(data["result_white"][g]) == 0
+            if int(data["termination"][g]) == T_REPETITION:
+                board = chess.Board()
+                for uci in str(data["game_moves"][g]).split():
+                    board.push_uci(uci)
+                reps.append((len(board.move_stack), material_points(board)))
+    by_ply = {label: sum(lo <= p < hi for p, _ in reps) for lo, hi, label in PLY_BINS}
+    by_material = {label: sum(lo <= m < hi for _, m in reps) for lo, hi, label in MATERIAL_BINS}
+    return {"games": games, "draws": draws, "repetition_draws": len(reps),
+            "share_of_games": len(reps) / games if games else 0.0,
+            "share_of_draws": len(reps) / draws if draws else 0.0,
+            "by_ply": by_ply, "by_material": by_material,
+            "median_ply": float(np.median([p for p, _ in reps])) if reps else None,
+            "median_material": float(np.median([m for _, m in reps])) if reps else None}
+
+
+def describe_repetitions(s: dict) -> str:
+    lines = [f"Nulles par triple répétition : {s['repetition_draws']} sur {s['games']} parties "
+             f"({s['share_of_games']:.1%} des parties, {s['share_of_draws']:.1%} des {s['draws']} nulles)"]
+    if s["repetition_draws"]:
+        lines.append("  par demi-coup de la fin : " + ", ".join(f"{k} : {v}" for k, v in s["by_ply"].items()))
+        lines.append("  par matériel restant (points, 78 au départ) : "
+                     + ", ".join(f"{k} : {v}" for k, v in s["by_material"].items()))
+        lines.append(f"  médianes : demi-coup {s['median_ply']:.0f}, matériel {s['median_material']:.0f}")
+    return "\n".join(lines)
+
+
 # --------------------------------------------------------------------------- vérification d'un shard
 
 

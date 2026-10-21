@@ -17,6 +17,7 @@ Déroulement :
 """
 
 import argparse
+import json
 import multiprocessing as mp
 import sys
 import time
@@ -130,6 +131,29 @@ def main() -> None:
           f"{sum(r['eval_seconds'] for r in results) / max(sum(r['seconds'] for r in results), 1e-9):.0%} du temps")
     print(f"Tampon : {s['shards']} shards, {s['positions']} positions ({s['removed']} shards sortis de la fenêtre) ; "
           f"{len(list_shards([args.out]))} shards dans {args.out}")
+
+    # statistiques de la session (parties de CETTE session seulement), affichées et gardées dans sessions/
+    from chesszero.selfplay import describe_repetitions, load_shard, repetition_stats
+
+    own = [load_shard(Path(args.out) / name) for r in results for name in r["shards"]]
+    reps = repetition_stats(own)
+    print(describe_repetitions(reps))
+    controls = sum(int(d["control"].sum()) for d in own)
+    triggered = [(d, g, c) for d in own for g in np.nonzero(d["control"])[0] for c in (0, 1)
+                 if int(d["would_resign"][g][c]) >= 0]
+    false = sum(int(d["result_white"][g]) != (-1 if c == 0 else 1) for d, g, c in triggered)
+    print(f"Parties de contrôle : {controls} ; abandons qui se seraient déclenchés : {len(triggered)} ; faux : {false}")
+    stats = {"session": session, "generation": args.generation, "checkpoint": Path(args.checkpoint).name,
+             "workers": args.workers, "minutes": seconds / 60, "games": games, "positions": positions,
+             "simulations_per_second": sims / seconds, "games_per_hour": games / seconds * 3600,
+             "terminations": {t: int(n) for t, n in zip(TERMINATIONS, terms)},
+             "unfinished_dropped": sum(r["unfinished_dropped"] for r in results),
+             "repetitions": reps, "control_games": controls, "resign_triggered_in_control": len(triggered),
+             "false_resignations": false, "shards": [n for r in results for n in r["shards"]]}
+    out = Path(args.out) / "sessions"
+    out.mkdir(parents=True, exist_ok=True)
+    (out / f"{session}.json").write_text(json.dumps(stats, ensure_ascii=False, indent=1) + "\n",
+                                         encoding="utf-8", newline="\n")
 
 
 if __name__ == "__main__":

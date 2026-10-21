@@ -34,16 +34,18 @@ def main() -> None:
     args = ap.parse_args()
 
     from chesszero.book import OpeningBook
-    from chesszero.selfplay import TERMINATIONS, T_RESIGN, SelfPlayConfig, list_shards, load_shard, verify_shard
+    from chesszero.selfplay import (TERMINATIONS, T_RESIGN, SelfPlayConfig, describe_repetitions, list_shards,
+                                    load_shard, repetition_stats, verify_shard)
     from chesszero.syzygy import Tablebase
 
     cfg = SelfPlayConfig.named(args.config)
     tb = Tablebase.open(args.syzygy, wdl_only=True) if args.syzygy else None
     book = OpeningBook.load(args.book) if args.book and Path(args.book).exists() else None
     shards = sorted(list_shards(args.dirs), key=lambda s: s["name"])
-    games, n_positions, errors = [], 0, []
+    games, n_positions, errors, loaded = [], 0, [], []
     for s in shards:
         data = load_shard(s["npz"])
+        loaded.append(data)
         errs = verify_shard(data, cfg, tb)
         errors += [f"{s['name']} : {e}" for e in errs]
         n_positions += len(data["played"])
@@ -74,6 +76,7 @@ def main() -> None:
     print("Fins : " + ", ".join(f"{TERMINATIONS[t]} {n}" for t, n in sorted(Counter(int(g['termination']) for g in games).items())))
     res = Counter(int(g["result_white"]) for g in games)
     print(f"Résultats : Blancs gagnent {res[1]}, nulles {res[0]}, Noirs gagnent {res[-1]}")
+    print(describe_repetitions(repetition_stats(loaded)))
     visits = [v for g in games for v in g["visits"]]
     print(f"Visites à la racine (réutilisation de l'arbre comprise) : moyenne {statistics.mean(visits):.0f}, "
           f"min {min(visits)}, max {max(visits)} (simulations par coup : {cfg.simulations})")
