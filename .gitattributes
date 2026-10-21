@@ -1,3 +1,21 @@
-# Fins de ligne normalisées (le code tourne aussi sous Linux sur Kaggle)
-* text=auto
-*.sh text eol=lf
+# Fins de ligne : LF partout, dans le dépôt ET dans la copie de travail, sur Windows comme sous Linux (Kaggle).
+# `eol=lf` l'emporte sur `core.autocrlf=true` (réglage par défaut de Git pour Windows), qui convertissait les
+# fichiers en CRLF à l'extraction : les outils qui écrivent en LF faisaient alors apparaître des fichiers
+# « modifiés » dont seules les fins de ligne avaient changé.
+* text=auto eol=lf
+
+# Scripts Windows : cmd.exe lit mal les .bat en LF (étiquettes, blocs entre parenthèses).
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binaires : jamais de conversion.
+*.png binary
+*.jpg binary
+*.pt binary
+*.npz binary
+*.npy binary
+*.zip binary
+*.zst binary
+*.rtbw binary
+*.rtbz binary

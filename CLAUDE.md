@@ -50,6 +50,7 @@ pip install -e .        # NE PAS réinstaller torch : garder le torch CUDA de Ka
 | `weights_only=False` au chargement | Nécessaire pour les états RNG Python/NumPy. Ne charger que nos propres checkpoints. |
 | `data/` et `checkpoints/` hors de git | Trop volumineux. Sur Kaggle, ils passent par les Datasets et le dossier de sortie. |
 | Scripts dans `scripts/`, logique dans le package | Le notebook Kaggle reste minimal : il clone le dépôt puis lance un script. |
+| `.gitattributes` : `* text=auto eol=lf`, `*.bat` en CRLF, binaires marqués | LF partout (dépôt et copie de travail, Windows et Kaggle) : `core.autocrlf=true` de Git pour Windows ne crée plus de fichiers « modifiés » par les seules fins de ligne. |
 
 ## Arborescence
 
