@@ -56,3 +56,38 @@ shard_minutes = 10.0           # ... ou toutes les 10 minutes
 buffer_positions = 500000      # fenêtre du tampon gardée d'une session à l'autre
 stop_new_games_minutes = 20.0  # plus de nouvelles parties 20 min avant la fin du budget
 hard_stop_minutes = 5.0        # arrêt 5 min avant la fin (parties inachevées perdues)
+
+# Entraînement sur le self-play (étape 6d), choix validés le 2026-10-22 (voir CLAUDE.md et docs/journal.md).
+[selfplay_train]
+batch_size = 1024
+lr = 2e-4                      # constant après la montée...
+lr_start = 2e-5                # ... depuis 2e-5 (fin du pré-entraînement) sur 300 pas ; AdamW neuf
+warmup_steps = 300
+lr_min = 2.5e-5                # plancher après des divisions par 2 (G1)
+weight_decay = 0.01
+grad_clip = 1.0
+buffer_positions = 500000      # fenêtre du tampon
+reuse = 4.0                    # passages moyens par nouvelle position (1 pas pour 192 nouvelles à 25 % humain)
+reduced_reuse = 2.0            # après un rejet pour surapprentissage
+max_views_per_round = 1.0      # plafond : 1 passage moyen par position du tampon dans un même tour
+min_buffer_positions = 250000  # premier tour seulement quand le tampon (hors parties de côté) atteint ce nombre
+human_fraction = 0.25          # positions Lichess par lot (composition exacte)...
+human_fraction_late = 0.10     # ... puis 10 %...
+human_switch_generation = 5    # ... à partir de la 6e génération acceptée
+value_target = "result"        # "blend" = (résultat + Q racine) / 2, à évaluer (scripts/eval_value_target.py)
+heldout_fraction = 0.10        # parties de self-play mises de côté (surapprentissage, évaluation)
+lichess_val_positions = 50000  # sous-ensemble fixe de la validation Lichess
+early_generations = 5          # G1 / G2 stricts pendant ces générations
+g1_policy_loss = 0.05
+g2_top1_points = 3.0
+catastrophic_policy_loss = 0.15  # ensuite : rejet seulement au-delà
+catastrophic_top1_points = 10.0
+jump_policy_loss = 0.05        # alerte : chute brutale depuis la génération précédente
+jump_top1_points = 2.0
+g3_value_loss = 0.05           # alerte : perte de valeur Lichess
+max_rejections = 3             # G4
+save_every = 100
+log_every = 20
+amp = "auto"
+num_workers = 3
+seed = 0
