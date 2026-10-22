@@ -100,7 +100,10 @@ catastrophic_top1_points = 10.0
 jump_policy_loss = 0.05        # alerte : chute brutale depuis la génération précédente
 jump_top1_points = 2.0
 g3_value_loss = 0.05           # alerte : perte de valeur Lichess
-max_rejections = 3             # G4
+max_rejections = 3             # G4 (rejets par les garde-fous d'affilée)
+max_arena_rejections = 5       # étape 7 : arrêt après 5 rejets en arène d'affilée (stagnation)
+anchor_stop_generations = 2    # étape 7 : arrêt si l'accepté est sous kaggle_sup (borne haute < 0) sur 2 générations
+anchor_stop_from_generation = 3  # ... consécutives, générations >= 3 seulement (premier arrêt possible : génération 4)
 save_every = 100
 log_every = 20
 amp = "auto"

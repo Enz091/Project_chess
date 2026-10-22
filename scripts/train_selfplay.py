@@ -6,12 +6,20 @@
   train_selfplay.py --out data/sp_train_essai --buffer data/selfplay_essai --human data/lichess_2000 \\
                     --batch-size 64 --steps 200 --force --lichess-val 2000 --stop-after 100
 
-Sorties dans --out : train_state.pt (reprise), accepted.pt (dernier réseau accepté), generations/gen_XXXX.pt,
-rounds.jsonl (métriques et décision de chaque tour), train_log.jsonl (pertes pendant les tours).
-Code de sortie : 0 accepté ou en attente, 1 rejeté, 2 arrêt G4, 3 interrompu (--stop-after).
+  # verdict de l'arène pour le candidat en attente (résumés = result.json de scripts/arena.py)
+  train_selfplay.py --out ... --commit-arena 7 --gate loop/arena/cand_0007_gate/result.json                     [--anchor loop/arena/cand_0007_anchor/result.json]
+  train_selfplay.py --out ... --status          # état (source de vérité : train_state.pt)
+  train_selfplay.py --out ... --clear-stop "raison"   # reprise après un arrêt, sur décision humaine
+
+Sorties dans --out : train_state.pt (reprise et SOURCE DE VÉRITÉ), line_ok.pt (dernier état qui a passé les
+garde-fous), candidate.pt (candidat en attente de l'arène), generations/gen_XXXX.pt (acceptés en arène),
+rounds.jsonl (tours et verdicts d'arène), train_log.jsonl (pertes pendant les tours).
+Code de sortie d'un tour : 0 candidat prêt ou en attente de données, 1 rejeté par les garde-fous, 2 arrêt,
+3 interrompu (--stop-after). Verdict : 0 accepté, 1 rejeté, 2 arrêt.
 """
 
 import argparse
+import json
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import replace
@@ -38,6 +46,12 @@ def main() -> None:
     ap.add_argument("--value-target", choices=["result", "blend"], default=None)
     ap.add_argument("--lichess-val", type=int, default=None, help="positions de validation Lichess")
     ap.add_argument("--workers", type=int, default=None, help="processus pour les masques Lichess (0 = aucun)")
+    ap.add_argument("--commit-arena", type=int, default=None, metavar="CANDIDAT",
+                    help="applique le verdict de l'arène au candidat (avec --gate et, après la génération 1, --anchor)")
+    ap.add_argument("--gate", default=None, help="result.json de l'arène contre le réseau accepté")
+    ap.add_argument("--anchor", default=None, help="result.json de l'arène contre l'ancre kaggle_sup")
+    ap.add_argument("--clear-stop", default=None, metavar="NOTE", help="reprise après un arrêt (décision humaine)")
+    ap.add_argument("--status", action="store_true", help="affiche l'état et s'arrête")
     args = ap.parse_args()
 
     import torch
@@ -51,6 +65,27 @@ def main() -> None:
                                    ("lichess_val_positions", args.lichess_val), ("num_workers", args.workers))
                  if v is not None}
     cfg = replace(cfg, **overrides)
+    if args.status:
+        from chesszero.selfplay_train import read_train_state
+
+        print(json.dumps(read_train_state(args.out), ensure_ascii=False, indent=1, default=str))
+        return
+    if args.commit_arena is not None or args.clear_stop is not None:
+        from chesszero.arena import ArenaConfig
+
+        trainer = SelfPlayTrainer(args.out, cfg, "cpu", args.init)
+        if args.clear_stop is not None:
+            print(trainer.clear_stop(args.clear_stop))
+            return
+        load = lambda p: json.loads(Path(p).read_text(encoding="utf-8"))["summary"] if p else None
+        if not args.gate:
+            sys.exit("--commit-arena demande --gate")
+        c = trainer.commit_arena(args.commit_arena, load(args.gate), load(args.anchor), ArenaConfig.named(args.config))
+        print(f"Candidat {args.commit_arena} : {'ACCEPTÉ' if c['accepted'] else 'REJETÉ'} (génération acceptée : "
+              f"{c['generation_after']}, rejets en arène d'affilée : {c['arena_rejections']})")
+        for r in c["reasons"] + c["alerts"]:
+            print(f"  {r}")
+        sys.exit(2 if c["loop_status"] == "stop" else (0 if c["accepted"] else 1))
     if args.threads:
         torch.set_num_threads(args.threads)
     device = get_device(args.device)
@@ -90,9 +125,9 @@ def main() -> None:
         print(f"  REJET : {r}")
     for a in result["alerts"]:
         print(f"  ALERTE : {a}")
-    if result.get("checkpoint"):
-        print(f"  Réseau accepté : {Path(args.out) / result['checkpoint']}")
-    sys.exit(0 if status == "accepted" else (2 if result["loop_status"] == "stop" else 1))
+    if status == "candidate":
+        print(f"  Candidat {result['candidate']} : {Path(args.out) / 'candidate.pt'} (verdict : --commit-arena)")
+    sys.exit(0 if status == "candidate" else (2 if result["loop_status"] == "stop" else 1))
 
 
 if __name__ == "__main__":

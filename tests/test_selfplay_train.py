@@ -127,7 +127,7 @@ def test_guards_overfitting_on_heldout_selfplay_rejects():
 def test_round_trains_with_exact_human_share_and_loss_decreases(world):
     t = trainer(world, "run")
     res = t.run_round([world["buffer"]], world["human"], world["val"], steps_override=60)
-    assert res["status"] in ("accepted", "rejected")
+    assert res["status"] in ("candidate", "rejected")
     log = [json.loads(l) for l in (world["root"] / "run" / "train_log.jsonl").read_text(encoding="utf-8").splitlines()]
     assert all(row["human_share"] == pytest.approx(4 / 16) for row in log)
     assert log[-1]["sp_policy"] < log[0]["sp_policy"] and log[-1]["loss"] < log[0]["loss"]
@@ -154,11 +154,11 @@ def test_resume_after_interruption_is_identical(world):
     assert losses("full") == losses("cut")  # journal identique aussi (fenêtre de moyenne reprise)
 
 
-def test_accepted_generation_is_a_loadable_checkpoint(world):
+def test_candidate_is_a_loadable_checkpoint_and_not_yet_a_generation(world):
     t = trainer(world, "gen", cfg=replace(CFG, g1_policy_loss=10, g2_top1_points=100))
     res = t.run_round([world["buffer"]], world["human"], world["val"], steps_override=10)
-    assert res["status"] == "accepted" and t.state["generation"] == 1
-    model, meta = load_for_inference(world["root"] / "gen" / res["checkpoint"])
+    assert res["status"] == "candidate" and t.state["generation"] == 0  # c'est l'arène qui accepte (étape 7b)
+    model, meta = load_for_inference(world["root"] / "gen" / "candidate.pt")
     assert meta["step"] == 10
 
 
@@ -177,6 +177,7 @@ def test_g4_stops_after_three_rejections(world):
     for _ in range(3):
         res = t.run_round([world["buffer"]], world["human"], world["val"], steps_override=3)
     assert res["loop_status"] == "stop" and any("G4" in a for a in res["alerts"])
+    assert t.state["stop_reason"] == "G4" and t.state["arena_rejections"] == 0
     with pytest.raises(RuntimeError):
         t.run_round([world["buffer"]], world["human"], world["val"], steps_override=3)
 

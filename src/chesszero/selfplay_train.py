@@ -14,9 +14,12 @@ Un TOUR = un réseau candidat :
      `value_valid` ; perte moyenne par position (chaque part pèse selon sa place dans le lot) ;
   4. taux : AdamW neuf au départ, montée linéaire de `lr_start` (2e-5) à `lr` (2e-4) sur `warmup_steps` (300) pas,
      puis constant, multiplié par `lr_scale` (divisé par 2 par le garde-fou G1) ;
-  5. évaluation et décision (`decide`), puis : accepté -> `generations/gen_XXXX.pt` (+ état « accepté ») ;
-     rejeté -> retour aux poids et à l'optimiseur du dernier réseau accepté, réaction automatique, et le tour
-     sera refait sur les mêmes données.
+  5. garde-fous (`decide`) : passés -> le tour devient le CANDIDAT (`candidate.pt`), en attente de l'arène
+     (étape 7) ; non passés -> retour aux poids et à l'optimiseur du dernier état qui les a passés (`line_ok.pt`),
+     réaction automatique, et le tour sera refait sur les mêmes données ;
+  6. verdict de l'arène (`commit_arena`) : accepté -> `generations/gen_XXXX.pt`, génération + 1 ; rejeté -> la
+     ligne d'entraînement CONTINUE (comme AlphaGo Zero : rien n'est défait), seul le self-play garde l'ancien
+     réseau. Les générations comptées (part humaine, garde-fous stricts) sont celles acceptées en arène.
 
 Reprise : les lots d'un tour ne dépendent que de (graine, n° de tour, pas) et de la liste des shards fixée au début
 du tour (enregistrée) ; `train_state.pt` est écrit tous les `save_every` pas : une reprise après coupure donne
@@ -27,6 +30,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import time
 import tomllib
 import zlib
@@ -74,7 +78,10 @@ class SelfPlayTrainConfig:
     jump_policy_loss: float = 0.05  # alerte : chute brutale par rapport à la génération précédente
     jump_top1_points: float = 2.0
     g3_value_loss: float = 0.05  # alerte : hausse de la perte de valeur Lichess
-    max_rejections: int = 3  # G4 : arrêt après autant de rejets d'affilée
+    max_rejections: int = 3  # G4 : arrêt après autant de rejets d'affilée par les garde-fous
+    max_arena_rejections: int = 5  # arrêt (stagnation) après autant de rejets en arène d'affilée
+    anchor_stop_generations: int = 2  # arrêt si l'accepté est sous l'ancre sur autant de générations consécutives...
+    anchor_stop_from_generation: int = 3  # ... en ne comptant que les générations >= celle-ci (1er arrêt possible : 4)
     save_every: int = 100
     log_every: int = 20
     amp: str = "auto"  # fp16 + GradScaler sur CUDA seulement
@@ -366,17 +373,52 @@ def plan_steps(new_positions: int, buffer_train_positions: int, cfg: SelfPlayTra
 
 
 def _atomic_torch_save(obj, path: Path) -> None:
+    """Écrit dans `<path>.tmp`, force sur disque, puis renomme : `path` est soit l'ancien, soit le nouveau."""
     tmp = path.with_name(path.name + ".tmp")
-    torch.save(obj, tmp)
+    with open(tmp, "wb") as f:
+        torch.save(obj, f)
+        f.flush()
+        os.fsync(f.fileno())
     tmp.replace(path)
 
 
+STATE_FORMAT = 2  # 1 = étape 6d (acceptation par les garde-fous seuls) ; 2 = étape 7b (candidat puis arène)
+
+
+def _new_state_fields(init_sha: str | None) -> dict:
+    """Champs de l'état ajoutés en 7b (format 2)."""
+    return {
+        "format": STATE_FORMAT,
+        "candidate": None,  # candidat en attente du verdict de l'arène (voir `_finish_round`)
+        "arena_rejections": 0,  # rejets en arène d'affilée (les rejets par les garde-fous n'y comptent pas)
+        "accepted": {"generation": 0, "file": None, "sha256": init_sha, "anchor": None, "anchor_source": "identité"},
+        "anchor_history": [],  # mesure contre l'ancre de chaque génération acceptée
+        "anchor_stop_ack": 0,  # générations <= cette valeur ignorées par l'arrêt sur l'ancre (après --clear-stop)
+        "commits": [],  # verdicts d'arène déjà appliqués (un verdict rejoué ne fait rien)
+        "line_ok_round": None,  # tour du point de retour `line_ok.pt` (None = réseau de départ)
+        "stop_reason": None,
+    }
+
+
+def _sha256(path: Path) -> str:
+    from chesszero.arena import sha256_file
+
+    return sha256_file(path)
+
+
 class SelfPlayTrainer:
-    """État de l'entraînement sur le self-play dans `out_dir` :
-      train_state.pt  modèle et optimiseur courants, pas, tour en cours (shards, pas faits), compteurs ;
-      accepted.pt     modèle et optimiseur du dernier réseau accepté (point de retour d'un rejet) ;
-      generations/gen_XXXX.pt  réseaux acceptés (format de checkpoint habituel : load_for_inference) ;
-      rounds.jsonl    une ligne par tour (métriques, décision) ; train_log.jsonl : pertes pendant les tours.
+    """État de l'entraînement sur le self-play dans `out_dir` (format 2, étape 7b) :
+      train_state.pt  SOURCE DE VÉRITÉ : modèle et optimiseur de la ligne d'entraînement, pas, tour en cours,
+                      candidat en attente, génération acceptée (fichier + SHA-256 + mesure contre l'ancre),
+                      rejets en arène, historique contre l'ancre, arrêt (lu par `read_train_state`) ;
+      line_ok.pt      modèle et optimiseur du dernier état qui a passé les garde-fous (point de retour d'un rejet
+                      par les garde-fous ; régénéré depuis train_state.pt s'il ne correspond pas au tour attendu) ;
+      candidate.pt    candidat en attente (format load_for_inference) ; ignoré s'il n'est pas référencé ;
+      generations/gen_XXXX.pt  réseaux acceptés EN ARÈNE (format load_for_inference + résultats des arènes) ;
+                      un fichier non référencé par train_state.pt (coupure) est ignoré puis écrasé ;
+      rounds.jsonl    une ligne par tour et par verdict d'arène ; train_log.jsonl : pertes pendant les tours.
+    Ordre d'écriture : fichiers de données (atomiques) puis train_state.pt (point de validation), puis line_ok.pt
+    et les journaux (régénérés ou complétés sans doublon à la reprise).
     """
 
     def __init__(self, out_dir: str | Path, cfg: SelfPlayTrainConfig, device: torch.device | str,
@@ -386,8 +428,10 @@ class SelfPlayTrainer:
         self.cfg, self.device, self.log = cfg, torch.device(device), log
         self.use_amp = cfg.amp == "on" or (cfg.amp == "auto" and self.device.type == "cuda")
         state_path = self.out / "train_state.pt"
-        if state_path.exists():
+        fresh = not state_path.exists()
+        if not fresh:
             self.state = torch.load(state_path, map_location="cpu", weights_only=False)
+            self._migrate()
             model_cfg = ModelConfig(**self.state["model_config"])
         else:
             if init_checkpoint is None:
@@ -400,6 +444,7 @@ class SelfPlayTrainer:
                 "human_sticky_25": False, "trained_shards": [], "consecutive_rejections": 0, "baseline": None,
                 "previous": None, "history": [], "round": None, "status": "ok",
                 "init_checkpoint": str(init_checkpoint), "init_step": payload.get("step"),
+                **_new_state_fields(_sha256(Path(init_checkpoint))),
             }
         self.model = build_model(model_cfg).to(self.device)
         self.model.load_state_dict(self.state["model"])
@@ -413,10 +458,49 @@ class SelfPlayTrainer:
         self.scaler = torch.amp.GradScaler("cuda", enabled=self.use_amp)
         if self.state["scaler"] is not None and self.use_amp:
             self.scaler.load_state_dict(self.state["scaler"])
-        if not (self.out / "accepted.pt").exists():
-            self._save_accepted()
+        if fresh:  # lisible tout de suite par read_train_state (réseau de départ et son SHA-256)
+            self._save_state()
+        self._check_line_ok()
 
     # ---------------------------------------------------------------- état
+
+    def _migrate(self) -> None:
+        """État de l'étape 6d (format 1) -> format 2. Refusé s'il contient des générations : elles ont été
+        acceptées par les garde-fous seuls, sans arène."""
+        st = self.state
+        if st.get("format", 1) >= STATE_FORMAT:
+            return
+        if st["generation"] > 0:
+            raise RuntimeError(f"{self.out} : état de l'étape 6d avec {st['generation']} génération(s) acceptées sans "
+                               "arène ; repartir d'un dossier neuf (le tampon, lui, reste utilisable)")
+        init = Path(st.get("init_checkpoint") or "")
+        st.update(_new_state_fields(_sha256(init) if init.is_file() else None))
+        old = self.out / "accepted.pt"
+        if old.exists():
+            if not (self.out / "line_ok.pt").exists():
+                payload = torch.load(old, map_location="cpu", weights_only=False)
+                _atomic_torch_save({**payload, "round": None}, self.out / "line_ok.pt")
+            old.replace(old.with_name("accepted.pt.migre"))  # gardé (renommé), jamais supprimé
+        _atomic_torch_save(st, self.out / "train_state.pt")
+        self.log(f"État de l'étape 6d migré au format {STATE_FORMAT} (accepted.pt -> line_ok.pt ; ancien fichier "
+                 "gardé sous accepted.pt.migre)")
+
+    def _check_line_ok(self) -> None:
+        """`line_ok.pt` doit être le point du tour `line_ok_round`. Après une coupure entre la validation d'un
+        candidat (train_state.pt) et l'écriture de line_ok.pt, il est régénéré depuis train_state.pt, qui contient
+        à ce moment-là exactement l'état du candidat (aucun tour n'a pu commencer depuis)."""
+        path = self.out / "line_ok.pt"
+        expected = self.state["line_ok_round"]
+        if path.exists():
+            current = torch.load(path, map_location="cpu", weights_only=False).get("round", "absent")
+            if current == expected:
+                return
+            if self.state["round"] is not None:
+                raise RuntimeError(f"{path} (tour {current}) ne correspond pas au tour {expected} et un tour est en "
+                                   "cours : état incohérent")
+        elif self.state["round"] is not None and expected is not None:
+            raise RuntimeError(f"{path} manquant pendant un tour : état incohérent")
+        self._save_line_ok()
 
     def human_fraction(self) -> float:
         if self.state["human_sticky_25"] or self.state["generation"] < self.cfg.human_switch_generation:
@@ -429,13 +513,16 @@ class SelfPlayTrainer:
         self.state["scaler"] = self.scaler.state_dict() if self.use_amp else None
         _atomic_torch_save(self.state, self.out / "train_state.pt")
 
-    def _save_accepted(self) -> None:
+    def _save_line_ok(self) -> None:
         _atomic_torch_save({"model": self.model.state_dict(), "optimizer": self.optimizer.state_dict(),
                             "scaler": self.scaler.state_dict() if self.use_amp else None,
-                            "global_step": self.state["global_step"]}, self.out / "accepted.pt")
+                            "global_step": self.state["global_step"], "round": self.state["line_ok_round"]},
+                           self.out / "line_ok.pt")
 
-    def _restore_accepted(self) -> None:
-        acc = torch.load(self.out / "accepted.pt", map_location="cpu", weights_only=False)
+    def _restore_line_ok(self) -> None:
+        acc = torch.load(self.out / "line_ok.pt", map_location="cpu", weights_only=False)
+        if acc.get("round") != self.state["line_ok_round"]:
+            raise RuntimeError("line_ok.pt ne correspond pas au dernier état qui a passé les garde-fous")
         self.model.load_state_dict(acc["model"])
         self.optimizer.load_state_dict(acc["optimizer"])
         if self.use_amp and acc.get("scaler"):
@@ -445,6 +532,20 @@ class SelfPlayTrainer:
         with open(self.out / name, "a", encoding="utf-8", newline="\n") as f:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
+    def _append_once(self, row: dict, key: tuple) -> None:
+        """Ajoute `row` à rounds.jsonl sauf si une ligne de même clé (type, n°) y est déjà (reprise)."""
+        from chesszero.arena import read_jsonl
+
+        rows = read_jsonl(self.out / "rounds.jsonl", repair=True)
+        if not any((r.get("type", "round"), r.get("round", r.get("candidate"))) == key for r in rows):
+            self._append("rounds.jsonl", row)
+
+    def _model_payload(self, metrics: dict, **extra) -> dict:
+        """Checkpoint au format load_for_inference (modèle courant)."""
+        return {"step": self.state["global_step"], "epoch": 0, "model": self.model.state_dict(),
+                "config": {"model": self.state["model_config"], "selfplay_train": asdict(self.cfg)},
+                "metrics": metrics, **extra}
+
     # ---------------------------------------------------------------- un tour
 
     def run_round(self, buffer_dirs, human_train: dict, human_val: dict, pool: ProcessPoolExecutor | None = None,
@@ -453,7 +554,11 @@ class SelfPlayTrainer:
         simulée). `steps_override` / `force` : pour les essais (nombre de pas imposé, tampon minimal ignoré)."""
         cfg, st = self.cfg, self.state
         if st["status"] == "stop":
-            raise RuntimeError("arrêt demandé par le garde-fou G4 : décision humaine nécessaire (train_state.pt)")
+            raise RuntimeError(f"arrêt demandé ({st.get('stop_reason') or 'G4'}) : décision humaine nécessaire "
+                               "(train_selfplay.py --clear-stop)")
+        if st["candidate"] is not None:
+            raise RuntimeError(f"candidat {st['candidate']['id']} en attente du verdict de l'arène : commit_arena "
+                               "d'abord")
         if st["round"] is None:  # nouveau tour : on fige la fenêtre du tampon
             shards = buffer_window(list_shards(buffer_dirs), cfg.buffer_positions)
             names = sorted(s["name"] for s in shards)
@@ -542,6 +647,9 @@ class SelfPlayTrainer:
         return self._finish_round(data, human_val)
 
     def _finish_round(self, data: SelfPlayData, human_val: dict) -> dict:
+        """Garde-fous. Passés : le tour devient le CANDIDAT en attente de l'arène (candidate.pt), ses shards sont
+        marqués comme utilisés et il devient le point de retour (line_ok.pt) : la ligne d'entraînement continue
+        quel que soit le verdict de l'arène. Non passés : retour à line_ok.pt et réactions (comme en 6d)."""
         cfg, st, rnd = self.cfg, self.state, self.state["round"]
         lines = [json.loads(l) for l in (self.out / "train_log.jsonl").read_text(encoding="utf-8").splitlines()]
         last = [l for l in lines if l["round"] == rnd["id"]][-1:]
@@ -551,27 +659,28 @@ class SelfPlayTrainer:
             "train": {"sp_value": last[0]["sp_value"] if last else None,
                       "sp_policy": last[0]["sp_policy"] if last else None},
         }
+        # `previous` = métriques du dernier état de la ligne qui a passé les garde-fous (chute brutale)
         decision = decide(metrics, st["baseline"], st["previous"], st["history"], st["generation"], cfg)
-        row = {"round": rnd["id"], "generation_before": st["generation"], "steps": rnd["steps"],
+        row = {"type": "round", "round": rnd["id"], "generation_before": st["generation"], "steps": rnd["steps"],
                "new_positions": rnd["new_positions"], "human_fraction": rnd["human_fraction"],
                "value_target": rnd["value_target"], "lr_scale": st["lr_scale"], "reuse": st["reuse"],
                "metrics": metrics, "baseline": st["baseline"], **decision, "time": time.time()}
         st["history"].append(metrics)
-        if decision["accept"]:
-            st["generation"] += 1
+        passed = decision["accept"]
+        if passed:
+            cid = rnd["id"]  # numéro du candidat = numéro du tour (graine des ouvertures de l'arène)
+            path = self.out / "candidate.pt"
+            _atomic_torch_save(self._model_payload(metrics, candidate=cid, round=cid), path)
+            st["candidate"] = {"id": cid, "round": cid, "file": "candidate.pt", "sha256": _sha256(path),
+                               "metrics": metrics, "global_step": st["global_step"],
+                               "opponent": dict(st["accepted"])}
             st["trained_shards"] = sorted(set(st["trained_shards"]) | set(rnd["shards"]))
             st["previous"] = metrics
             st["consecutive_rejections"] = 0
-            gen_dir = self.out / "generations"
-            gen_dir.mkdir(exist_ok=True)
-            path = gen_dir / f"gen_{st['generation']:04d}.pt"
-            _atomic_torch_save({"step": st["global_step"], "epoch": 0, "model": self.model.state_dict(),
-                                "config": {"model": st["model_config"], "selfplay_train": asdict(cfg)},
-                                "metrics": metrics, "generation": st["generation"]}, path)
-            self._save_accepted()
-            row["checkpoint"] = str(path.relative_to(self.out))
+            st["line_ok_round"] = cid
+            row["candidate"] = cid
         else:
-            self._restore_accepted()
+            self._restore_line_ok()
             if "halve_lr" in decision["actions"]:
                 st["lr_scale"] /= 2
             if "human_25" in decision["actions"]:
@@ -580,14 +689,148 @@ class SelfPlayTrainer:
                 st["reuse"] = min(st["reuse"], cfg.reduced_reuse)
             st["consecutive_rejections"] += 1
             if st["consecutive_rejections"] >= cfg.max_rejections:
-                st["status"] = "stop"
-                decision["alerts"].append(f"G4 : {st['consecutive_rejections']} rejets d'affilée : arrêt, "
-                                          "décision humaine nécessaire")
+                st["status"], st["stop_reason"] = "stop", "G4"
+                decision["alerts"].append(f"G4 : {st['consecutive_rejections']} rejets d'affilée par les garde-fous : "
+                                          "arrêt, décision humaine nécessaire")
                 row["alerts"] = decision["alerts"]
         row["generation_after"] = st["generation"]
         row["loop_status"] = st["status"]
         st["round"] = None
         st["round_id"] += 1
-        self._append("rounds.jsonl", row)
+        self._save_state()  # point de validation
+        if passed:
+            self._save_line_ok()  # régénéré à la reprise si une coupure tombe avant
+        self._append_once(row, ("round", rnd["id"]))
+        return {"status": "candidate" if passed else "rejected", **row}
+
+    # ---------------------------------------------------------------- verdict de l'arène
+
+    def commit_arena(self, candidate_id: int, gate: dict, anchor: dict | None, arena_cfg) -> dict:
+        """Applique le verdict de l'arène au candidat `candidate_id` (rejouable sans effet).
+
+        `gate` : résumé (`arena.summarize`) du candidat contre le réseau accepté ; `anchor` : contre l'ancre
+        `kaggle_sup`. Tant que le réseau accepté est le réseau de départ (génération 0, qui EST l'ancre), l'arène
+        contre l'accepté est aussi la mesure contre l'ancre (`anchor` = None) : cette mesure est gonflée par la
+        sélection (elle a servi à accepter ; ~10 à 20 Elo), à garder en tête si la génération 2 subit un veto.
+        Ensuite `anchor` est obligatoire quand le candidat gagne l'arène (veto de l'ancre, `arena.gate_decision`).
+        Accepté : generations/gen_XXXX.pt, génération + 1, rejets en arène à 0 ; rejeté : la ligne d'entraînement
+        continue (rien n'est défait), rejets en arène + 1. Arrêts : `max_arena_rejections` rejets en arène
+        d'affilée ; réseau accepté sous l'ancre (borne haute < 0) sur `anchor_stop_generations` générations
+        acceptées consécutives, en ne comptant que les générations >= `anchor_stop_from_generation`."""
+        from chesszero.arena import gate_decision
+
+        cfg, st = self.cfg, self.state
+        done = [c for c in st["commits"] if c["candidate"] == candidate_id]
+        if done:
+            self._append_once({"type": "arena", **done[0]}, ("arena", candidate_id))
+            return done[0]
+        cand = st["candidate"]
+        if cand is None or cand["id"] != candidate_id:
+            raise ValueError(f"candidat {candidate_id} pas en attente (en attente : {cand and cand['id']})")
+        path = self.out / cand["file"]
+        if not path.exists() or _sha256(path) != cand["sha256"]:
+            raise RuntimeError(f"{path} ne correspond pas au candidat {candidate_id} enregistré (SHA-256)")
+        first = st["accepted"]["generation"] == 0  # l'accepté est le réseau de départ = l'ancre
+        if first:
+            decision = gate_decision(gate, arena_cfg)
+            cand_anchor, source = gate, "arène contre l'accepté (= l'ancre), biaisée par la sélection (~10 à 20 Elo)"
+        else:
+            decision = gate_decision(gate, arena_cfg)
+            if decision["accept"]:
+                if anchor is None:
+                    raise ValueError("arène ancre manquante : obligatoire quand le candidat gagne l'arène")
+                decision = gate_decision(gate, arena_cfg, anchor, st["accepted"]["anchor"])
+            cand_anchor, source = anchor, "arène ancre (ouvertures fixes)"
+        commit = {"candidate": candidate_id, "accepted": decision["accept"], "reasons": decision["reasons"],
+                  "anchor_diff": decision["anchor_diff"], "anchor_diff_se": decision["anchor_diff_se"],
+                  "gate": {k: gate[k] for k in ("games", "score", "points", "elo", "elo_low", "elo_high", "los")},
+                  "anchor": ({k: cand_anchor[k] for k in ("games", "score", "elo", "elo_se", "elo_low", "elo_high")}
+                             if cand_anchor is not None else None),
+                  "opponent": cand["opponent"], "alerts": [], "time": time.time()}
+        if decision["accept"]:
+            g = st["generation"] + 1
+            gen_dir = self.out / "generations"
+            gen_dir.mkdir(exist_ok=True)
+            gen_path = gen_dir / f"gen_{g:04d}.pt"
+            payload = torch.load(path, map_location="cpu", weights_only=False)
+            payload.update(generation=g, arena={"gate": gate, "anchor": cand_anchor, "anchor_source": source,
+                                                "decision": decision})
+            _atomic_torch_save(payload, gen_path)  # un fichier orphelin (coupure avant la validation) est écrasé
+            st["generation"] = g
+            st["accepted"] = {"generation": g, "file": str(gen_path.relative_to(self.out)).replace("\\", "/"),
+                              "sha256": _sha256(gen_path), "anchor": cand_anchor, "anchor_source": source,
+                              "candidate": candidate_id}
+            st["anchor_history"].append({"generation": g, "candidate": candidate_id, "elo": cand_anchor["elo"],
+                                         "elo_se": cand_anchor["elo_se"], "elo_low": cand_anchor["elo_low"],
+                                         "elo_high": cand_anchor["elo_high"], "source": source})
+            st["arena_rejections"] = 0
+            below = [h for h in st["anchor_history"] if h["generation"] >= cfg.anchor_stop_from_generation
+                     and h["generation"] > st["anchor_stop_ack"]][-cfg.anchor_stop_generations:]
+            if (len(below) == cfg.anchor_stop_generations
+                    and [h["generation"] for h in below] == list(range(g - cfg.anchor_stop_generations + 1, g + 1))
+                    and all(h["elo_high"] is not None and h["elo_high"] < 0 for h in below)):
+                st["status"], st["stop_reason"] = "stop", "ancre"
+                commit["alerts"].append(f"arrêt : réseau accepté sous l'ancre kaggle_sup (borne haute < 0) sur "
+                                        f"{cfg.anchor_stop_generations} générations consécutives ({below[0]['generation']} "
+                                        f"à {g}) : décision humaine nécessaire")
+        else:
+            st["arena_rejections"] += 1
+            if st["arena_rejections"] >= cfg.max_arena_rejections:
+                st["status"], st["stop_reason"] = "stop", "stagnation"
+                commit["alerts"].append(f"arrêt : {st['arena_rejections']} rejets en arène d'affilée (stagnation) : "
+                                        "décision humaine nécessaire")
+        commit.update(generation_after=st["generation"], arena_rejections=st["arena_rejections"],
+                      loop_status=st["status"])
+        st["candidate"] = None
+        st["commits"].append(commit)
+        self._save_state()  # point de validation
+        self._append_once({"type": "arena", **commit}, ("arena", candidate_id))
+        return commit
+
+    def clear_stop(self, note: str = "") -> dict:
+        """Reprise après un arrêt, sur décision humaine : remet à zéro le compteur qui a déclenché l'arrêt."""
+        st = self.state
+        if st["status"] != "stop":
+            raise ValueError("aucun arrêt en cours")
+        reason = st.get("stop_reason") or "G4"
+        if reason == "G4":
+            st["consecutive_rejections"] = 0
+        elif reason == "stagnation":
+            st["arena_rejections"] = 0
+        elif reason == "ancre":
+            st["anchor_stop_ack"] = st["generation"]  # il faudra de nouvelles générations sous l'ancre
+        st["status"], st["stop_reason"] = "ok", None
         self._save_state()
-        return {"status": "accepted" if decision["accept"] else "rejected", **row}
+        row = {"type": "clear_stop", "round": f"{reason}@{st['round_id']}", "reason": reason, "note": note,
+               "time": time.time()}
+        self._append_once(row, ("clear_stop", row["round"]))
+        return row
+
+
+def read_train_state(out_dir: str | Path) -> dict:
+    """Lecture de l'état d'entraînement (SOURCE DE VÉRITÉ pour l'orchestrateur, étape 7d : ne pas recopier ces
+    informations dans loop_state.json) : réseau accepté (chemin absolu, None = réseau de départ), candidat en
+    attente, compteurs, historique contre l'ancre, arrêt. Ne charge aucun modèle sur un device."""
+    out = Path(out_dir)
+    path = out / "train_state.pt"
+    if not path.exists():
+        return {"exists": False}
+    st = torch.load(path, map_location="cpu", weights_only=False)
+    if st.get("format", 1) < STATE_FORMAT:
+        return {"exists": True, "format": st.get("format", 1), "needs_migration": True,
+                "generation": st["generation"]}
+    acc, cand, rnd = st["accepted"], st["candidate"], st["round"]
+    return {
+        "exists": True, "format": st["format"], "status": st["status"], "stop_reason": st["stop_reason"],
+        "generation": st["generation"],
+        "accepted": {**{k: v for k, v in acc.items() if k != "file"},
+                     "path": str(out / acc["file"]) if acc["file"] else None,
+                     "is_init": acc["file"] is None, "init_checkpoint": st["init_checkpoint"]},
+        "candidate": ({"id": cand["id"], "path": str(out / cand["file"]), "sha256": cand["sha256"],
+                       "metrics": cand["metrics"], "opponent_sha256": cand["opponent"]["sha256"]} if cand else None),
+        "round_in_progress": ({"id": rnd["id"], "done": rnd["done"], "steps": rnd["steps"]} if rnd else None),
+        "arena_rejections": st["arena_rejections"], "guard_rejections": st["consecutive_rejections"],
+        "anchor_history": st["anchor_history"], "commits": len(st["commits"]),
+        "round_id": st["round_id"], "global_step": st["global_step"], "lr_scale": st["lr_scale"],
+        "reuse": st["reuse"], "human_sticky_25": st["human_sticky_25"],
+    }

@@ -263,8 +263,16 @@ def main() -> None:
     deadline = start + args.minutes * 60
 
     def current_network() -> tuple[str, int]:
-        gens = sorted((train_out / "generations").glob("gen_*.pt"))
-        return (str(gens[-1]), int(gens[-1].stem.split("_")[1])) if gens else (args.init, 0)
+        # réseau ACCEPTÉ selon train_state.pt (source de vérité), jamais « le dernier gen_*.pt » du dossier : un
+        # fichier orphelin (coupure avant la validation) serait pris à tort. Depuis l'étape 7b, une génération
+        # n'est acceptée qu'après une arène : cette boucle provisoire (sans arène) garde le réseau de départ ;
+        # l'orchestrateur de l'étape 7d la remplacera.
+        from chesszero.selfplay_train import read_train_state
+
+        st = read_train_state(train_out)
+        if st.get("exists") and st.get("accepted", {}).get("path"):
+            return st["accepted"]["path"], st["generation"]
+        return args.init, 0
 
     inputs = list(args.inputs)
     with ResourceSampler() as sampler:
