@@ -25,5 +25,10 @@ checkpoints/*
 .idea/
 Thumbs.db
 
+# Jeton de l'API Kaggle : ne doit JAMAIS entrer dans le dépôt (il donne accès à tout le compte)
+kaggle.json
+.kaggle/
+access_token
+
 # Logiciels externes téléchargés (Stockfish, Cute Chess) : gros binaires, hors git
 tools/
