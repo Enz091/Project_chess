@@ -39,6 +39,7 @@ def worker(task: dict) -> dict:
     from chesszero.selfplay import SelfPlayConfig, ShardWriter, config_dict, run_selfplay
     from chesszero.syzygy import Tablebase
 
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # processus fils : même encodage que le parent
     torch.set_num_threads(task["threads"])
     cfg = SelfPlayConfig.named(task["config"])
     if task["overrides"]:
@@ -86,6 +87,10 @@ def main() -> None:
     ap.add_argument("--max-minutes", type=float, default=None, help="budget de temps de la session")
     ap.add_argument("--games-per-worker", type=int, default=None)
     ap.add_argument("--simulations", type=int, default=None)
+    ap.add_argument("--stop-new-games-minutes", type=float, default=None,
+                    help="marge avant la fin : plus de nouvelles parties (défaut : [selfplay], 20)")
+    ap.add_argument("--hard-stop-minutes", type=float, default=None,
+                    help="marge avant la fin : arrêt, parties inachevées perdues (défaut : [selfplay], 5)")
     ap.add_argument("--device", default=None)
     ap.add_argument("--session", default=None, help="identifiant (défaut : date et heure UTC)")
     ap.add_argument("--generation", type=int, default=0, help="numéro de génération du réseau (étape 7)")
@@ -94,9 +99,13 @@ def main() -> None:
 
     from chesszero.selfplay import SelfPlayConfig, list_shards, sync_buffer
 
+    from dataclasses import replace
+
     cfg = SelfPlayConfig.named(args.config)
-    overrides = {k: v for k, v in (("games_per_worker", args.games_per_worker), ("simulations", args.simulations))
-                 if v is not None}
+    overrides = {k: v for k, v in (("games_per_worker", args.games_per_worker), ("simulations", args.simulations),
+                                   ("stop_new_games_minutes", args.stop_new_games_minutes),
+                                   ("hard_stop_minutes", args.hard_stop_minutes)) if v is not None}
+    cfg = replace(cfg, **overrides)
     session = args.session or time.strftime("s%Y%m%dT%H%M%S", time.gmtime())
     start = time.time()
     if args.inputs:
@@ -143,9 +152,16 @@ def main() -> None:
                  if int(d["would_resign"][g][c]) >= 0]
     false = sum(int(d["result_white"][g]) != (-1 if c == 0 else 1) for d, g, c in triggered)
     print(f"Parties de contrôle : {controls} ; abandons qui se seraient déclenchés : {len(triggered)} ; faux : {false}")
+    work_seconds = max(r["seconds"] for r in results)  # temps de jeu des processus (hors chargement)
     stats = {"session": session, "generation": args.generation, "checkpoint": Path(args.checkpoint).name,
-             "workers": args.workers, "minutes": seconds / 60, "games": games, "positions": positions,
-             "simulations_per_second": sims / seconds, "games_per_hour": games / seconds * 3600,
+             "workers": args.workers, "games_per_worker": cfg.games_per_worker, "simulations_per_move": cfg.simulations,
+             "minutes": seconds / 60, "play_minutes": work_seconds / 60, "games": games, "positions": positions,
+             "simulations": sims, "simulations_per_second": sims / max(work_seconds, 1e-9),
+             "games_per_hour": games / max(work_seconds, 1e-9) * 3600,
+             "positions_per_eval_call": sum(r["eval_positions"] for r in results) / max(calls, 1),
+             "eval_time_share": sum(r["eval_seconds"] for r in results) / max(sum(r["seconds"] for r in results), 1e-9),
+             "plies": [int(x) for d in own for x in d["plies"]],  # longueur des parties (depuis la position initiale)
+             "selfplay_plies": [int(x) - int(y) for d in own for x, y in zip(d["plies"], d["start_plies"])],
              "terminations": {t: int(n) for t, n in zip(TERMINATIONS, terms)},
              "unfinished_dropped": sum(r["unfinished_dropped"] for r in results),
              "repetitions": reps, "control_games": controls, "resign_triggered_in_control": len(triggered),
