@@ -377,3 +377,17 @@ def test_step6_state_with_generations_is_refused(world):
 
 def test_read_train_state_without_state():
     assert read_train_state(Path("dossier_absent_xyz")) == {"exists": False}
+
+
+def test_export_trained_keeps_the_network_even_when_rejected(world, scripted):
+    """A/B de la cible de valeur : le réseau du tour est écrit avant la décision des garde-fous."""
+    scripted(False)
+    t = SelfPlayTrainer(world["root"] / "ex1", CFG, "cpu", world["init"], log=lambda m: None,
+                        export_trained=world["root"] / "ex1_trained.pt")
+    torch.manual_seed(0)
+    res = run(t, world)
+    assert res["status"] == "rejected"
+    model, meta = load_for_inference(world["root"] / "ex1_trained.pt")
+    payload = torch.load(world["root"] / "ex1_trained.pt", weights_only=False)
+    assert payload["value_target"] == "result" and payload["round"] == 0
+    assert not same(weights(payload["model"]), weights(t.model))  # t est revenu au réseau de départ, l'export non

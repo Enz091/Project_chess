@@ -203,3 +203,23 @@ def test_bootstrap_by_game_detects_clear_difference_and_not_noise():
     noise = a + rng.normal(0, 0.01, 2000)
     d, lo, hi = bootstrap_diff(a, noise, game, 500, 0)
     assert lo < 0 < hi
+
+
+def test_round_time_breakdown_is_recorded(world):
+    """Rapport de session : décomposition du temps d'un tour (chargement, lots Lichess, tampon, masques, préparation,
+    calcul, évaluation), cumulée sur les reprises."""
+    from chesszero.selfplay_train import timing_shares
+
+    t = trainer(world, "timing")
+    t.load_seconds = 0.5
+    t.run_round([world["buffer"]], world["human"], world["val"], steps_override=8, stop_after=3)
+    t = trainer(world, "timing")  # reprise
+    res = t.run_round([world["buffer"]], world["human"], world["val"])
+    tm = res["timing"]
+    for k in ("load", "human_read", "buffer_read", "human_masks", "prepare", "compute", "eval", "wall"):
+        assert tm[k] >= 0, k
+    assert tm["load"] == pytest.approx(0.5) and tm["compute"] > 0 and not any(k.startswith("_") for k in tm)
+    sh = timing_shares(tm)
+    assert 0 <= sh["reading"] <= 1 and sh["other"] >= 0
+    assert sum(sh[k] for k in ("load", "human_read", "buffer_read", "human_masks", "prepare", "compute", "eval",
+                               "other")) == pytest.approx(1.0, abs=1e-6)

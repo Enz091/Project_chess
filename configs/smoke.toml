@@ -1,0 +1,67 @@
+# Essai complet LOCAL de la boucle (étape 7d, --smoke) : réseau tiny sur CPU, tout est réduit pour durer
+# quelques minutes. Ne sert qu'à vérifier la mécanique (phases, reprise, rapport) ; aucun chiffre n'a de sens.
+[model]
+n_blocks = 4
+n_filters = 64
+value_hidden = 64
+
+[mcts]
+num_simulations = 16
+c_puct = 1.5
+batch_size = 4
+virtual_loss = 1.0
+fpu_reduction = 0.2
+dirichlet_alpha = 0.3
+dirichlet_epsilon = 0.0
+temperature = 0.0
+
+[selfplay]
+simulations = 16
+leaves_per_tree = 4
+games_per_worker = 8
+max_plies = 120
+shard_games = 8
+shard_minutes = 0.5
+buffer_positions = 30000
+stop_new_games_minutes = 0.4
+hard_stop_minutes = 0.1
+
+[arena]
+pairs = 3
+anchor_pairs = 3
+simulations = 16
+leaves_per_tree = 4
+games_per_worker = 8
+max_plies = 120
+accept_score = 0.52
+anchor_veto_se = 2.0
+
+[selfplay_train]
+batch_size = 64
+lr = 1e-3
+lr_start = 1e-4
+warmup_steps = 10
+buffer_positions = 30000
+min_buffer_positions = 1500
+lichess_val_positions = 1000
+num_workers = 0
+save_every = 10
+log_every = 10
+amp = "off"
+
+[loop]
+new_positions_per_generation = 1500
+start_margin_minutes = 0.5
+end_margin_minutes = 0.3
+min_chunk_minutes = 0.3
+chunk_stop_new_games_minutes = 0.2
+control_a_pairs = 2
+control_b_pairs = 3
+control_b_weak_simulations = 1
+control_b_min_score = 0.5     # essai : 6 parties d'un réseau tiny, seuil bas (sur Kaggle : 70 %, 40 parties)
+est_positions_per_minute = 1000.0
+est_train_fixed_minutes = 0.3
+est_train_minutes_per_step = 0.01
+est_arena_fixed_minutes = 0.2
+est_simulations_per_second = 3000.0
+est_arena_searched_moves_per_game = 60.0

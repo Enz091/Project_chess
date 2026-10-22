@@ -109,3 +109,36 @@ log_every = 20
 amp = "auto"
 num_workers = 3
 seed = 0
+
+# Boucle AlphaZero (étape 7d), plan validé le 2026-10-22 (voir CLAUDE.md et docs/journal.md).
+[loop]
+new_positions_per_generation = 100000  # self-play entre deux tours (~85 min) ; à ajuster selon le taux d'acceptation
+start_margin_minutes = 15.0     # marge avant un tour (entraînement + arènes estimés) ou une arène
+end_margin_minutes = 10.0       # fin de session : rapport, sauvegarde de la sortie
+min_chunk_minutes = 10.0        # tranche de self-play minimale
+chunk_stop_new_games_minutes = 12.0  # tranche : plus de nouvelles parties 12 min avant sa fin
+control_a_pairs = 10            # contrôle (a) : kaggle_sup contre lui-même (avertissement seulement)
+control_a_low = 0.40
+control_a_high = 0.60
+control_b_pairs = 20            # contrôle (b) : 200 contre 50 simulations (bloquant sous 70 %)
+control_b_weak_simulations = 50
+control_b_min_score = 0.70
+# estimations de départ (remplacées par la moyenne des 3 dernières mesures), d'après la session de self-play seul
+# sur Kaggle du 2026-10-22 : 4 296 simulations/s, 77 300 positions/h, 97,5 coups cherchés par partie
+est_positions_per_minute = 1290.0
+est_train_fixed_minutes = 5.0
+est_train_minutes_per_step = 0.006
+est_arena_fixed_minutes = 1.0
+est_simulations_per_second = 4296.0
+est_arena_searched_moves_per_game = 97.5   # -> 0,083 min par partie d'arène à 200 simulations (200 parties ~17,6 min)
+est_arena_slowdown = 1.10
+estimate_window = 3
+max_phase_failures = 2          # une phase en échec est rejouée une fois ; arrêt au 2e échec
+v2_anchor_gain = 50.0           # « Actions » : mesure v2 si l'Elo contre l'ancre (lissé) a gagné > 50...
+v2_max_generations = 10         # ... ou au plus tard toutes les 10 générations acceptées
+false_resign_alert = 0.05
+early_repetition_alert = 0.05
+repetition_material_reference = 0.145   # session de référence : 552 sur 3 803 parties finies par répétition avec >= 20 points
+repetition_material_alert_points = 5.0  # « Actions » : alerte au-delà de 19,5 %
+throughput_drop_alert = 0.15
+reading_alert = 0.30            # « Actions » : lecture des données > 30 % du temps d'un tour

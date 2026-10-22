@@ -42,6 +42,8 @@ def main() -> None:
     ap.add_argument("--steps", type=int, default=None, help="essai : nombre de pas imposé pour un nouveau tour")
     ap.add_argument("--force", action="store_true", help="essai : ignorer la taille minimale du tampon")
     ap.add_argument("--stop-after", type=int, default=None, help="s'arrêter après N pas (coupure simulée)")
+    ap.add_argument("--max-minutes", type=float, default=None,
+                    help="budget : arrêt propre après ce temps (reprise au pas près au lancement suivant)")
     ap.add_argument("--batch-size", type=int, default=None)
     ap.add_argument("--value-target", choices=["result", "blend"], default=None)
     ap.add_argument("--lichess-val", type=int, default=None, help="positions de validation Lichess")
@@ -52,6 +54,9 @@ def main() -> None:
     ap.add_argument("--anchor", default=None, help="result.json de l'arène contre l'ancre kaggle_sup")
     ap.add_argument("--clear-stop", default=None, metavar="NOTE", help="reprise après un arrêt (décision humaine)")
     ap.add_argument("--status", action="store_true", help="affiche l'état et s'arrête")
+    ap.add_argument("--export-trained", default=None,
+                    help="expériences : écrit le réseau entraîné du tour (format load_for_inference), même s'il est "
+                         "rejeté par les garde-fous")
     args = ap.parse_args()
 
     import torch
@@ -60,6 +65,9 @@ def main() -> None:
     from chesszero.device import describe_device, get_device
     from chesszero.selfplay_train import SelfPlayTrainConfig, SelfPlayTrainer, human_val_set
 
+    import time
+
+    start = time.time()
     cfg = SelfPlayTrainConfig.named(args.config)
     overrides = {k: v for k, v in (("batch_size", args.batch_size), ("value_target", args.value_target),
                                    ("lichess_val_positions", args.lichess_val), ("num_workers", args.workers))
@@ -91,15 +99,18 @@ def main() -> None:
     device = get_device(args.device)
     print(f"{describe_device(device)} ; réglages : {overrides or 'ceux de ' + args.config}", flush=True)
 
+    t_load = time.time()
     human_train = load_split(args.human, "train")
     pool = ProcessPoolExecutor(cfg.num_workers) if cfg.num_workers > 0 else None
     try:
         human_val = human_val_set(load_split(args.human, "val"), cfg.lichess_val_positions, cfg.seed, pool)
         print(f"Lichess : {len(human_train['boards'])} positions d'entraînement, {len(human_val['boards'])} de "
               f"validation (sous-ensemble fixe)", flush=True)
-        trainer = SelfPlayTrainer(args.out, cfg, device, args.init)
+        trainer = SelfPlayTrainer(args.out, cfg, device, args.init, export_trained=args.export_trained)
+        trainer.load_seconds = time.time() - t_load  # lecture des données Lichess (et masques de validation)
         result = trainer.run_round(args.buffer, human_train, human_val, pool, steps_override=args.steps,
-                                   stop_after=args.stop_after, force=args.force)
+                                   stop_after=args.stop_after, force=args.force,
+                                   deadline=start + 60 * args.max_minutes if args.max_minutes else None)
     finally:
         if pool is not None:
             pool.shutdown(cancel_futures=True)

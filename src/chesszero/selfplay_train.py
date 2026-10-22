@@ -195,20 +195,33 @@ def batch_rows(cfg: SelfPlayTrainConfig, human_fraction: float, round_id: int, s
 
 
 def make_batch(sp_data: SelfPlayData, human: dict, sp_pos: np.ndarray, hu_rows: np.ndarray, human_legal: np.ndarray,
-               value_target: str) -> dict:
+               value_target: str, timer: dict | None = None) -> dict:
+    """Lot mélangé. `timer` (facultatif) : secondes ajoutées à "buffer_read" (positions et cibles du tampon),
+    "human_read" (positions et cibles Lichess) et "prepare" (décodage des positions en tenseurs)."""
+    t0 = time.perf_counter()
     sp_rows = sp_data.train_rows[sp_pos]
     legal_sp, pol_sp, val_sp = sp_data.targets(sp_rows, value_target)
+    sp_boards = sp_data.boards[sp_rows]
+    t1 = time.perf_counter()
     n_h = len(hu_rows)
     pol_h = np.zeros((n_h, N_ACTIONS), dtype=np.float32)
     pol_h[np.arange(n_h), human["moves"][hu_rows].astype(np.int64)] = 1.0
-    boards = np.concatenate([sp_data.boards[sp_rows], human["boards"][hu_rows]])
+    hu_boards = human["boards"][hu_rows]
+    hu_results = human["results"][hu_rows].astype(np.float32)
+    hu_valid = human["value_valid"][hu_rows].astype(np.float32)
+    t2 = time.perf_counter()
+    boards = np.concatenate([sp_boards, hu_boards])
+    x = unpack_batch(boards)
+    if timer is not None:
+        timer["buffer_read"] = timer.get("buffer_read", 0.0) + t1 - t0
+        timer["human_read"] = timer.get("human_read", 0.0) + t2 - t1
+        timer["prepare"] = timer.get("prepare", 0.0) + time.perf_counter() - t2
     return {
-        "x": unpack_batch(boards),
+        "x": x,
         "legal": np.concatenate([legal_sp, human_legal]),
         "policy": np.concatenate([pol_sp, pol_h]),
-        "value": np.concatenate([val_sp, human["results"][hu_rows].astype(np.float32)]),
-        "value_valid": np.concatenate([np.ones(len(sp_rows), np.float32),
-                                       human["value_valid"][hu_rows].astype(np.float32)]),
+        "value": np.concatenate([val_sp, hu_results]),
+        "value_valid": np.concatenate([np.ones(len(sp_rows), np.float32), hu_valid]),
         "is_human": np.concatenate([np.zeros(len(sp_rows), bool), np.ones(n_h, bool)]),
     }
 
@@ -382,6 +395,23 @@ def _atomic_torch_save(obj, path: Path) -> None:
     tmp.replace(path)
 
 
+def timing_load_once(timing: dict) -> float:
+    """Chargement des données de ce lancement, ajouté UNE fois au temps total du tour (il a lieu avant le tour)."""
+    pending = timing.pop("_load_pending", 0.0)
+    return pending
+
+
+def timing_shares(timing: dict) -> dict:
+    """Part de chaque poste dans le temps total du tour ; « lecture » = chargement + lecture Lichess + tampon."""
+    wall = timing.get("wall") or sum(v for k, v in timing.items() if not k.startswith("_"))
+    keys = ("load", "human_read", "buffer_read", "human_masks", "prepare", "compute", "eval")
+    shares = {k: timing.get(k, 0.0) / wall if wall > 0 else 0.0 for k in keys}
+    shares["other"] = max(0.0, 1 - sum(shares.values()))
+    shares["reading"] = shares["load"] + shares["human_read"] + shares["buffer_read"]
+    shares["wall_minutes"] = wall / 60
+    return shares
+
+
 STATE_FORMAT = 2  # 1 = étape 6d (acceptation par les garde-fous seuls) ; 2 = étape 7b (candidat puis arène)
 
 
@@ -392,6 +422,7 @@ def _new_state_fields(init_sha: str | None) -> dict:
         "candidate": None,  # candidat en attente du verdict de l'arène (voir `_finish_round`)
         "arena_rejections": 0,  # rejets en arène d'affilée (les rejets par les garde-fous n'y comptent pas)
         "accepted": {"generation": 0, "file": None, "sha256": init_sha, "anchor": None, "anchor_source": "identité"},
+        "init_sha256": init_sha,  # réseau de départ = l'ancre : doit rester le même d'une session à l'autre
         "anchor_history": [],  # mesure contre l'ancre de chaque génération acceptée
         "anchor_stop_ack": 0,  # générations <= cette valeur ignorées par l'arrêt sur l'ancre (après --clear-stop)
         "commits": [],  # verdicts d'arène déjà appliqués (un verdict rejoué ne fait rien)
@@ -422,7 +453,9 @@ class SelfPlayTrainer:
     """
 
     def __init__(self, out_dir: str | Path, cfg: SelfPlayTrainConfig, device: torch.device | str,
-                 init_checkpoint: str | Path | None = None, log=print):
+                 init_checkpoint: str | Path | None = None, log=print, export_trained: str | Path | None = None):
+        self.export_trained = Path(export_trained) if export_trained else None  # A/B : réseau du tour, avant décision
+        self.load_seconds = 0.0  # chargement des données de ce lancement (mis par l'appelant), compté dans le tour
         self.out = Path(out_dir)
         self.out.mkdir(parents=True, exist_ok=True)
         self.cfg, self.device, self.log = cfg, torch.device(device), log
@@ -549,9 +582,12 @@ class SelfPlayTrainer:
     # ---------------------------------------------------------------- un tour
 
     def run_round(self, buffer_dirs, human_train: dict, human_val: dict, pool: ProcessPoolExecutor | None = None,
-                  steps_override: int | None = None, stop_after: int | None = None, force: bool = False) -> dict:
+                  steps_override: int | None = None, stop_after: int | None = None, force: bool = False,
+                  deadline: float | None = None) -> dict:
         """Un tour complet (ou sa reprise). `stop_after` : s'arrête après ce nombre de pas de CE lancement (coupure
-        simulée). `steps_override` / `force` : pour les essais (nombre de pas imposé, tampon minimal ignoré)."""
+        simulée). `deadline` (temps `time.time()`) : arrêt propre au premier pas qui la dépasse (budget de la
+        session ; le tour reprendra au pas près). `steps_override` / `force` : pour les essais (nombre de pas imposé,
+        tampon minimal ignoré)."""
         cfg, st = self.cfg, self.state
         if st["status"] == "stop":
             raise RuntimeError(f"arrêt demandé ({st.get('stop_reason') or 'G4'}) : décision humaine nécessaire "
@@ -580,11 +616,14 @@ class SelfPlayTrainer:
                 self.log(f"Réseau de départ sur la validation Lichess : {st['baseline']['lichess']}")
             self._save_state()
         rnd = st["round"]
+        t_launch = time.perf_counter()
         by_name = {s["name"]: s for s in list_shards(buffer_dirs)}
         missing = [n for n in rnd["shards"] if n not in by_name]
         if missing:
             raise FileNotFoundError(f"shards du tour en cours introuvables : {missing[:3]}...")
         data = SelfPlayData([by_name[n] for n in rnd["shards"]], cfg.heldout_fraction)
+        timing = rnd.setdefault("timing", {})
+        timing["buffer_read"] = timing.get("buffer_read", 0.0) + time.perf_counter() - t_launch  # chargement des shards
         self.log(f"Tour {rnd['id']} : {rnd['steps']} pas ({rnd['done']} déjà faits), tampon {len(data)} positions "
                  f"({len(data.train_rows)} d'entraînement, {len(data.heldout_rows)} mises de côté), "
                  f"{rnd['new_positions']} nouvelles, part humaine {rnd['human_fraction']:.0%}, cible de valeur "
@@ -603,12 +642,20 @@ class SelfPlayTrainer:
             submit(k)
         # fenêtre de moyenne du journal : reprise avec le tour pour que le journal soit lui aussi identique
         done_now, window, t0 = 0, list(rnd.get("log_window", [])), time.perf_counter()
+        # décomposition du temps du tour (rapport de session), cumulée sur les reprises
+        timing["load"] = timing.get("load", 0.0) + self.load_seconds  # chargement des données de ce lancement
+        timing["_load_pending"] = self.load_seconds
+        self.load_seconds = 0.0
+        cuda = self.device.type == "cuda"
         for k, (sp_pos, hu) in enumerate(rows):
             submit(k + 6)
             job = jobs.pop(k, None)
+            tm = time.perf_counter()
             human_legal = job.result() if job is not None else legal_masks_from_packed(human_train["boards"][hu])
-            batch = make_batch(data, human_train, sp_pos, hu, human_legal, rnd["value_target"])
+            timing["human_masks"] = timing.get("human_masks", 0.0) + time.perf_counter() - tm
+            batch = make_batch(data, human_train, sp_pos, hu, human_legal, rnd["value_target"], timing)
             assert int(batch["is_human"].sum()) == len(hu) == int(round(cfg.batch_size * rnd["human_fraction"]))
+            tc = time.perf_counter()
             bt = to_device(batch, self.device)
             for g in self.optimizer.param_groups:
                 g["lr"] = lr_at(st["global_step"], cfg, st["lr_scale"])
@@ -621,6 +668,9 @@ class SelfPlayTrainer:
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), cfg.grad_clip)
             self.scaler.step(self.optimizer)
             self.scaler.update()
+            if cuda:
+                torch.cuda.synchronize()  # pour que le temps de calcul soit attribué au bon pas
+            timing["compute"] = timing.get("compute", 0.0) + time.perf_counter() - tc
             rnd["done"] += 1
             st["global_step"] += 1
             done_now += 1
@@ -638,12 +688,15 @@ class SelfPlayTrainer:
             if rnd["done"] % cfg.save_every == 0 and rnd["done"] < rnd["steps"]:
                 rnd["log_window"] = window
                 self._save_state()
-            if stop_after is not None and done_now >= stop_after and rnd["done"] < rnd["steps"]:
+            out_of_time = deadline is not None and time.time() >= deadline
+            if ((stop_after is not None and done_now >= stop_after) or out_of_time) and rnd["done"] < rnd["steps"]:
                 for job in jobs.values():
                     job.cancel()
                 rnd["log_window"] = window
+                timing["wall"] = timing.get("wall", 0.0) + time.perf_counter() - t_launch + timing_load_once(timing)
                 self._save_state()
                 return {"status": "interrupted", "round": rnd["id"], "done": rnd["done"], "steps": rnd["steps"]}
+        self._t_launch = t_launch
         return self._finish_round(data, human_val)
 
     def _finish_round(self, data: SelfPlayData, human_val: dict) -> dict:
@@ -651,6 +704,7 @@ class SelfPlayTrainer:
         marqués comme utilisés et il devient le point de retour (line_ok.pt) : la ligne d'entraînement continue
         quel que soit le verdict de l'arène. Non passés : retour à line_ok.pt et réactions (comme en 6d)."""
         cfg, st, rnd = self.cfg, self.state, self.state["round"]
+        te = time.perf_counter()
         lines = [json.loads(l) for l in (self.out / "train_log.jsonl").read_text(encoding="utf-8").splitlines()]
         last = [l for l in lines if l["round"] == rnd["id"]][-1:]
         metrics = {
@@ -659,12 +713,19 @@ class SelfPlayTrainer:
             "train": {"sp_value": last[0]["sp_value"] if last else None,
                       "sp_policy": last[0]["sp_policy"] if last else None},
         }
+        if self.export_trained is not None:  # expériences (A/B de la cible de valeur) : gardé même si rejeté
+            _atomic_torch_save(self._model_payload(metrics, round=rnd["id"], value_target=rnd["value_target"]),
+                               self.export_trained)
+        timing = rnd.setdefault("timing", {})
+        timing["eval"] = timing.get("eval", 0.0) + time.perf_counter() - te
+        timing["wall"] = timing.get("wall", 0.0) + time.perf_counter() - self._t_launch + timing_load_once(timing)
         # `previous` = métriques du dernier état de la ligne qui a passé les garde-fous (chute brutale)
         decision = decide(metrics, st["baseline"], st["previous"], st["history"], st["generation"], cfg)
         row = {"type": "round", "round": rnd["id"], "generation_before": st["generation"], "steps": rnd["steps"],
                "new_positions": rnd["new_positions"], "human_fraction": rnd["human_fraction"],
                "value_target": rnd["value_target"], "lr_scale": st["lr_scale"], "reuse": st["reuse"],
-               "metrics": metrics, "baseline": st["baseline"], **decision, "time": time.time()}
+               "metrics": metrics, "baseline": st["baseline"], **decision, "time": time.time(),
+               "timing": dict(timing)}
         st["history"].append(metrics)
         passed = decision["accept"]
         if passed:
@@ -832,5 +893,6 @@ def read_train_state(out_dir: str | Path) -> dict:
         "arena_rejections": st["arena_rejections"], "guard_rejections": st["consecutive_rejections"],
         "anchor_history": st["anchor_history"], "commits": len(st["commits"]),
         "round_id": st["round_id"], "global_step": st["global_step"], "lr_scale": st["lr_scale"],
-        "reuse": st["reuse"], "human_sticky_25": st["human_sticky_25"],
+        "reuse": st["reuse"], "human_sticky_25": st["human_sticky_25"], "trained_shards": list(st["trained_shards"]),
+        "init_sha256": st.get("init_sha256"),
     }
