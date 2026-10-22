@@ -1,7 +1,7 @@
 """Session de self-play (Kaggle ou local) : essai de débit ou session complète, avec rapport.
 
   selfplay_session.py bench --minutes 15 --work /kaggle/working --init <best.pt> --syzygy /tmp/syzygy
-  selfplay_session.py full --minutes 690 --work /kaggle/working --init <best.pt> --syzygy /tmp/syzygy \\
+  selfplay_session.py full --minutes 660 --work /kaggle/working --init <best.pt> --syzygy /tmp/syzygy \\
                       --inputs <sorties précédentes>/selfplay [--with-training --human <lichess-24m>]
 
 bench : `--minutes` au total, en deux phases, dans <work>/bench_selfplay (séparé du tampon ; parties en cours à la fin
