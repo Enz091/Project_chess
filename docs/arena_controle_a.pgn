@@ -1,0 +1,130 @@
+[Event "ChessZero arène arena_controle_a"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "709:A-blancs"]
+[White "sup (200 sim)"]
+[Black "sup (200 sim)"]
+[Result "1-0"]
+[Termination "abandon"]
+[PlyCount "95"]
+[Opening "réserve n° 709 (10 demi-coups)"]
+
+1. e4 c6 2. Nc3 e6 3. Nf3 d5 4. exd5 cxd5 5. d4 f5 6. Bf4 Bd6 7. Ne5 Nf6 8. Bb5+ Nc6 9. Nxc6 bxc6 10. Bxc6+ Bd7 11. Bxd6 Bxc6 12. Ba3 Kf7 13. O-O Re8 14. Re1 Ne4 15. f3 Nxc3 16. bxc3 Bb5 17. Rb1 Bc4 18. Rb7+ Kg8 19. Qd2 Qc8 20. Reb1 Ba6 21. Re7 Rxe7 22. Bxe7 Qc4 23. Bc5 e5 24. Qg5 e4 25. Qxf5 exf3 26. Qxf3 Re8 27. h3 Qxa2 28. Rb3 h6 29. Qxd5+ Kh8 30. Qf5 Qa1+ 31. Kh2 Qe1 32. Bxa7 Qe7 33. Bb8 Bc4 34. Rb6 Rf8 35. Qg6 Rf6 36. Rxf6 Qxf6 37. Qxf6 gxf6 38. Kg3 Kg7 39. Kf4 Kg6 40. g4 h5 41. gxh5+ Kxh5 42. Kf5 Kh4 43. Kxf6 Kxh3 44. Ke5 Kg4 45. d5 Kf3 46. d6 Bb5 47. Ke6 Ke4 48. d7 1-0
+
+[Event "ChessZero arène arena_controle_a"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "709:A-noirs"]
+[White "sup (200 sim)"]
+[Black "sup (200 sim)"]
+[Result "1-0"]
+[Termination "abandon"]
+[PlyCount "95"]
+[Opening "réserve n° 709 (10 demi-coups)"]
+
+1. e4 c6 2. Nc3 e6 3. Nf3 d5 4. exd5 cxd5 5. d4 f5 6. Bf4 Bd6 7. Ne5 Nf6 8. Bb5+ Nc6 9. Nxc6 bxc6 10. Bxc6+ Bd7 11. Bxd6 Bxc6 12. Ba3 Kf7 13. O-O Re8 14. Re1 Ne4 15. f3 Nxc3 16. bxc3 Bb5 17. Rb1 Bc4 18. Rb7+ Kg8 19. Qd2 Qc8 20. Reb1 Ba6 21. Re7 Rxe7 22. Bxe7 Qc4 23. Bc5 e5 24. Qg5 e4 25. Qxf5 exf3 26. Qxf3 Re8 27. h3 Qxa2 28. Rb3 h6 29. Qxd5+ Kh8 30. Qf5 Qa1+ 31. Kh2 Qe1 32. Bxa7 Qe7 33. Bb8 Bc4 34. Rb6 Rf8 35. Qg6 Rf6 36. Rxf6 Qxf6 37. Qxf6 gxf6 38. Kg3 Kg7 39. Kf4 Kg6 40. g4 h5 41. gxh5+ Kxh5 42. Kf5 Kh4 43. Kxf6 Kxh3 44. Ke5 Kg4 45. d5 Kf3 46. d6 Bb5 47. Ke6 Ke4 48. d7 1-0
+
+[Event "ChessZero arène arena_controle_a"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "732:A-blancs"]
+[White "sup (200 sim)"]
+[Black "sup (200 sim)"]
+[Result "0-1"]
+[Termination "abandon"]
+[PlyCount "162"]
+[Opening "réserve n° 732 (20 demi-coups)"]
+
+1. d4 c6 2. c4 d5 3. cxd5 cxd5 4. Nc3 Nc6 5. Nf3 g6 6. Bf4 a6 7. e3 Bg7 8. a3 Nh6 9. Bd3 O-O 10. h4 f6 11. h5 g5 12. Bg3 e5 13. dxe5 fxe5 14. Nxd5 Bf5 15. Bxf5 Nxf5 16. h6 Nxh6 17. Rh5 g4 18. Ng5 Qe8 19. Rxh6 Bxh6 20. Qxg4 Kh8 21. Ne4 Rg8 22. Qh4 Qg6 23. Qf6+ Qxf6 24. Ndxf6 Rg6 25. Rd1 Bg7 26. Nh5 Rd8 27. Rxd8+ Nxd8 28. Nxg7 Kxg7 29. Bxe5+ Kf7 30. g3 Ke6 31. Bc3 Nf7 32. Nc5+ Kd5 33. Nxb7 Ng5 34. Ke2 Ne4 35. Na5 Rh6 36. Be1 Rh2 37. Kf3 Ng5+ 38. Ke2 Ne4 39. Nb3 Nxg3+ 40. Kf3 Rh1 41. Bb4 Ne4 42. Nd2 Nxd2+ 43. Bxd2 Rb1 44. Bc3 h5 45. e4+ Ke6 46. Kg3 Rg1+ 47. Kh3 Rg4 48. f3 Rg1 49. f4 Rg4 50. f5+ Kf7 51. e5 Rf4 52. f6 Ke6 53. Kg3 Rg4+ 54. Kh3 Re4 55. Kg3 Rg4+ 56. Kh3 Re4 57. Kg3 Kf7 58. Kf3 Rg4 59. Ke3 Ke6 60. Kf3 Rg1 61. Kf2 Rg8 62. Kf3 h4 63. Be1 h3 64. Bg3 Rh8 65. Bh2 Rc8 66. Kg4 Rc2 67. Kxh3 Rxb2 68. Bg3 Rb3 69. a4 Ra3 70. Kg4 Rxa4+ 71. Kg5 a5 72. Bf4 Rc4 73. Bd2 a4 74. Kg6 Rg4+ 75. Kh5 Rg2 76. Bb4 Rg3 77. Bd6 a3 78. Kh4 Rb3 79. Kg5 a2 80. Kg6 Rg3+ 81. Kh7 a1=Q 0-1
+
+[Event "ChessZero arène arena_controle_a"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "732:A-noirs"]
+[White "sup (200 sim)"]
+[Black "sup (200 sim)"]
+[Result "0-1"]
+[Termination "abandon"]
+[PlyCount "162"]
+[Opening "réserve n° 732 (20 demi-coups)"]
+
+1. d4 c6 2. c4 d5 3. cxd5 cxd5 4. Nc3 Nc6 5. Nf3 g6 6. Bf4 a6 7. e3 Bg7 8. a3 Nh6 9. Bd3 O-O 10. h4 f6 11. h5 g5 12. Bg3 e5 13. dxe5 fxe5 14. Nxd5 Bf5 15. Bxf5 Nxf5 16. h6 Nxh6 17. Rh5 g4 18. Ng5 Qe8 19. Rxh6 Bxh6 20. Qxg4 Kh8 21. Ne4 Rg8 22. Qh4 Qg6 23. Qf6+ Qxf6 24. Ndxf6 Rg6 25. Rd1 Bg7 26. Nh5 Rd8 27. Rxd8+ Nxd8 28. Nxg7 Kxg7 29. Bxe5+ Kf7 30. g3 Ke6 31. Bc3 Nf7 32. Nc5+ Kd5 33. Nxb7 Ng5 34. Ke2 Ne4 35. Na5 Rh6 36. Be1 Rh2 37. Kf3 Ng5+ 38. Ke2 Ne4 39. Nb3 Nxg3+ 40. Kf3 Rh1 41. Bb4 Ne4 42. Nd2 Nxd2+ 43. Bxd2 Rb1 44. Bc3 h5 45. e4+ Ke6 46. Kg3 Rg1+ 47. Kh3 Rg4 48. f3 Rg1 49. f4 Rg4 50. f5+ Kf7 51. e5 Rf4 52. f6 Ke6 53. Kg3 Rg4+ 54. Kh3 Re4 55. Kg3 Rg4+ 56. Kh3 Re4 57. Kg3 Kf7 58. Kf3 Rg4 59. Ke3 Ke6 60. Kf3 Rg1 61. Kf2 Rg8 62. Kf3 h4 63. Be1 h3 64. Bg3 Rh8 65. Bh2 Rc8 66. Kg4 Rc2 67. Kxh3 Rxb2 68. Bg3 Rb3 69. a4 Ra3 70. Kg4 Rxa4+ 71. Kg5 a5 72. Bf4 Rc4 73. Bd2 a4 74. Kg6 Rg4+ 75. Kh5 Rg2 76. Bb4 Rg3 77. Bd6 a3 78. Kh4 Rb3 79. Kg5 a2 80. Kg6 Rg3+ 81. Kh7 a1=Q 0-1
+
+[Event "ChessZero arène arena_controle_a"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "787:A-blancs"]
+[White "sup (200 sim)"]
+[Black "sup (200 sim)"]
+[Result "1-0"]
+[Termination "mat"]
+[PlyCount "85"]
+[Opening "réserve n° 787 (20 demi-coups)"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. d4 exd4 5. Nxd4 Nxd4 6. Qxd4 Nf6 7. Nc3 Be7 8. Be3 O-O 9. O-O-O a5 10. a4 Nd7 11. f4 Bf6 12. Qd2 Re8 13. Bd4 Bxd4 14. Qxd4 Nc5 15. e5 Bg4 16. Rd2 Qh4 17. g3 Qh3 18. exd6 cxd6 19. Qxd6 Rac8 20. Bd5 h6 21. Bg2 Qh5 22. Rd5 Qg6 23. Qxg6 fxg6 24. h3 Be6 25. Re5 Bf7 26. Rhe1 Red8 27. Re7 b6 28. Rd1 Rxd1+ 29. Kxd1 Kf8 30. Re5 Rd8+ 31. Kc1 Rc8 32. Bd5 Bxd5 33. Rxd5 Re8 34. Kd2 Kf7 35. Rd6 Rb8 36. Ke3 Re8+ 37. Kd4 Re1 38. Rxb6 Ne6+ 39. Kc4 Rg1 40. Rb7+ Kf6 41. Ne4+ Kf5 42. Nd6+ Kf6 43. Rf7# 1-0
+
+[Event "ChessZero arène arena_controle_a"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "787:A-noirs"]
+[White "sup (200 sim)"]
+[Black "sup (200 sim)"]
+[Result "1-0"]
+[Termination "mat"]
+[PlyCount "85"]
+[Opening "réserve n° 787 (20 demi-coups)"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. d4 exd4 5. Nxd4 Nxd4 6. Qxd4 Nf6 7. Nc3 Be7 8. Be3 O-O 9. O-O-O a5 10. a4 Nd7 11. f4 Bf6 12. Qd2 Re8 13. Bd4 Bxd4 14. Qxd4 Nc5 15. e5 Bg4 16. Rd2 Qh4 17. g3 Qh3 18. exd6 cxd6 19. Qxd6 Rac8 20. Bd5 h6 21. Bg2 Qh5 22. Rd5 Qg6 23. Qxg6 fxg6 24. h3 Be6 25. Re5 Bf7 26. Rhe1 Red8 27. Re7 b6 28. Rd1 Rxd1+ 29. Kxd1 Kf8 30. Re5 Rd8+ 31. Kc1 Rc8 32. Bd5 Bxd5 33. Rxd5 Re8 34. Kd2 Kf7 35. Rd6 Rb8 36. Ke3 Re8+ 37. Kd4 Re1 38. Rxb6 Ne6+ 39. Kc4 Rg1 40. Rb7+ Kf6 41. Ne4+ Kf5 42. Nd6+ Kf6 43. Rf7# 1-0
+
+[Event "ChessZero arène arena_controle_a"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "1012:A-blancs"]
+[White "sup (200 sim)"]
+[Black "sup (200 sim)"]
+[Result "1-0"]
+[Termination "abandon"]
+[PlyCount "67"]
+[Opening "réserve n° 1012 (16 demi-coups)"]
+
+1. d4 d5 2. Nf3 Nf6 3. e3 Bf5 4. Be2 e6 5. O-O c5 6. b3 cxd4 7. Nxd4 Bg6 8. c4 Nc6 9. Bb2 Be7 10. Nc3 O-O 11. cxd5 Nxd5 12. Nxd5 Qxd5 13. Bf3 Be4 14. Bxe4 Qxe4 15. Nxc6 bxc6 16. Rc1 Rfd8 17. Qc2 Qxc2 18. Rxc2 c5 19. Ba3 Rac8 20. Rfc1 Rd5 21. Kf1 Rcd8 22. Bxc5 Bxc5 23. Rxc5 g6 24. Rxd5 Rxd5 25. Ke2 a5 26. e4 Rd4 27. f3 a4 28. Rc4 Rxc4 29. bxc4 Kf8 30. Kd3 Ke7 31. Kc3 Kd6 32. Kb4 Kc6 33. Kxa4 Kc5 34. Kb3 1-0
+
+[Event "ChessZero arène arena_controle_a"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "1012:A-noirs"]
+[White "sup (200 sim)"]
+[Black "sup (200 sim)"]
+[Result "1-0"]
+[Termination "abandon"]
+[PlyCount "67"]
+[Opening "réserve n° 1012 (16 demi-coups)"]
+
+1. d4 d5 2. Nf3 Nf6 3. e3 Bf5 4. Be2 e6 5. O-O c5 6. b3 cxd4 7. Nxd4 Bg6 8. c4 Nc6 9. Bb2 Be7 10. Nc3 O-O 11. cxd5 Nxd5 12. Nxd5 Qxd5 13. Bf3 Be4 14. Bxe4 Qxe4 15. Nxc6 bxc6 16. Rc1 Rfd8 17. Qc2 Qxc2 18. Rxc2 c5 19. Ba3 Rac8 20. Rfc1 Rd5 21. Kf1 Rcd8 22. Bxc5 Bxc5 23. Rxc5 g6 24. Rxd5 Rxd5 25. Ke2 a5 26. e4 Rd4 27. f3 a4 28. Rc4 Rxc4 29. bxc4 Kf8 30. Kd3 Ke7 31. Kc3 Kd6 32. Kb4 Kc6 33. Kxa4 Kc5 34. Kb3 1-0
+
+[Event "ChessZero arène arena_controle_a"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "1113:A-blancs"]
+[White "sup (200 sim)"]
+[Black "sup (200 sim)"]
+[Result "1/2-1/2"]
+[Termination "triple répétition"]
+[PlyCount "81"]
+[Opening "réserve n° 1113 (16 demi-coups)"]
+
+1. e4 c5 2. Nf3 Nc6 3. b4 cxb4 4. d4 d5 5. exd5 Qxd5 6. c4 Qe4+ 7. Be3 Bg4 8. Bd3 Bxf3 9. gxf3 Qh4 10. Qa4 e6 11. d5 exd5 12. cxd5 Ne7 13. dxc6 Nxc6 14. Be4 Qf6 15. O-O Be7 16. Nd2 O-O 17. Kh1 Bd6 18. Rg1 Bf4 19. Bxc6 Bxe3 20. fxe3 bxc6 21. Qxb4 Rfd8 22. Rad1 Rd3 23. Qg4 Rxe3 24. Ne4 Qxf3+ 25. Qxf3 Rxf3 26. Rd6 Re3 27. Nf6+ Kh8 28. Ng4 Re2 29. Rg2 Re1+ 30. Rg1 Re2 31. Rxc6 f5 32. Rc7 fxg4 33. Rxg4 g6 34. Rd4 Rxa2 35. Rdd7 h5 36. Rh7+ Kg8 37. Rcg7+ Kf8 38. Rf7+ Kg8 39. Rfg7+ Kf8 40. Rf7+ Kg8 41. Rfg7+ 1/2-1/2
+
+[Event "ChessZero arène arena_controle_a"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "1113:A-noirs"]
+[White "sup (200 sim)"]
+[Black "sup (200 sim)"]
+[Result "1/2-1/2"]
+[Termination "triple répétition"]
+[PlyCount "81"]
+[Opening "réserve n° 1113 (16 demi-coups)"]
+
+1. e4 c5 2. Nf3 Nc6 3. b4 cxb4 4. d4 d5 5. exd5 Qxd5 6. c4 Qe4+ 7. Be3 Bg4 8. Bd3 Bxf3 9. gxf3 Qh4 10. Qa4 e6 11. d5 exd5 12. cxd5 Ne7 13. dxc6 Nxc6 14. Be4 Qf6 15. O-O Be7 16. Nd2 O-O 17. Kh1 Bd6 18. Rg1 Bf4 19. Bxc6 Bxe3 20. fxe3 bxc6 21. Qxb4 Rfd8 22. Rad1 Rd3 23. Qg4 Rxe3 24. Ne4 Qxf3+ 25. Qxf3 Rxf3 26. Rd6 Re3 27. Nf6+ Kh8 28. Ng4 Re2 29. Rg2 Re1+ 30. Rg1 Re2 31. Rxc6 f5 32. Rc7 fxg4 33. Rxg4 g6 34. Rd4 Rxa2 35. Rdd7 h5 36. Rh7+ Kg8 37. Rcg7+ Kf8 38. Rf7+ Kg8 39. Rfg7+ Kf8 40. Rf7+ Kg8 41. Rfg7+ 1/2-1/2
+

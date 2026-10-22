@@ -362,7 +362,7 @@ def run_selfplay(evaluator, cfg: SelfPlayConfig, mcts_cfg: MCTSConfig, writer: S
     def new_game() -> Game:
         nonlocal started
         if book is not None and rng.random() < cfg.book_fraction:
-            index = int(rng.integers(len(book)))
+            index = book.sample_index(rng)  # hors réserve d'arène si elle a été exclue (indice du livre complet)
             board = book.board(index)
         else:
             index, board = -1, chess.Board()

@@ -1000,3 +1000,51 @@ Cycle par candidat ≈ 85 min de self-play + 6 min d'entraînement + 19 min d'ar
 - **7e** : `MODE = "loop"` dans le notebook, essai complet en local, puis première session Kaggle courte.
 - **7f** (facultatif) : `scripts/fetch_kaggle.py`.
 - (Reportée : pause du self-play avec changement de réseau à chaud.)
+
+## Étape 7a — Arène et réserve d'ouvertures (2026-10-22)
+
+Vérification préalable (demande de l'auteur) : `git log --all --oneline -- "*kaggle.json" "*access_token" ".kaggle/*"` vide, et aucun de ces fichiers dans l'arbre d'aucun des 26 commits. Commit séparé du plan et du `.gitignore` (`fe7825a`), poussé.
+
+### Réserve d'arène (écart d'exécution par rapport au plan)
+- La règle est celle du plan : une position du livre est réservée si `crc32("arena:" + EPD) % 1000 < 9` → **1 991 positions sur 225 945 (0,88 %)**.
+- **Écart** : rejouer les 226 000 suites pour leur EPD prend 40 à 70 s, à chaque chargement du livre par chaque processus de self-play (sans doute 2 fois plus sur Kaggle). La réserve est donc **calculée une fois et versionnée** : `books/lichess_2000_arena.tsv.gz` (37 Ko, même format que le livre) + `books/lichess_2000_arena.json` (règle, nombre, SHA-256 du livre). `prepare_book.py --arena-reserve` la recalcule (et elle est recalculée après une extraction complète ou `--refilter`).
+- Self-play : `exclude_arena_reserve` retire ces suites du tirage (appartenance d'une chaîne, instantané). **Les indices de départ restent ceux du livre complet** (`OpeningBook.allowed` + `sample_index`), donc `check_selfplay.py` et les shards déjà écrits restent cohérents. Le nombre d'entrées exclues est noté dans les métadonnées des shards (`arena_reserve_excluded`). La session de self-play en cours sur Kaggle (code d'avant) n'est pas concernée.
+
+### Code
+- `src/chesszero/arena.py` :
+  - `ArenaConfig` (section `[arena]` de `kaggle.toml`), `Player` ;
+  - `anchor_openings` (les 100 premières d'un ordre fixe de la réserve), `gate_openings` (100 tirées hors ancre, graine = numéro du candidat), `schedule` (chaque ouverture avec les deux couleurs) ;
+  - `ArenaGame` + `play_games` : un arbre par joueur, les arbres des parties où A est au trait partent au réseau A en un appel, ceux de B au réseau B ; coups forcés sans recherche ; abandon seulement si les deux camps sont d'accord (Q racine et Q du meilleur coup, des deux côtés, sur leurs `resign_consecutive` derniers coups) ;
+  - `summarize` : score, V/N/D, **erreur type par paires d'ouvertures**, Elo et intervalle à 95 %, probabilité que A soit meilleur, fins, répétitions avant le demi-coup 60, score des Blancs, paires à exactement 1 point sur 2 ;
+  - `gate_decision` : acceptation à 52 %, veto de l'ancre à 2 erreurs types de l'écart (les règles d'arrêt « 5 rejets » et « 2 générations sous l'ancre » viendront avec l'orchestrateur, 7d) ;
+  - fichiers : `arena.json` (joueurs identifiés par le **SHA-256** de leur checkpoint, car les chemins changent d'une session Kaggle à l'autre ; ouvertures, réglages, code git), `games.jsonl`, `games.pgn`, `result.json` (en dernier) ; `append_history` (une seule ligne par arène, avec hash git et instantané de la configuration) ; `process_runner` (processus en `spawn`, seul le processus principal écrit `games.jsonl`, les fils lui envoient leurs parties par une file).
+- `scripts/arena.py` : `--kind gate|anchor`, `--seed`, `--pairs`, `--a/--b` (+ `--a-sims/--b-sims`, noms), `--max-minutes`, `--stop-after`, `--history`, `--expect-min/--expect-max` (contrôles) ; relancer = reprendre ; codes de sortie 0 complet, 1 contrôle échoué, 3 incomplet.
+- `scripts/prepare_book.py --arena-reserve`, `book.py` (règle, chemin, calcul, exclusion), `selfplay.py` (tirage par `sample_index`).
+
+### Tests (`tests/test_arena.py`, 15 ; suite complète : 223 tests en 3 min 14)
+- Ouvertures de l'ancre fixes, ouvertures de l'arène contre l'accepté reproductibles, dépendantes de la graine, jamais dans l'ancre ; deux couleurs par ouverture.
+- Réserve versionnée conforme à la règle (toutes ses entrées, et un échantillon de 20 000 entrées du livre hors réserve) ; le self-play ne tire jamais la réserve et garde les indices du livre complet.
+- **Attribution des couleurs** : départ où les Blancs matent en un coup → A gagne avec les Blancs, perd avec les Noirs. **Attribution des réseaux et des simulations** : A à 40 simulations, B à 8 → chaque faux réseau évalue ~ses propres simulations par coup de SON joueur. **Abandon** : déclenché quand les deux camps sont d'accord, jamais quand l'adversaire ne se voit pas gagnant.
+- Erreur type par paires, Elo, probabilité d'être meilleur, 52 % ≈ +13,9 Elo ; 104/200 accepté, 103 refusé ; veto de l'ancre juste au-delà de 2 erreurs types, pas juste en deçà.
+- **Coupures** : dernière ligne tronquée de `games.jsonl` ignorée puis retirée (une ligne complète illisible = erreur) ; arène coupée après 2 parties, puis ligne tronquée et `result.json.tmp` / `games.pgn.tmp` orphelins → la reprise ne rejoue que les 4 parties manquantes et donne **exactement** le résultat d'une arène d'une traite ; arène terminée jamais rejouée ; arène différente (simulations, ouvertures) refusée ; historique sans doublon avec hash git et configuration ; chemin réel à plusieurs processus avec un petit réseau (coupure puis reprise).
+- **Reste à couvrir en 7d** : le fichier orphelin au sens de l'orchestrateur (`gen_XXXX.pt` ou `candidate.pt` écrit mais non référencé par `loop_state.json`), qui n'existe pas encore en 7a.
+
+### Diagnostic du débit sur le PC (demande de l'auteur)
+Première mesure de l'arène en local : ~340 simulations/s, environ deux fois moins que l'essai de self-play de l'étape 6c (648). Comparaison dans les mêmes conditions (réseau kaggle, CPU, 1,5 min chacun, simulations/s rapportées au temps de jeu) :
+
+| Disposition | Self-play | Arène (même réseau des deux côtés) | Écart |
+|---|---|---|---|
+| 2 processus × 2 threads, 4 parties par processus (conditions de 6c) | **447** (16 positions par appel, réseau 92 % du temps) | **403** (8 par appel et par joueur) | −10 % |
+| 2 processus × 4 threads, 10 parties par processus | 401 (39 par appel, réseau 87 %) | 327 | −18 % |
+
+- **Cause principale : la machine.** Le même self-play qu'en 6c fait 447 simulations/s aujourd'hui, contre 648. Le PC tournait **sur batterie** (statut « en décharge », 37 %, mode d'alimentation « Utilisation normale »), ce qui bride très probablement le processeur du portable (cause probable, non prouvée par une mesure sur secteur). Indice concordant : 4 threads par processus vont moins vite que 2.
+- **Part de l'arène : −10 à −18 % sur CPU.** Dans l'arène, chaque itération fait deux appels au réseau de demi-taille (un par joueur) au lieu d'un : sur CPU, où le réseau prend ~90 % du temps, des lots plus petits sont moins efficaces.
+- **Impact sur Kaggle : faible, l'estimation de ~19 min par arène tient.** Sur Kaggle, le goulot est la recherche en Python (CPU) et le GPU est peu chargé : deux lots de ~128 positions au lieu d'un de ~256 ajoutent surtout la latence d'un appel GPU par tour de collecte (~50 tours de 4 feuilles par coup, quelques ms chacun), soit de l'ordre de 2 à 5 % sur une itération d'~10 s. Compter ~19 à 20 min ; à vérifier sur la première arène Kaggle (le rapport donne les simulations/s). Aucun changement de code.
+
+### Contrôles de l'arène (version réduite, PC, réseau `kaggle_sup`, 2 processus × 2 threads, PC sur batterie)
+- **(a) `kaggle_sup` contre lui-même, 200 simulations, 5 ouvertures fixes de l'ancre (10 parties), 9,5 min** : 4 victoires, 2 nulles, 4 défaites, **score exactement 50,0 %**, **5 paires sur 5 à exactement 1 point** (chaque ouverture donne le même résultat vu des Blancs dans les deux parties : jeu déterministe) ; score des Blancs 70 % ; fins : 6 abandons (d'accord des deux camps), 2 mats, 2 répétitions ; 98 demi-coups en moyenne. CONTRÔLE RÉUSSI. L'intervalle affiché est « −0 à −0 » : erreur type nulle quand toutes les paires sont identiques (affichage sans conséquence).
+  - **Limite (remarque de l'auteur)** : avec deux joueurs identiques, ce contrôle **ne peut pas détecter une inversion des réseaux ou des couleurs**. Il vérifie la **comptabilité des paires** (deux parties par ouverture, couleurs alternées, points comptés pour le bon joueur dans chaque partie : une erreur qui donnerait par exemple toujours à A le résultat des Blancs aurait donné ~70 % ici). L'attribution elle-même est vérifiée par le contrôle (b) et par les tests unitaires (mat en un coup, simulations par joueur).
+- **(b) `kaggle_sup` à 200 simulations contre `kaggle_sup` à 50, 10 ouvertures (20 parties), 13,3 min** : 17 victoires, 2 nulles, 1 défaite, **score 90,0 %, Elo +382 (intervalle à 95 % : +232 à +1200, borne haute plafonnée)**, probabilité d'être meilleur ~100 % ; fins : 12 abandons, 4 mats, 2 arbitrages par les tables, 2 répétitions ; 81 demi-coups en moyenne ; score des Blancs 50 %. CONTRÔLE RÉUSSI (seuil 70 %). Cohérent avec le match de vérification de l'étape 6 (64 contre 200 simulations : −421 ± 139 Elo).
+- Débit : 287 simulations/s en (a), 205 en (b) (le côté à 50 simulations fait des lots plus petits ; fin des dernières parties). Durées conformes à l'estimation (10 à 12 min et 12 à 15 min).
+- Parties : `docs/arena_controle_a.pgn`, `docs/arena_controle_b.pgn` ; résultats complets dans `data/arena_controle_a|b/` (hors git). `result.json` porte le commit `fe7825a` avec `dirty = true` (code de 7a pas encore commité).
+- **À refaire au début de la première session Kaggle en `MODE = "loop"`** (plan validé) : mêmes deux contrôles sur GPU, avant la première vraie arène.

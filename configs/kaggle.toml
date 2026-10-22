@@ -57,6 +57,21 @@ buffer_positions = 500000      # fenêtre du tampon gardée d'une session à l'a
 stop_new_games_minutes = 20.0  # plus de nouvelles parties 20 min avant la fin du budget
 hard_stop_minutes = 5.0        # arrêt 5 min avant la fin (parties inachevées perdues)
 
+# Arène (étape 7a), plan validé le 2026-10-22 (voir CLAUDE.md et docs/journal.md).
+[arena]
+pairs = 100                    # contre le réseau accepté : 100 ouvertures x 2 couleurs = 200 parties
+anchor_pairs = 100             # contre l'ancre kaggle_sup : 100 ouvertures fixes x 2 couleurs
+simulations = 200              # par coup (= self-play et mesure v2)
+leaves_per_tree = 4
+games_per_worker = 64
+resign_threshold = -0.90       # abandon seulement si les deux camps sont d'accord...
+resign_consecutive = 3         # ... sur leurs 3 derniers coups...
+resign_min_ply = 20            # ... à partir du demi-coup 20
+max_plies = 400
+tablebase_pieces = 5
+accept_score = 0.52            # acceptation : >= 104 points sur 200 (~ +14 Elo)
+anchor_veto_se = 2.0           # veto : Elo contre l'ancre < celui de l'accepté - 2 erreurs types de l'écart
+
 # Entraînement sur le self-play (étape 6d), choix validés le 2026-10-22 (voir CLAUDE.md et docs/journal.md).
 [selfplay_train]
 batch_size = 1024

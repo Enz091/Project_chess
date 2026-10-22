@@ -20,6 +20,11 @@ Construction (`scripts/prepare_book.py`) :
 
 Format : `books/<nom>.tsv.gz`, une ligne par position : coups UCI séparés par des espaces, tabulation,
 nombre de parties, tabulation, valeur du réseau (camp au trait) ; + `books/<nom>.json` (paramètres, stats).
+
+Réserve d'arène (étape 7) : ~0,9 % des positions, choisies de façon stable par `crc32("arena:" + EPD)`, servent
+de départs aux arènes et ne sont plus tirées par le self-play. Calculer l'EPD de 226 000 positions prend ~40 s :
+la réserve est donc calculée une fois (`prepare_book.py --arena-reserve`) et versionnée à côté du livre
+(`books/<nom>_arena.tsv.gz`, même format) ; le self-play l'exclut par simple appartenance des suites de coups.
 """
 
 from __future__ import annotations
@@ -118,6 +123,7 @@ class OpeningBook:
         self.lines = lines
         self.counts = counts if counts is not None else np.ones(len(lines), dtype=np.int64)
         self.values = values if values is not None else np.zeros(len(lines), dtype=np.float32)
+        self.allowed = np.arange(len(lines))  # indices que `sample_index` peut tirer (tout le livre par défaut)
 
     def __len__(self) -> int:
         return len(self.lines)
@@ -162,4 +168,48 @@ class OpeningBook:
 
     def sample(self, rng: np.random.Generator) -> chess.Board:
         """Une position tirée uniformément parmi les positions distinctes du livre."""
-        return self.board(int(rng.integers(len(self.lines))))
+        return self.board(self.sample_index(rng))
+
+    def sample_index(self, rng: np.random.Generator) -> int:
+        """Indice (dans le livre complet) tiré uniformément parmi les positions permises (`allowed`)."""
+        return int(self.allowed[rng.integers(len(self.allowed))])
+
+    def exclude_from_sampling(self, lines) -> int:
+        """Les suites `lines` ne sont plus tirées par `sample_index` ; les indices des autres ne changent pas
+        (les shards de self-play désignent leur départ par son indice dans le livre complet). Renvoie le
+        nombre d'entrées exclues."""
+        excluded = set(lines)
+        keep = np.array([line not in excluded for line in self.lines])
+        if not keep.any():
+            raise ValueError("toutes les positions du livre seraient exclues")
+        self.allowed = np.nonzero(keep)[0]
+        return int((~keep).sum())
+
+
+# --------------------------------------------------------------------------- réserve d'arène (étape 7)
+
+ARENA_RESERVE_PER_MILLE = 9  # ~0,9 % du livre : ~2 000 positions sur 226 000
+
+
+def is_arena_reserved(epd: str, per_mille: int = ARENA_RESERVE_PER_MILLE) -> bool:
+    """Règle stable (indépendante de l'ordre du livre) : la position est réservée aux arènes."""
+    return zlib.crc32(("arena:" + epd).encode()) % 1000 < per_mille
+
+
+def arena_reserve_path(book_path: str | Path) -> Path:
+    """`books/<nom>.tsv.gz` -> `books/<nom>_arena.tsv.gz`."""
+    book_path = Path(book_path)
+    return book_path.with_name(book_path.name.removesuffix(".tsv.gz") + "_arena.tsv.gz")
+
+
+def compute_arena_reserve(book: OpeningBook, per_mille: int = ARENA_RESERVE_PER_MILLE) -> OpeningBook:
+    """Entrées du livre réservées aux arènes (lent : rejoue chaque suite pour son EPD, ~40 s pour 226 000)."""
+    keep = np.array([is_arena_reserved(book.board(i).epd(), per_mille) for i in range(len(book))])
+    return OpeningBook([l for l, k in zip(book.lines, keep) if k], book.counts[keep], book.values[keep])
+
+
+def exclude_arena_reserve(book: OpeningBook, book_path: str | Path) -> int:
+    """Retire du tirage du self-play la réserve d'arène versionnée à côté du livre, si elle existe.
+    Renvoie le nombre d'entrées exclues (0 sans fichier de réserve)."""
+    path = arena_reserve_path(book_path)
+    return book.exclude_from_sampling(OpeningBook.load(path).lines) if path.exists() else 0

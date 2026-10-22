@@ -11,6 +11,9 @@ comprises) ou s'arrêtent sur leur ligne. Sortie : books/<nom>.tsv.gz + books/<n
 
   prepare_book.py --refilter                          # applique seulement le retrait des ouvertures v2 au
                                                       # livre existant (même résultat, sans tout réextraire)
+  prepare_book.py --arena-reserve                     # (re)calcule seulement la réserve d'arène du livre
+                                                      # existant : books/<nom>_arena.tsv.gz (~40 s)
+La réserve d'arène est aussi recalculée à la fin d'une extraction complète et après --refilter.
 """
 
 import argparse
@@ -25,7 +28,8 @@ from pathlib import Path
 import chess
 import numpy as np
 
-from chesszero.book import OpeningBook, book_entry
+from chesszero.book import (ARENA_RESERVE_PER_MILLE, OpeningBook, arena_reserve_path, book_entry,
+                            compute_arena_reserve)
 from chesszero.data import FilterConfig, iter_game_texts, open_pgn, parse_headers, reject_reason, split_of
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -74,6 +78,23 @@ def network_values(lines: list[str], checkpoint: str, threads: int, batch: int =
     return out
 
 
+def save_arena_reserve(out: str) -> None:
+    """Réserve d'arène du livre `<out>.tsv.gz` -> `<out>_arena.tsv.gz` (+ .json) : départs des arènes (étape 7),
+    jamais tirés par le self-play."""
+    import hashlib
+
+    book_path = Path(out + ".tsv.gz")
+    book = OpeningBook.load(book_path)
+    start = time.perf_counter()
+    reserve = compute_arena_reserve(book)
+    path = arena_reserve_path(book_path)
+    reserve.save(path, {"rule": "crc32('arena:' + EPD) % 1000 < per_mille", "per_mille": ARENA_RESERVE_PER_MILLE,
+                        "positions": len(reserve), "book": book_path.name, "book_positions": len(book),
+                        "book_sha256": hashlib.sha256(book_path.read_bytes()).hexdigest()})
+    print(f"Réserve d'arène : {len(reserve)} positions sur {len(book)} ({len(reserve) / len(book):.2%}) -> {path} "
+          f"({time.perf_counter() - start:.0f} s)", flush=True)
+
+
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
@@ -87,13 +108,19 @@ def main() -> None:
     ap.add_argument("--config", default=str(ROOT / "configs" / "data.toml"))
     ap.add_argument("--workers", type=int, default=7, help="processus de lecture des coups (8 threads au plus)")
     ap.add_argument("--refilter", action="store_true", help="seulement retirer les ouvertures v2 du livre --out existant")
+    ap.add_argument("--arena-reserve", action="store_true", help="seulement (re)calculer la réserve d'arène")
     args = ap.parse_args()
+
+    if args.arena_reserve:
+        save_arena_reserve(args.out)
+        return
 
     if args.refilter:
         book = OpeningBook.load(args.out + ".tsv.gz")
         meta_path = Path(args.out + ".json")
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
         save_without_measure_openings(book, meta, args.out)
+        save_arena_reserve(args.out)
         return
 
     cfg = FilterConfig.from_toml(args.config)
@@ -163,6 +190,7 @@ def main() -> None:
     }
     print(f"{int((~keep).sum())} positions écartées par la valeur (|v| > {args.max_abs_value})", flush=True)
     save_without_measure_openings(book, meta, args.out)
+    save_arena_reserve(args.out)
 
 
 def save_without_measure_openings(book: OpeningBook, meta: dict, out: str) -> None:

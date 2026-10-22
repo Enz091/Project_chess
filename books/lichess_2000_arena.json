@@ -1,0 +1,8 @@
+{
+ "rule": "crc32('arena:' + EPD) % 1000 < per_mille",
+ "per_mille": 9,
+ "positions": 1991,
+ "book": "lichess_2000.tsv.gz",
+ "book_positions": 225945,
+ "book_sha256": "be021b951d8e3886cdc9c51280bed506c0b275edfe70b0fe62eaf805ee776716"
+}

@@ -32,7 +32,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def worker(task: dict) -> dict:
     import torch
 
-    from chesszero.book import OpeningBook
+    from chesszero.book import OpeningBook, exclude_arena_reserve
     from chesszero.checkpoint import load_for_inference
     from chesszero.device import get_device
     from chesszero.mcts import MCTSConfig, NetEvaluator
@@ -51,17 +51,20 @@ def worker(task: dict) -> dict:
     evaluator = NetEvaluator(model)
     tb = Tablebase.open(task["syzygy"], max_pieces=cfg.tablebase_pieces, wdl_only=True) if task["syzygy"] else None
     book = OpeningBook.load(task["book"]) if task["book"] else None
+    reserved = exclude_arena_reserve(book, task["book"]) if book is not None else 0  # départs des arènes
     seed = zlib.crc32(f"{task['session']}/{task['worker']}/{task['seed']}".encode())
     rng = np.random.default_rng(seed)
     prefix = f"{task['session']}_w{task['worker']}"
     shard_meta = {"session": task["session"], "worker": task["worker"], "seed": seed,
                   "generation": task["generation"], "checkpoint": Path(task["checkpoint"]).name,
                   "checkpoint_step": meta.get("step"), "book": Path(task["book"]).name if task["book"] else None,
+                  "arena_reserve_excluded": reserved,
                   "tablebase": tb.describe() if tb else None, "device": str(device),
                   "config": config_dict(cfg, mcts_cfg)}
     writer = ShardWriter(task["out"], prefix, shard_meta, cfg.shard_games, cfg.shard_minutes)
     log = (lambda msg: print(f"[w{task['worker']}] {msg}", flush=True))
-    log(f"{device}, {tb.describe() if tb else 'sans tables'}, livre {len(book) if book else 0} positions, "
+    log(f"{device}, {tb.describe() if tb else 'sans tables'}, livre {len(book) if book else 0} positions "
+        f"({reserved} réservées aux arènes, jamais tirées), "
         f"{cfg.games_per_worker} parties en parallèle, {cfg.simulations} simulations par coup")
     stats = run_selfplay(evaluator, cfg, mcts_cfg, writer, rng, prefix, book=book, tablebase=tb,
                          max_games=task["max_games"], soft_deadline=task["soft_deadline"],
