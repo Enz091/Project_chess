@@ -10,8 +10,8 @@ import chess
 import numpy as np
 import pytest
 
-from chesszero.arena import (ArenaConfig, Player, anchor_openings, append_history, gate_decision, gate_openings,
-                             play_games, read_jsonl, run_arena, schedule, summarize)
+from chesszero.arena import (ArenaConfig, Player, anchor_openings, append_history, describe, gate_decision,
+                             gate_openings, play_games, read_jsonl, run_arena, schedule, summarize)
 from chesszero.book import (OpeningBook, arena_reserve_path, exclude_arena_reserve, is_arena_reserved)
 from chesszero.mcts import MCTSConfig
 from chesszero.rating import elo_from_score
@@ -221,6 +221,88 @@ def test_anchor_veto_at_two_standard_errors():
     assert not d["accept"] and d["reasons"][0].startswith("veto de l'ancre")
     assert d["anchor_diff_se"] == pytest.approx(se)
     assert gate_decision(gate, cfg, {"elo": -500, "elo_se": 20.0})["accept"]  # sans référence : pas de veto
+
+
+# --------------------------------------------------------------------------- cas limites des statistiques
+
+
+def finite_json(summary):
+    json.dumps(summary, allow_nan=False)  # JSON strict : ni NaN ni infini
+    for k in ("score", "score_se", "elo", "elo_se", "los"):
+        assert math.isfinite(summary[k]), k
+
+
+def full(score_fn, pairs=100):
+    return [rec(o, w, score_fn(o, w)) for o in range(pairs) for w in (True, False)]
+
+
+def test_cluster_standard_error_equals_the_pair_formula_for_complete_pairs():
+    rng = np.random.default_rng(1)
+    records = full(lambda o, w: float(rng.choice([0.0, 0.5, 1.0])), pairs=40)
+    s = summarize(records)
+    pairs = [np.mean([r["score_a"] for r in records if r["opening"] == o]) for o in range(40)]
+    assert s["score_se"] == pytest.approx(np.std(pairs, ddof=1) / math.sqrt(40))
+
+
+def test_identical_pairs_give_a_floor_not_a_zero_standard_error():
+    """Contrôle (a) : chaque paire vaut 1 point sur 2 -> écart-type des paires nul ; plancher d'une demi-partie."""
+    s = summarize(full(lambda o, w: 1.0 if w else 0.0, pairs=5))
+    finite_json(s)
+    assert s["score"] == 0.5 and s["score_se"] == pytest.approx(0.5 / 10)
+    assert s["elo"] == 0.0 and math.copysign(1, s["elo"]) == 1  # pas de « −0 »
+    assert s["elo_low"] == pytest.approx(-s["elo_high"]) and s["elo_high"] > 50
+    assert s["los"] == 0.5 and "−0" not in describe(s) and "-0 " not in describe(s)
+
+
+def test_only_draws_is_finite_and_rejected():
+    s = summarize(full(lambda o, w: 0.5))
+    finite_json(s)
+    assert s["draws"] == 200 and s["score_se"] == pytest.approx(0.5 / 200)
+    assert not gate_decision(s, ArenaConfig())["accept"]  # 50 % < 52 %
+
+
+def test_perfect_and_null_scores_are_bounds_and_decided_consistently():
+    win, loss = summarize(full(lambda o, w: 1.0)), summarize(full(lambda o, w: 0.0))
+    for s in (win, loss):
+        finite_json(s)
+    assert win["elo_bound"] == "lower" and win["elo"] == pytest.approx(elo_from_score(199.5 / 200))
+    assert win["elo_high"] is None and win["elo_low"] is not None and win["los"] > 0.999
+    assert loss["elo_bound"] == "upper" and loss["elo"] == pytest.approx(-win["elo"])
+    assert loss["elo_low"] is None and loss["los"] < 0.001
+    assert "≥ " in describe(win) and "non bornée" in describe(win)
+    assert gate_decision(win, ArenaConfig())["accept"] and not gate_decision(loss, ArenaConfig())["accept"]
+
+
+def test_very_few_pairs_are_finite_and_cannot_be_decided():
+    one_game = summarize([rec(0, True, 1.0)])
+    one_pair = summarize([rec(0, True, 1.0), rec(0, False, 0.5)])
+    for s in (one_game, one_pair):
+        finite_json(s)
+    assert one_game["score_se"] == 0.5 and one_pair["score_se"] == 0.25  # plancher : une demi-partie
+    # paires incomplètes (arène reprise) : estimateur par grappes, poids de chaque partie respecté
+    partial = [rec(0, True, 1.0), rec(0, False, 1.0), rec(1, True, 0.0), rec(2, True, 1.0), rec(2, False, 0.0),
+               rec(3, True, 0.0)]
+    s = summarize(partial)
+    finite_json(s)
+    resid = {0: 1.0, 1: -0.5, 2: 0.0, 3: -0.5}  # somme des écarts au score (0,5) par paire
+    assert s["score"] == 0.5
+    assert s["score_se"] == pytest.approx(math.sqrt(4 / 3 * sum(v * v for v in resid.values()) / 36))
+    with pytest.raises(ValueError, match="incomplète"):
+        gate_decision(s, ArenaConfig())
+    with pytest.raises(ValueError, match="incomplète"):
+        gate_decision(one_pair, ArenaConfig(), anchor=s, accepted_anchor=one_pair)
+
+
+def test_veto_is_not_triggered_by_a_tiny_difference_between_degenerate_measures():
+    """Avant correction : deux erreurs types nulles -> veto pour un écart de 1 Elo."""
+    gate = summarize(full(lambda o, w: 1.0 if (o + w) % 3 else 0.5))  # candidat gagnant
+    accepted = summarize(full(lambda o, w: 0.5))  # que des nulles contre l'ancre
+    cand = summarize(full(lambda o, w: 0.0 if (o, w) == (0, True) else 0.5))  # une défaite de plus
+    d = gate_decision(gate, ArenaConfig(), cand, accepted)
+    assert cand["elo"] - accepted["elo"] == pytest.approx(d["anchor_diff"]) and -3 < d["anchor_diff"] < 0
+    assert d["accept"] and d["anchor_diff_se"] > 2
+    with pytest.raises(ValueError, match="erreur type manquante"):
+        gate_decision(gate, ArenaConfig(), {"elo": 0.0, "elo_se": None}, accepted)
 
 
 # --------------------------------------------------------------------------- fichiers, coupures, reprise

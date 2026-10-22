@@ -160,6 +160,60 @@ def play_game(task: dict) -> dict:
 # --------------------------------------------------------------------------- orchestration
 
 
+# Mode d'alimentation de Windows 11 (Paramètres > Système > Alimentation), surcouche du plan actif
+POWER_MODES = {"ded574b5-45a0-4f42-8737-46345c09c238": "meilleures performances",
+               "00000000-0000-0000-0000-000000000000": "équilibré",
+               "961cc777-2547-4f9d-8174-7d86181b8a7a": "meilleure efficacité énergétique"}
+
+_POWER_PS = r"""
+$b = Get-CimInstance Win32_Battery | Select-Object -First 1
+$p = Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Power\User\PowerSchemes' -ErrorAction SilentlyContinue
+$plan = (powercfg /getactivescheme) -join ' '
+@{battery_status = $b.BatteryStatus; battery_percent = $b.EstimatedChargeRemaining; plan = $plan;
+  overlay_ac = $p.ActiveOverlayAcPowerScheme; overlay_dc = $p.ActiveOverlayDcPowerScheme} | ConvertTo-Json -Compress
+"""
+
+
+def power_status() -> dict:
+    """Alimentation au lancement d'une mesure (Windows) : secteur ou batterie, charge, plan et mode d'alimentation.
+    Sur batterie le processeur est bridé : Stockfish (au temps) s'affaiblit, l'IA (simulations fixes) non, ce qui
+    gonfle l'Elo (règle de CLAUDE.md : mesures sur secteur, mode « meilleures performances »)."""
+    if os.name != "nt":
+        return {"on_ac": None, "note": "non mesuré (hors Windows)"}
+    try:
+        raw = subprocess.run(["powershell", "-NoProfile", "-Command", _POWER_PS], capture_output=True, text=True,
+                             timeout=30).stdout.strip()
+        d = json.loads(raw)
+    except Exception as e:  # pas de quoi bloquer une mesure, mais on le note
+        return {"on_ac": None, "note": f"non mesuré ({type(e).__name__})"}
+    status = d.get("battery_status")
+    on_ac = None if status is None else status != 1  # Win32_Battery : 1 = en décharge, 2 = sur secteur, ...
+    if status is None:  # pas de batterie : PC fixe, toujours sur secteur
+        on_ac = True
+    overlay = (d.get("overlay_ac") if on_ac else d.get("overlay_dc")) or "00000000-0000-0000-0000-000000000000"
+    plan = d.get("plan") or ""
+    return {"on_ac": on_ac, "battery_status": status, "battery_percent": d.get("battery_percent"),
+            "power_mode": POWER_MODES.get(overlay.lower(), f"inconnu ({overlay})"), "power_mode_guid": overlay,
+            "power_plan": plan[plan.find("(") + 1:plan.rfind(")")] if "(" in plan else plan}
+
+
+def power_warning(power: dict) -> str | None:
+    """Texte d'avertissement si la mesure ne se fait pas sur secteur en mode « meilleures performances »."""
+    problems = []
+    if power.get("on_ac") is False:
+        problems.append(f"SUR BATTERIE ({power.get('battery_percent')} %)")
+    elif power.get("on_ac") is None:
+        problems.append(f"alimentation inconnue ({power.get('note')})")
+    if power.get("on_ac") is not False and power.get("power_mode") not in (None, "meilleures performances"):
+        problems.append(f"mode d'alimentation « {power.get('power_mode')} »")
+    if not problems:
+        return None
+    line = "!" * 100
+    return (f"{line}\nATTENTION : {', '.join(problems)}.\nRègle de mesure : sur secteur, mode « meilleures "
+            f"performances ». Sinon le processeur est bridé : Stockfish (300 ms par coup) s'affaiblit, l'IA "
+            f"(simulations fixes) non, et l'Elo mesuré est gonflé.\n{line}")
+
+
 def environment(args) -> dict:
     import torch
 
@@ -172,7 +226,8 @@ def environment(args) -> dict:
     checkpoint = Path(args.checkpoint).resolve()
     return {"cpu": cpu, "logical_cpus": os.cpu_count(), "os": platform.platform(), "python": platform.python_version(),
             "torch": torch.__version__, "workers": args.workers, "torch_threads_per_worker": args.torch_threads,
-            "checkpoint": str(checkpoint.relative_to(ROOT)) if checkpoint.is_relative_to(ROOT) else str(checkpoint)}
+            "checkpoint": str(checkpoint.relative_to(ROOT)) if checkpoint.is_relative_to(ROOT) else str(checkpoint),
+            "power": power_status()}  # au dernier lancement (une reprise le remplace)
 
 
 def task_key(t: dict) -> tuple:
@@ -386,6 +441,11 @@ def bench(args) -> None:
     levels = [1320, 1600, 1900, 2200, 2500, 2300, 2400, 2500]
     tasks = [{"level": levels[i % len(levels)], "round": 0, "opening": (i * 7) % n_open, "ai_white": i % 2 == 0,
               "phase": "bench"} for i in range(args.bench_games or args.workers)]
+    power = power_status()
+    print(f"Alimentation : {'secteur' if power.get('on_ac') else 'batterie' if power.get('on_ac') is False else '?'}, "
+          f"mode « {power.get('power_mode')} »", flush=True)
+    if power_warning(power):
+        print(power_warning(power), flush=True)
     with make_pool(args, protocol, resolve_syzygy(args.syzygy)) as pool:
         start = time.perf_counter()
         games = play_tasks(pool, None, tasks, f"benchmark ({len(tasks)} parties, rien n'est enregistré)")
@@ -498,6 +558,9 @@ def main() -> None:
                      "choisir un autre --tag.")
         results.data["protocol"], results.data["ai"] = results.protocol, ai
         results.data["environment"] = environment(args)
+        warning = power_warning(results.data["environment"]["power"])
+        if warning:
+            print(warning, flush=True)
         print(f"{results.label} : {results.protocol['name']}, IA {results.ai}", flush=True)
         start = time.perf_counter()
         with make_pool(args, results.protocol, ai) as pool:

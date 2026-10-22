@@ -45,3 +45,14 @@ def test_round_sizes_and_tag_parsing():
     assert ms.parse_tag("kaggle_sup", "v2") == ("v2", "kaggle_sup")
     r = ms.Results("v1/kaggle_sup")
     assert r.protocol is ms.PROTOCOL_V1 and len(r.games) == 220 and r.ai == "sans tables"
+
+
+def test_power_warning_only_on_ac_with_best_performance_is_silent():
+    """Règle de mesure : secteur + « meilleures performances ». Sinon, avertissement visible au lancement."""
+    assert ms.power_warning({"on_ac": True, "power_mode": "meilleures performances"}) is None
+    battery = ms.power_warning({"on_ac": False, "battery_percent": 37, "power_mode": "meilleure efficacité énergétique"})
+    assert battery is not None and "SUR BATTERIE (37 %)" in battery
+    assert "équilibré" in ms.power_warning({"on_ac": True, "power_mode": "équilibré"})
+    assert "inconnue" in ms.power_warning({"on_ac": None, "note": "non mesuré (hors Windows)"})
+    p = ms.power_status()  # sur la machine de test : ne doit jamais lever d'exception
+    assert "on_ac" in p

@@ -19,9 +19,10 @@ Plusieurs parties par processus : à chaque itération, les arbres des parties o
 dans un même appel (`search_batched`), ceux où B est au trait au réseau B.
 
 Score, Elo, intervalle : score moyen de A (victoire 1, nulle 0,5) ; erreur type calculée PAR PAIRES d'ouvertures
-(écart-type des scores moyens des paires / racine du nombre de paires : les deux parties d'une même ouverture ne
-sont pas indépendantes) ; Elo = −400 log10(1/score − 1), intervalle à 95 % = image de score ± 1,96 erreur type ;
-probabilité que A soit meilleur = Φ((score − 0,5) / erreur type).
+(les deux parties d'une même ouverture ne sont pas indépendantes ; estimateur par grappes, `score_se`, = écart-type
+des scores moyens des paires / racine du nombre de paires quand elles sont complètes ; plancher d'une demi-partie) ;
+Elo = −400 log10(1/score − 1), intervalle à 95 % = image de score ± 1,96 erreur type ; probabilité que A soit
+meilleur = Φ((score − 0,5) / erreur type). Toujours des nombres finis (cas limites : voir `summarize`).
 
 Décision (`gate_decision`) : acceptation si score ≥ `accept_score` (52 % = 104 points sur 200) ; veto de l'ancre
 si l'Elo du candidat contre l'ancre est inférieur à celui du réseau accepté de plus de `anchor_veto_se` erreurs
@@ -354,38 +355,51 @@ def process_runner(players: dict[str, Player], cfg: ArenaConfig, base_mcts: MCTS
 # --------------------------------------------------------------------------- résultats
 
 
-def _clamp(s: float) -> float:
-    return min(max(s, 1e-3), 1 - 1e-3)
+def score_se(by_pair: dict[int, list[float]], score: float, n: int) -> float:
+    """Erreur type du score moyen, les paires d'ouvertures étant des grappes (estimateur « par grappes » :
+    (m / (m − 1)) × Σ_paires (Σ des écarts au score)² / n²). Pour des paires complètes, c'est exactement
+    l'écart-type des scores moyens des paires / √m ; il reste juste quand certaines paires n'ont qu'une partie
+    (arène reprise ou incomplète). Plancher = une demi-partie (0,5 / n) : le score n'est pas connu plus finement
+    que l'effet d'un demi-point sur une partie ; sans lui, des paires toutes identiques (ou que des nulles, ou
+    100 %) donneraient une erreur nulle, donc un intervalle vide et des décisions sur un écart de 1 Elo."""
+    m = len(by_pair)
+    cluster = 0.0
+    if m >= 2:
+        cluster = math.sqrt(m / (m - 1) * sum(sum(x - score for x in v) ** 2 for v in by_pair.values()) / n ** 2)
+    return max(cluster, 0.5 / n)
 
 
 def summarize(records: list[dict]) -> dict:
     """Score de A, Elo et intervalle (erreur type par paires d'ouvertures), probabilité que A soit meilleur, fins.
-    Une ouverture dont une seule partie est jouée (arène incomplète) compte comme une paire d'une partie."""
+    Toujours des nombres finis (JSON strict). Score de 0 % ou 100 % : Elo calculé avec une demi-partie de moins
+    (n − 0,5 sur n), noté comme une borne (`elo_bound` = "lower" ou "upper") ; une borne d'intervalle qui sortirait
+    de ]0, 1[ en score est None (non bornée)."""
     if not records:
         raise ValueError("aucune partie")
     scores = [r["score_a"] for r in records]
     by_pair = defaultdict(list)
     for r in records:
         by_pair[r["opening"]].append(r["score_a"])
-    pair_means = [sum(v) / len(v) for v in by_pair.values()]
-    n, m = len(scores), len(pair_means)
+    n = len(scores)
     score = sum(scores) / n
-    se = (float(np.std(pair_means, ddof=1)) / math.sqrt(m)) if m > 1 else float("nan")
-    s = _clamp(score)
-    elo = elo_from_score(s)
-    if math.isnan(se):
-        low = high = elo_se = los = None
-    else:
-        low, high = elo_from_score(_clamp(score - 1.96 * se)), elo_from_score(_clamp(score + 1.96 * se))
-        elo_se = se * 400 / (math.log(10) * s * (1 - s))
-        los = NormalDist().cdf((score - 0.5) / se) if se > 0 else (1.0 if score > 0.5 else 0.0 if score < 0.5 else 0.5)
+    se = score_se(by_pair, score, n)
+    half = 0.5 / n
+    s = min(max(score, half), 1 - half)  # 0 % / 100 % : une demi-partie de moins
+    elo = elo_from_score(s) + 0.0  # + 0.0 : pas de « −0 »
+    elo_bound = "lower" if score >= 1 else "upper" if score <= 0 else None
+    lo_s, hi_s = score - 1.96 * se, score + 1.96 * se
+    low = elo_from_score(lo_s) + 0.0 if lo_s > 0 else None
+    high = elo_from_score(hi_s) + 0.0 if hi_s < 1 else None
+    elo_se = se * 400 / (math.log(10) * s * (1 - s))
+    los = NormalDist().cdf((score - 0.5) / se)
     terms = Counter(r["termination"] for r in records)
     early_reps = sum(r["termination"] == TERMINATIONS[T_REPETITION] and r["plies"] < 60 for r in records)
     complete = sum(len(v) == 2 for v in by_pair.values())
     mirrored = sum(len(v) == 2 and sum(v) == 1.0 for v in by_pair.values())
-    return {"games": n, "pairs": m, "complete_pairs": complete, "points": sum(scores), "score": score,
+    return {"games": n, "pairs": len(by_pair), "complete_pairs": complete, "points": sum(scores), "score": score,
             "wins": scores.count(1.0), "draws": scores.count(0.5), "losses": scores.count(0.0),
-            "score_se": se, "elo": elo, "elo_se": elo_se, "elo_low": low, "elo_high": high, "los": los,
+            "score_se": se, "elo": elo, "elo_bound": elo_bound, "elo_se": elo_se, "elo_low": low, "elo_high": high,
+            "los": los,
             "pairs_scored_1": mirrored, "terminations": dict(terms),
             "repetitions_before_ply_60": early_reps,
             "mean_plies": sum(r["plies"] for r in records) / n,
@@ -394,8 +408,11 @@ def summarize(records: list[dict]) -> dict:
 
 def describe(summary: dict, a: str = "A", b: str = "B") -> str:
     s = summary
-    ci = (f"Elo {s['elo']:+.0f} (intervalle à 95 % : {s['elo_low']:+.0f} à {s['elo_high']:+.0f}), "
-          f"probabilité que {a} soit meilleur {s['los']:.1%}" if s["elo_low"] is not None else f"Elo {s['elo']:+.0f}")
+    bound = {"lower": "≥ ", "upper": "≤ "}.get(s.get("elo_bound"), "")
+    low = f"{s['elo_low']:+.0f}" if s["elo_low"] is not None else "non bornée"
+    high = f"{s['elo_high']:+.0f}" if s["elo_high"] is not None else "non bornée"
+    ci = (f"Elo {bound}{s['elo']:+.0f} (intervalle à 95 % : {low} à {high}), "
+          f"probabilité que {a} soit meilleur {s['los']:.1%}")
     return (f"{a} contre {b} : {s['wins']} victoires, {s['draws']} nulles, {s['losses']} défaites en {s['games']} "
             f"parties ({s['complete_pairs']} paires complètes) ; score {s['score']:.1%} ({s['points']:g} points) ; {ci}")
 
@@ -403,7 +420,15 @@ def describe(summary: dict, a: str = "A", b: str = "B") -> str:
 def gate_decision(gate: dict, cfg: ArenaConfig, anchor: dict | None = None,
                   accepted_anchor: dict | None = None) -> dict:
     """Décision sur un candidat. `gate` : résumé contre l'accepté ; `anchor` / `accepted_anchor` : résumés du
-    candidat et du réseau accepté contre l'ancre (veto seulement si les deux sont fournis)."""
+    candidat et du réseau accepté contre l'ancre (veto seulement si les deux sont fournis). Les deux mesures
+    contre l'ancre sont bruitées : l'erreur type de l'écart les combine (racine de la somme des carrés, comme si
+    elles étaient indépendantes ; jouées sur les mêmes ouvertures, elles sont plutôt corrélées positivement, donc
+    cette erreur est un peu surestimée : le veto est prudent). Une arène incomplète ne peut pas être décidée."""
+    for name, summ in (("arène contre l'accepté", gate), ("arène ancre", anchor), ("ancre de l'accepté", accepted_anchor)):
+        if summ is not None and "complete_pairs" in summ and (summ["complete_pairs"] != summ["pairs"]
+                                                              or summ["games"] != 2 * summ["pairs"]):
+            raise ValueError(f"{name} incomplète ({summ['games']} parties, {summ['complete_pairs']} paires "
+                             f"complètes sur {summ['pairs']}) : pas de décision")
     out = {"accept": True, "reasons": [], "anchor_diff": None, "anchor_diff_se": None}
     if gate["score"] < cfg.accept_score - 1e-9:
         out["accept"] = False
@@ -411,7 +436,9 @@ def gate_decision(gate: dict, cfg: ArenaConfig, anchor: dict | None = None,
                               f"< {cfg.accept_score:.0%}")
     if anchor is not None and accepted_anchor is not None:
         diff = anchor["elo"] - accepted_anchor["elo"]
-        se = math.hypot(anchor["elo_se"] or 0.0, accepted_anchor["elo_se"] or 0.0)
+        if anchor.get("elo_se") is None or accepted_anchor.get("elo_se") is None:
+            raise ValueError("veto de l'ancre : erreur type manquante (résumé d'une ancienne version ?)")
+        se = math.hypot(anchor["elo_se"], accepted_anchor["elo_se"])
         out["anchor_diff"], out["anchor_diff_se"] = diff, se
         if diff < -cfg.anchor_veto_se * se:
             out["accept"] = False
