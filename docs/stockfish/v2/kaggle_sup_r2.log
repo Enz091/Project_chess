@@ -1,0 +1,678 @@
+v2/kaggle_sup_r2 : stockfish-ladder-v2, IA Syzygy 5 pièces
+== bench de départ de la vitesse : 4 parties à jouer (0 déjà faites)
+  1/4 niveau 1320 tour 0 Sicilienne Najdorf  IA Blancs | gain    | mat                  |  51 demi-coups | 0.77 s/coup IA | 21 s | reste ~1 min
+  2/4 niveau 1900 tour 0 Viennoise           IA Blancs | gain    | mat                  |  57 demi-coups | 0.79 s/coup IA | 28 s | reste ~1 min
+  3/4 niveau 1600 tour 0 Italienne Giuoco piano IA Noirs  | gain    | mat                  |  84 demi-coups | 0.71 s/coup IA | 38 s | reste ~0 min
+  4/4 niveau 2200 tour 0 Est-indienne classique IA Noirs  | gain    | mat                  | 108 demi-coups | 0.72 s/coup IA | 49 s | reste ~0 min
+Alimentation au départ : 100 % chargée
+Vitesse de l'IA au bench de départ : 0.75 s par coup (référence de cette mesure : 0.75 s ; mesure v2 de référence : 0.80 s)
+== rejeu exact de « v2/kaggle_sup » (640 parties) : 640 parties à jouer (0 déjà faites)
+  1/640 niveau 1320 tour 0 Sicilienne Alapin   IA Noirs  | gain    | mat                  |  54 demi-coups | 0.75 s/coup IA | 24 s | reste ~253 min | moy.20 0.75 s (+0%) | 100 % chargée
+  2/640 niveau 1320 tour 0 Sicilienne Alapin   IA Blancs | gain    | mat                  |  61 demi-coups | 0.82 s/coup IA | 29 s | reste ~156 min | moy.20 0.79 s (+5%) | 100 % chargée
+  3/640 niveau 1320 tour 0 Sicilienne Najdorf  IA Blancs | gain    | mat                  |  77 demi-coups | 0.85 s/coup IA | 38 s | reste ~136 min | moy.20 0.81 s (+8%) | 100 % chargée
+  4/640 niveau 1320 tour 0 Française Winawer   IA Blancs | gain    | mat                  |  43 demi-coups | 0.75 s/coup IA | 18 s | reste ~111 min | moy.20 0.79 s (+6%) | 100 % chargée
+  5/640 niveau 1320 tour 0 Sicilienne Rossolimo IA Blancs | gain    | mat                  |  49 demi-coups | 0.86 s/coup IA | 25 s | reste ~116 min | moy.20 0.81 s (+8%) | 100 % chargée
+  6/640 niveau 1320 tour 0 Sicilienne Najdorf  IA Noirs  | gain    | mat                  | 112 demi-coups | 0.81 s/coup IA | 55 s | reste ~97 min | moy.20 0.81 s (+8%) | 100 % chargée
+  7/640 niveau 1320 tour 0 Française Winawer   IA Noirs  | gain    | mat                  |  72 demi-coups | 0.86 s/coup IA | 36 s | reste ~113 min | moy.20 0.81 s (+9%) | 100 % chargée
+  8/640 niveau 1320 tour 0 Française avance    IA Blancs | gain    | mat                  |  57 demi-coups | 0.86 s/coup IA | 28 s | reste ~109 min | moy.20 0.82 s (+10%) | 100 % chargée
+  9/640 niveau 1320 tour 0 Sicilienne Rossolimo IA Noirs  | gain    | mat                  |  86 demi-coups | 0.79 s/coup IA | 42 s | reste ~98 min | moy.20 0.82 s (+9%) | 100 % chargée
+ 10/640 niveau 1320 tour 0 Française avance    IA Noirs  | gain    | mat                  |  74 demi-coups | 0.85 s/coup IA | 38 s | reste ~97 min | moy.20 0.82 s (+10%) | 100 % chargée
+ 11/640 niveau 1320 tour 0 Caro-Kann classique IA Noirs  | gain    | mat                  |  56 demi-coups | 0.85 s/coup IA | 27 s | reste ~97 min | moy.20 0.82 s (+10%) | 100 % chargée
+ 12/640 niveau 1320 tour 0 Caro-Kann classique IA Blancs | gain    | mat                  |  49 demi-coups | 0.81 s/coup IA | 23 s | reste ~92 min | moy.20 0.82 s (+10%) | 100 % chargée
+ 13/640 niveau 1320 tour 0 Espagnole Berlin    IA Blancs | gain    | mat                  |  51 demi-coups | 0.84 s/coup IA | 25 s | reste ~87 min | moy.20 0.82 s (+10%) | 100 % chargée
+ 14/640 niveau 1320 tour 0 Espagnole Berlin    IA Noirs  | gain    | mat                  |  58 demi-coups | 0.81 s/coup IA | 27 s | reste ~89 min | moy.20 0.82 s (+10%) | 100 % chargée
+ 15/640 niveau 1320 tour 0 Italienne Giuoco piano IA Blancs | gain    | mat                  |  55 demi-coups | 0.86 s/coup IA | 27 s | reste ~90 min | moy.20 0.83 s (+10%) | 100 % chargée
+ 16/640 niveau 1320 tour 0 Italienne Giuoco piano IA Noirs  | gain    | mat                  |  54 demi-coups | 0.83 s/coup IA | 26 s | reste ~86 min | moy.20 0.83 s (+10%) | 100 % chargée
+ 17/640 niveau 1320 tour 0 Écossaise           IA Noirs  | gain    | mat                  |  58 demi-coups | 0.80 s/coup IA | 27 s | reste ~83 min | moy.20 0.82 s (+10%) | 100 % chargée
+ 18/640 niveau 1320 tour 0 Écossaise           IA Blancs | gain    | mat                  |  41 demi-coups | 0.85 s/coup IA | 19 s | reste ~80 min | moy.20 0.83 s (+10%) | 100 % chargée
+ 19/640 niveau 1320 tour 0 Pirc autrichienne   IA Blancs | gain    | mat                  |  29 demi-coups | 0.80 s/coup IA | 12 s | reste ~81 min | moy.20 0.82 s (+10%) | 100 % chargée
+ 20/640 niveau 1320 tour 0 Petrov              IA Noirs  | gain    | mat                  |  52 demi-coups | 0.76 s/coup IA | 23 s | reste ~80 min | moy.20 0.82 s (+10%) | 100 % chargée
+ 21/640 niveau 1320 tour 0 Petrov              IA Blancs | gain    | mat                  |  59 demi-coups | 0.85 s/coup IA | 30 s | reste ~78 min | moy.20 0.83 s (+10%) | 100 % chargée
+ 22/640 niveau 1320 tour 0 Pirc autrichienne   IA Noirs  | gain    | mat                  |  62 demi-coups | 0.86 s/coup IA | 31 s | reste ~80 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 23/640 niveau 1320 tour 0 Alekhine moderne    IA Blancs | gain    | mat                  |  63 demi-coups | 0.84 s/coup IA | 31 s | reste ~80 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 24/640 niveau 1320 tour 0 Scandinave Qd6      IA Noirs  | gain    | mat                  |  46 demi-coups | 0.83 s/coup IA | 22 s | reste ~78 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 25/640 niveau 1320 tour 0 Alekhine moderne    IA Noirs  | gain    | mat                  |  72 demi-coups | 0.81 s/coup IA | 35 s | reste ~78 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 26/640 niveau 1320 tour 0 Scandinave Qd6      IA Blancs | gain    | mat                  |  51 demi-coups | 0.83 s/coup IA | 25 s | reste ~77 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 27/640 niveau 1320 tour 0 Gambit du roi accepté IA Blancs | gain    | mat                  |  57 demi-coups | 0.83 s/coup IA | 29 s | reste ~79 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 28/640 niveau 1320 tour 0 Gambit du roi accepté IA Noirs  | défaite | mat                  |  45 demi-coups | 0.83 s/coup IA | 22 s | reste ~77 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 29/640 niveau 1320 tour 0 Viennoise           IA Noirs  | gain    | mat                  |  72 demi-coups | 0.81 s/coup IA | 36 s | reste ~76 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 30/640 niveau 1320 tour 0 Gambit dame refusé orthodoxe IA Blancs | gain    | mat                  |  63 demi-coups | 0.84 s/coup IA | 31 s | reste ~77 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 31/640 niveau 1320 tour 0 Gambit dame refusé orthodoxe IA Noirs  | gain    | mat                  |  46 demi-coups | 0.83 s/coup IA | 21 s | reste ~75 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 32/640 niveau 1320 tour 0 Slave               IA Blancs | gain    | mat                  |  39 demi-coups | 0.83 s/coup IA | 18 s | reste ~74 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 33/640 niveau 1320 tour 0 Viennoise           IA Blancs | gain    | mat                  |  31 demi-coups | 0.81 s/coup IA | 14 s | reste ~75 min | moy.20 0.83 s (+10%) | 100 % chargée
+ 34/640 niveau 1320 tour 0 Gambit dame accepté IA Noirs  | gain    | mat                  |  38 demi-coups | 0.84 s/coup IA | 17 s | reste ~72 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 35/640 niveau 1320 tour 0 Slave               IA Noirs  | gain    | mat                  |  54 demi-coups | 0.83 s/coup IA | 26 s | reste ~75 min | moy.20 0.83 s (+10%) | 100 % chargée
+ 36/640 niveau 1320 tour 0 Nimzo-indienne      IA Blancs | gain    | mat                  |  43 demi-coups | 0.83 s/coup IA | 20 s | reste ~74 min | moy.20 0.83 s (+10%) | 100 % chargée
+ 37/640 niveau 1320 tour 0 Semi-slave          IA Noirs  | gain    | mat                  |  72 demi-coups | 0.84 s/coup IA | 34 s | reste ~75 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 38/640 niveau 1320 tour 0 Semi-slave          IA Blancs | gain    | mat                  |  53 demi-coups | 0.85 s/coup IA | 25 s | reste ~75 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 39/640 niveau 1320 tour 0 Gambit dame accepté IA Blancs | défaite | mat                  | 138 demi-coups | 0.86 s/coup IA | 76 s | reste ~74 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 40/640 niveau 1320 tour 0 Nimzo-indienne      IA Noirs  | gain    | mat                  |  74 demi-coups | 0.85 s/coup IA | 37 s | reste ~75 min | moy.20 0.84 s (+12%) | 100 % chargée
+ 41/640 niveau 1320 tour 0 Ouest-indienne      IA Noirs  | gain    | mat                  |  74 demi-coups | 0.86 s/coup IA | 37 s | reste ~77 min | moy.20 0.84 s (+12%) | 100 % chargée
+ 42/640 niveau 1320 tour 0 Ouest-indienne      IA Blancs | gain    | mat                  |  67 demi-coups | 0.86 s/coup IA | 34 s | reste ~76 min | moy.20 0.84 s (+12%) | 100 % chargée
+ 43/640 niveau 1320 tour 0 Est-indienne classique IA Blancs | gain    | mat                  |  75 demi-coups | 0.84 s/coup IA | 37 s | reste ~75 min | moy.20 0.84 s (+12%) | 100 % chargée
+ 44/640 niveau 1320 tour 0 Grünfeld échange    IA Blancs | gain    | mat                  |  45 demi-coups | 0.75 s/coup IA | 18 s | reste ~75 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 45/640 niveau 1320 tour 0 Est-indienne classique IA Noirs  | gain    | mat                  |  68 demi-coups | 0.87 s/coup IA | 33 s | reste ~74 min | moy.20 0.83 s (+12%) | 100 % chargée
+ 46/640 niveau 1320 tour 0 Grünfeld échange    IA Noirs  | gain    | mat                  |  42 demi-coups | 0.85 s/coup IA | 18 s | reste ~74 min | moy.20 0.84 s (+12%) | 100 % chargée
+ 47/640 niveau 1320 tour 0 Benoni moderne      IA Blancs | gain    | mat                  |  67 demi-coups | 0.81 s/coup IA | 32 s | reste ~77 min | moy.20 0.83 s (+12%) | 100 % chargée
+ 48/640 niveau 1320 tour 0 Gambit Benko        IA Blancs | gain    | mat                  |  99 demi-coups | 0.81 s/coup IA | 50 s | reste ~76 min | moy.20 0.83 s (+12%) | 100 % chargée
+ 49/640 niveau 1320 tour 0 Benoni moderne      IA Noirs  | gain    | mat                  |  74 demi-coups | 0.87 s/coup IA | 37 s | reste ~76 min | moy.20 0.84 s (+12%) | 100 % chargée
+ 50/640 niveau 1320 tour 0 Catalane            IA Blancs | gain    | mat                  |  79 demi-coups | 0.85 s/coup IA | 40 s | reste ~80 min | moy.20 0.84 s (+12%) | 100 % chargée
+ 51/640 niveau 1320 tour 0 Gambit Benko        IA Noirs  | gain    | mat                  | 154 demi-coups | 0.70 s/coup IA | 72 s | reste ~78 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 52/640 niveau 1320 tour 0 Hollandaise Leningrad IA Noirs  | gain    | mat                  |  58 demi-coups | 0.84 s/coup IA | 28 s | reste ~77 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 53/640 niveau 1320 tour 0 Catalane            IA Noirs  | gain    | mat                  |  88 demi-coups | 0.84 s/coup IA | 45 s | reste ~77 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 54/640 niveau 1320 tour 0 Trompowsky          IA Noirs  | gain    | mat                  |  22 demi-coups | 0.75 s/coup IA | 8 s | reste ~76 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 55/640 niveau 1320 tour 0 Trompowsky          IA Blancs | gain    | mat                  |  63 demi-coups | 0.80 s/coup IA | 31 s | reste ~77 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 56/640 niveau 1320 tour 0 Hollandaise Leningrad IA Blancs | gain    | mat                  |  83 demi-coups | 0.83 s/coup IA | 42 s | reste ~78 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 57/640 niveau 1320 tour 0 London              IA Blancs | gain    | mat                  |  83 demi-coups | 0.83 s/coup IA | 43 s | reste ~77 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 58/640 niveau 1320 tour 0 Anglaise quatre cavaliers IA Blancs | gain    | mat                  |  21 demi-coups | 0.78 s/coup IA | 8 s | reste ~76 min | moy.20 0.82 s (+10%) | 100 % chargée
+ 59/640 niveau 1320 tour 0 Anglaise quatre cavaliers IA Noirs  | gain    | mat                  |  34 demi-coups | 0.77 s/coup IA | 15 s | reste ~76 min | moy.20 0.82 s (+9%) | 100 % chargée
+ 60/640 niveau 1320 tour 0 London              IA Noirs  | gain    | mat                  |  58 demi-coups | 0.86 s/coup IA | 30 s | reste ~75 min | moy.20 0.82 s (+10%) | 100 % chargée
+ 61/640 niveau 1320 tour 0 Anglaise symétrique IA Blancs | gain    | mat                  | 101 demi-coups | 0.82 s/coup IA | 51 s | reste ~75 min | moy.20 0.82 s (+9%) | 100 % chargée
+ 62/640 niveau 1320 tour 0 Réti                IA Blancs | gain    | mat                  |  79 demi-coups | 0.85 s/coup IA | 41 s | reste ~77 min | moy.20 0.82 s (+9%) | 100 % chargée
+ 63/640 niveau 1320 tour 0 Réti                IA Noirs  | gain    | mat                  |  84 demi-coups | 0.86 s/coup IA | 44 s | reste ~78 min | moy.20 0.82 s (+9%) | 100 % chargée
+ 64/640 niveau 1320 tour 0 Anglaise symétrique IA Noirs  | gain    | mat                  |  94 demi-coups | 0.82 s/coup IA | 47 s | reste ~77 min | moy.20 0.82 s (+10%) | 100 % chargée
+ 65/640 niveau 1320 tour 0 Polonaise 1.b4      IA Blancs | gain    | mat                  |  61 demi-coups | 0.82 s/coup IA | 31 s | reste ~78 min | moy.20 0.82 s (+9%) | 100 % chargée
+ 66/640 niveau 1320 tour 0 Polonaise 1.b4      IA Noirs  | gain    | mat                  | 108 demi-coups | 0.85 s/coup IA | 58 s | reste ~77 min | moy.20 0.82 s (+9%) | 100 % chargée
+ 67/640 niveau 1320 tour 0 Grob 1.g4           IA Blancs | gain    | mat                  |  63 demi-coups | 0.80 s/coup IA | 31 s | reste ~77 min | moy.20 0.82 s (+9%) | 100 % chargée
+ 68/640 niveau 1320 tour 0 Grob 1.g4           IA Noirs  | gain    | mat                  |  56 demi-coups | 0.88 s/coup IA | 30 s | reste ~76 min | moy.20 0.82 s (+10%) | 100 % chargée
+ 69/640 niveau 1320 tour 0 Bird 1.f4           IA Blancs | gain    | mat                  |  61 demi-coups | 0.84 s/coup IA | 31 s | reste ~78 min | moy.20 0.82 s (+9%) | 100 % chargée
+ 70/640 niveau 1320 tour 0 Bird 1.f4           IA Noirs  | gain    | mat                  |  90 demi-coups | 0.82 s/coup IA | 46 s | reste ~78 min | moy.20 0.82 s (+9%) | 100 % chargée
+ 71/640 niveau 1320 tour 0 Dunst 1.Nc3         IA Blancs | gain    | mat                  |  65 demi-coups | 0.88 s/coup IA | 35 s | reste ~77 min | moy.20 0.83 s (+10%) | 100 % chargée
+ 72/640 niveau 1320 tour 0 Larsen 1.b3         IA Noirs  | gain    | mat                  |  70 demi-coups | 0.85 s/coup IA | 36 s | reste ~76 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 73/640 niveau 1320 tour 0 Nimzowitsch 1...Nc6 IA Blancs | gain    | mat                  |  49 demi-coups | 0.82 s/coup IA | 24 s | reste ~76 min | moy.20 0.82 s (+10%) | 100 % chargée
+ 74/640 niveau 1320 tour 0 Nimzowitsch 1...Nc6 IA Noirs  | gain    | mat                  |  52 demi-coups | 0.82 s/coup IA | 25 s | reste ~77 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 75/640 niveau 1320 tour 0 Larsen 1.b3         IA Blancs | gain    | mat                  |  65 demi-coups | 0.83 s/coup IA | 33 s | reste ~76 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 76/640 niveau 1320 tour 0 Dunst 1.Nc3         IA Noirs  | gain    | mat                  |  72 demi-coups | 0.86 s/coup IA | 38 s | reste ~76 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 77/640 niveau 1320 tour 0 Owen 1...b6         IA Blancs | gain    | mat                  |  61 demi-coups | 0.80 s/coup IA | 30 s | reste ~75 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 78/640 niveau 1320 tour 0 Budapest            IA Blancs | gain    | mat                  |  59 demi-coups | 0.86 s/coup IA | 31 s | reste ~77 min | moy.20 0.83 s (+11%) | 100 % chargée
+ 79/640 niveau 1600 tour 0 Sicilienne Najdorf  IA Blancs | gain    | mat                  |  63 demi-coups | 0.82 s/coup IA | 29 s | reste ~76 min | moy.20 0.84 s (+12%) | 100 % chargée
+ 80/640 niveau 1320 tour 0 Budapest            IA Noirs  | gain    | mat                  |  50 demi-coups | 0.86 s/coup IA | 25 s | reste ~75 min | moy.20 0.84 s (+12%) | 100 % chargée
+ 81/640 niveau 1600 tour 0 Sicilienne Najdorf  IA Noirs  | gain    | mat                  |  58 demi-coups | 0.84 s/coup IA | 27 s | reste ~77 min | moy.20 0.84 s (+12%) | 100 % chargée
+ 82/640 niveau 1600 tour 0 Sicilienne Alapin   IA Blancs | gain    | mat                  |  73 demi-coups | 0.81 s/coup IA | 36 s | reste ~77 min | moy.20 0.83 s (+12%) | 100 % chargée
+ 83/640 niveau 1320 tour 0 Owen 1...b6         IA Noirs  | nulle   | 50 coups             | 259 demi-coups | 0.45 s/coup IA | 94 s | reste ~78 min | moy.20 0.81 s (+9%) | 100 % chargée
+ 84/640 niveau 1600 tour 0 Sicilienne Rossolimo IA Blancs | gain    | mat                  | 157 demi-coups | 0.85 s/coup IA | 87 s | reste ~80 min | moy.20 0.82 s (+9%) | 100 % chargée
+ 85/640 niveau 1600 tour 0 Sicilienne Rossolimo IA Noirs  | défaite | mat                  |  99 demi-coups | 0.83 s/coup IA | 53 s | reste ~79 min | moy.20 0.82 s (+9%) | 100 % chargée
+ 86/640 niveau 1600 tour 0 Française Winawer   IA Blancs | gain    | mat                  |  75 demi-coups | 0.77 s/coup IA | 36 s | reste ~79 min | moy.20 0.81 s (+9%) | 100 % chargée
+ 87/640 niveau 1600 tour 0 Sicilienne Alapin   IA Noirs  | gain    | mat                  | 158 demi-coups | 0.72 s/coup IA | 76 s | reste ~79 min | moy.20 0.81 s (+8%) | 100 % chargée
+ 88/640 niveau 1600 tour 0 Française avance    IA Noirs  | gain    | mat                  | 100 demi-coups | 0.84 s/coup IA | 51 s | reste ~81 min | moy.20 0.81 s (+8%) | 100 % chargée
+ 89/640 niveau 1600 tour 0 Française avance    IA Blancs | gain    | mat                  | 115 demi-coups | 0.84 s/coup IA | 61 s | reste ~82 min | moy.20 0.81 s (+8%) | 100 % chargée
+ 90/640 niveau 1600 tour 0 Caro-Kann classique IA Blancs | gain    | mat                  | 117 demi-coups | 0.85 s/coup IA | 62 s | reste ~82 min | moy.20 0.81 s (+8%) | 100 % chargée
+ 91/640 niveau 1600 tour 0 Française Winawer   IA Noirs  | gain    | mat                  | 154 demi-coups | 0.73 s/coup IA | 74 s | reste ~81 min | moy.20 0.80 s (+7%) | 100 % chargée
+ 92/640 niveau 1600 tour 0 Espagnole Berlin    IA Blancs | gain    | mat                  |  73 demi-coups | 0.81 s/coup IA | 36 s | reste ~81 min | moy.20 0.80 s (+7%) | 100 % chargée
+ 93/640 niveau 1600 tour 0 Espagnole Berlin    IA Noirs  | nulle   | triple répétition    |  63 demi-coups | 0.85 s/coup IA | 31 s | reste ~82 min | moy.20 0.80 s (+7%) | 100 % chargée
+ 94/640 niveau 1600 tour 0 Caro-Kann classique IA Noirs  | défaite | mat                  | 125 demi-coups | 0.79 s/coup IA | 62 s | reste ~82 min | moy.20 0.80 s (+7%) | 100 % chargée
+ 95/640 niveau 1600 tour 0 Écossaise           IA Blancs | gain    | mat                  | 111 demi-coups | 0.84 s/coup IA | 58 s | reste ~83 min | moy.20 0.80 s (+7%) | 100 % chargée
+ 96/640 niveau 1600 tour 0 Italienne Giuoco piano IA Blancs | gain    | mat                  | 131 demi-coups | 0.87 s/coup IA | 71 s | reste ~83 min | moy.20 0.80 s (+7%) | 100 % chargée
+ 97/640 niveau 1600 tour 0 Italienne Giuoco piano IA Noirs  | gain    | mat                  |  98 demi-coups | 0.84 s/coup IA | 51 s | reste ~83 min | moy.20 0.80 s (+7%) | 100 % chargée
+ 98/640 niveau 1600 tour 0 Écossaise           IA Noirs  | gain    | mat                  | 100 demi-coups | 0.85 s/coup IA | 52 s | reste ~83 min | moy.20 0.80 s (+7%) | 100 % chargée
+ 99/640 niveau 1600 tour 0 Petrov              IA Blancs | gain    | mat                  |  75 demi-coups | 0.81 s/coup IA | 36 s | reste ~83 min | moy.20 0.80 s (+7%) | 100 % chargée
+100/640 niveau 1600 tour 0 Petrov              IA Noirs  | gain    | mat                  |  70 demi-coups | 0.85 s/coup IA | 35 s | reste ~82 min | moy.20 0.80 s (+7%) | 100 % chargée
+101/640 niveau 1600 tour 0 Pirc autrichienne   IA Noirs  | gain    | mat                  |  88 demi-coups | 0.86 s/coup IA | 46 s | reste ~83 min | moy.20 0.80 s (+7%) | 100 % chargée
+102/640 niveau 1600 tour 0 Alekhine moderne    IA Blancs | gain    | mat                  |  71 demi-coups | 0.87 s/coup IA | 37 s | reste ~83 min | moy.20 0.81 s (+8%) | 100 % chargée
+103/640 niveau 1600 tour 0 Scandinave Qd6      IA Noirs  | gain    | mat                  |  70 demi-coups | 0.84 s/coup IA | 36 s | reste ~82 min | moy.20 0.83 s (+10%) | 100 % chargée
+104/640 niveau 1600 tour 0 Pirc autrichienne   IA Blancs | gain    | mat                  | 113 demi-coups | 0.83 s/coup IA | 58 s | reste ~83 min | moy.20 0.82 s (+10%) | 100 % chargée
+105/640 niveau 1600 tour 0 Scandinave Qd6      IA Blancs | gain    | mat                  |  87 demi-coups | 0.84 s/coup IA | 46 s | reste ~83 min | moy.20 0.82 s (+10%) | 100 % chargée
+106/640 niveau 1600 tour 0 Gambit du roi accepté IA Blancs | gain    | mat                  |  81 demi-coups | 0.80 s/coup IA | 40 s | reste ~83 min | moy.20 0.83 s (+10%) | 100 % chargée
+107/640 niveau 1600 tour 0 Gambit du roi accepté IA Noirs  | gain    | mat                  |  62 demi-coups | 0.88 s/coup IA | 32 s | reste ~83 min | moy.20 0.83 s (+12%) | 100 % chargée
+108/640 niveau 1600 tour 0 Viennoise           IA Noirs  | gain    | mat                  |  62 demi-coups | 0.80 s/coup IA | 30 s | reste ~83 min | moy.20 0.83 s (+11%) | 100 % chargée
+109/640 niveau 1600 tour 0 Alekhine moderne    IA Noirs  | gain    | mat                  | 130 demi-coups | 0.85 s/coup IA | 69 s | reste ~82 min | moy.20 0.83 s (+11%) | 100 % chargée
+110/640 niveau 1600 tour 0 Viennoise           IA Blancs | gain    | mat                  |  51 demi-coups | 0.85 s/coup IA | 26 s | reste ~82 min | moy.20 0.83 s (+11%) | 100 % chargée
+111/640 niveau 1600 tour 0 Gambit dame refusé orthodoxe IA Blancs | gain    | mat                  |  99 demi-coups | 0.85 s/coup IA | 51 s | reste ~83 min | moy.20 0.84 s (+12%) | 100 % chargée
+112/640 niveau 1600 tour 0 Gambit dame accepté IA Blancs | gain    | mat                  |  83 demi-coups | 0.87 s/coup IA | 44 s | reste ~83 min | moy.20 0.84 s (+13%) | 100 % chargée
+113/640 niveau 1600 tour 0 Slave               IA Noirs  | gain    | mat                  |  64 demi-coups | 0.85 s/coup IA | 32 s | reste ~83 min | moy.20 0.84 s (+12%) | 100 % chargée
+114/640 niveau 1600 tour 0 Gambit dame accepté IA Noirs  | gain    | mat                  | 100 demi-coups | 0.86 s/coup IA | 52 s | reste ~83 min | moy.20 0.84 s (+13%) | 100 % chargée
+115/640 niveau 1600 tour 0 Gambit dame refusé orthodoxe IA Noirs  | gain    | mat                  | 160 demi-coups | 0.66 s/coup IA | 71 s | reste ~82 min | moy.20 0.84 s (+12%) | 100 % chargée
+116/640 niveau 1600 tour 0 Semi-slave          IA Noirs  | gain    | mat                  |  58 demi-coups | 0.82 s/coup IA | 27 s | reste ~82 min | moy.20 0.83 s (+11%) | 100 % chargée
+117/640 niveau 1600 tour 0 Slave               IA Blancs | gain    | mat                  |  69 demi-coups | 0.83 s/coup IA | 34 s | reste ~82 min | moy.20 0.83 s (+11%) | 100 % chargée
+118/640 niveau 1600 tour 0 Nimzo-indienne      IA Blancs | gain    | mat                  |  79 demi-coups | 0.84 s/coup IA | 39 s | reste ~82 min | moy.20 0.83 s (+11%) | 100 % chargée
+119/640 niveau 1600 tour 0 Ouest-indienne      IA Blancs | gain    | mat                  |  81 demi-coups | 0.83 s/coup IA | 41 s | reste ~82 min | moy.20 0.83 s (+11%) | 100 % chargée
+120/640 niveau 1600 tour 0 Nimzo-indienne      IA Noirs  | gain    | mat                  |  72 demi-coups | 0.85 s/coup IA | 36 s | reste ~81 min | moy.20 0.83 s (+11%) | 100 % chargée
+121/640 niveau 1600 tour 0 Ouest-indienne      IA Noirs  | gain    | mat                  |  56 demi-coups | 0.82 s/coup IA | 27 s | reste ~81 min | moy.20 0.83 s (+11%) | 100 % chargée
+122/640 niveau 1600 tour 0 Est-indienne classique IA Blancs | gain    | mat                  |  89 demi-coups | 0.84 s/coup IA | 45 s | reste ~83 min | moy.20 0.83 s (+11%) | 100 % chargée
+123/640 niveau 1600 tour 0 Semi-slave          IA Blancs | gain    | mat                  | 123 demi-coups | 0.83 s/coup IA | 64 s | reste ~82 min | moy.20 0.83 s (+11%) | 100 % chargée
+124/640 niveau 1600 tour 0 Est-indienne classique IA Noirs  | gain    | mat                  |  80 demi-coups | 0.83 s/coup IA | 39 s | reste ~82 min | moy.20 0.83 s (+11%) | 100 % chargée
+125/640 niveau 1600 tour 0 Grünfeld échange    IA Blancs | gain    | mat                  | 111 demi-coups | 0.83 s/coup IA | 57 s | reste ~81 min | moy.20 0.83 s (+11%) | 100 % chargée
+126/640 niveau 1600 tour 0 Grünfeld échange    IA Noirs  | gain    | mat                  |  56 demi-coups | 0.84 s/coup IA | 26 s | reste ~81 min | moy.20 0.83 s (+11%) | 100 % chargée
+127/640 niveau 1600 tour 0 Benoni moderne      IA Blancs | gain    | mat                  |  79 demi-coups | 0.78 s/coup IA | 37 s | reste ~81 min | moy.20 0.83 s (+10%) | 100 % chargée
+128/640 niveau 1600 tour 0 Catalane            IA Noirs  | gain    | mat                  |  70 demi-coups | 0.83 s/coup IA | 34 s | reste ~82 min | moy.20 0.83 s (+11%) | 100 % chargée
+129/640 niveau 1600 tour 0 Gambit Benko        IA Noirs  | gain    | mat                  | 100 demi-coups | 0.81 s/coup IA | 49 s | reste ~81 min | moy.20 0.83 s (+10%) | 100 % chargée
+130/640 niveau 1600 tour 0 Benoni moderne      IA Noirs  | gain    | mat                  | 106 demi-coups | 0.82 s/coup IA | 53 s | reste ~80 min | moy.20 0.82 s (+10%) | 100 % chargée
+131/640 niveau 1600 tour 0 Catalane            IA Blancs | gain    | mat                  |  73 demi-coups | 0.83 s/coup IA | 36 s | reste ~81 min | moy.20 0.82 s (+10%) | 100 % chargée
+132/640 niveau 1600 tour 0 Gambit Benko        IA Blancs | gain    | mat                  |  59 demi-coups | 0.83 s/coup IA | 29 s | reste ~80 min | moy.20 0.82 s (+10%) | 100 % chargée
+133/640 niveau 1600 tour 0 Hollandaise Leningrad IA Noirs  | gain    | mat                  |  68 demi-coups | 0.86 s/coup IA | 35 s | reste ~80 min | moy.20 0.82 s (+10%) | 100 % chargée
+134/640 niveau 1600 tour 0 Hollandaise Leningrad IA Blancs | gain    | mat                  |  93 demi-coups | 0.83 s/coup IA | 48 s | reste ~80 min | moy.20 0.82 s (+10%) | 100 % chargée
+135/640 niveau 1600 tour 0 Trompowsky          IA Blancs | gain    | mat                  |  85 demi-coups | 0.80 s/coup IA | 42 s | reste ~80 min | moy.20 0.83 s (+11%) | 100 % chargée
+136/640 niveau 1600 tour 0 Trompowsky          IA Noirs  | gain    | mat                  |  78 demi-coups | 0.81 s/coup IA | 39 s | reste ~80 min | moy.20 0.83 s (+11%) | 100 % chargée
+137/640 niveau 1600 tour 0 London              IA Blancs | gain    | mat                  |  87 demi-coups | 0.82 s/coup IA | 44 s | reste ~80 min | moy.20 0.83 s (+11%) | 100 % chargée
+138/640 niveau 1600 tour 0 London              IA Noirs  | gain    | mat                  |  86 demi-coups | 0.87 s/coup IA | 46 s | reste ~80 min | moy.20 0.83 s (+11%) | 100 % chargée
+139/640 niveau 1600 tour 0 Anglaise symétrique IA Noirs  | gain    | mat                  | 108 demi-coups | 0.81 s/coup IA | 54 s | reste ~80 min | moy.20 0.83 s (+11%) | 100 % chargée
+140/640 niveau 1600 tour 0 Anglaise symétrique IA Blancs | gain    | mat                  |  97 demi-coups | 0.84 s/coup IA | 50 s | reste ~80 min | moy.20 0.83 s (+11%) | 100 % chargée
+141/640 niveau 1600 tour 0 Anglaise quatre cavaliers IA Blancs | gain    | mat                  | 121 demi-coups | 0.84 s/coup IA | 65 s | reste ~81 min | moy.20 0.83 s (+11%) | 100 % chargée
+142/640 niveau 1600 tour 0 Réti                IA Noirs  | gain    | mat                  |  74 demi-coups | 0.78 s/coup IA | 35 s | reste ~81 min | moy.20 0.82 s (+10%) | 100 % chargée
+143/640 niveau 1600 tour 0 Réti                IA Blancs | gain    | mat                  | 107 demi-coups | 0.85 s/coup IA | 57 s | reste ~80 min | moy.20 0.83 s (+10%) | 100 % chargée
+144/640 niveau 1600 tour 0 Anglaise quatre cavaliers IA Noirs  | gain    | mat                  |  88 demi-coups | 0.86 s/coup IA | 46 s | reste ~80 min | moy.20 0.83 s (+11%) | 100 % chargée
+145/640 niveau 1600 tour 0 Polonaise 1.b4      IA Blancs | gain    | mat                  |  61 demi-coups | 0.81 s/coup IA | 30 s | reste ~80 min | moy.20 0.83 s (+10%) | 100 % chargée
+146/640 niveau 1600 tour 0 Grob 1.g4           IA Noirs  | gain    | mat                  |  72 demi-coups | 0.83 s/coup IA | 37 s | reste ~80 min | moy.20 0.83 s (+10%) | 100 % chargée
+147/640 niveau 1600 tour 0 Polonaise 1.b4      IA Noirs  | gain    | mat                  | 100 demi-coups | 0.83 s/coup IA | 53 s | reste ~80 min | moy.20 0.83 s (+11%) | 100 % chargée
+148/640 niveau 1600 tour 0 Bird 1.f4           IA Blancs | gain    | mat                  |  93 demi-coups | 0.82 s/coup IA | 48 s | reste ~79 min | moy.20 0.83 s (+11%) | 100 % chargée
+149/640 niveau 1600 tour 0 Grob 1.g4           IA Blancs | gain    | mat                  | 109 demi-coups | 0.83 s/coup IA | 57 s | reste ~80 min | moy.20 0.83 s (+11%) | 100 % chargée
+150/640 niveau 1600 tour 0 Larsen 1.b3         IA Blancs | défaite | mat                  |  72 demi-coups | 0.80 s/coup IA | 36 s | reste ~80 min | moy.20 0.83 s (+11%) | 100 % chargée
+151/640 niveau 1600 tour 0 Larsen 1.b3         IA Noirs  | gain    | mat                  |  92 demi-coups | 0.85 s/coup IA | 49 s | reste ~80 min | moy.20 0.83 s (+11%) | 100 % chargée
+152/640 niveau 1600 tour 0 Bird 1.f4           IA Noirs  | gain    | mat                  | 130 demi-coups | 0.81 s/coup IA | 68 s | reste ~80 min | moy.20 0.83 s (+11%) | 100 % chargée
+153/640 niveau 1600 tour 0 Dunst 1.Nc3         IA Blancs | gain    | mat                  |  67 demi-coups | 0.85 s/coup IA | 35 s | reste ~80 min | moy.20 0.83 s (+11%) | 100 % chargée
+154/640 niveau 1600 tour 0 Dunst 1.Nc3         IA Noirs  | gain    | mat                  |  64 demi-coups | 0.84 s/coup IA | 32 s | reste ~79 min | moy.20 0.83 s (+11%) | 100 % chargée
+155/640 niveau 1600 tour 0 Nimzowitsch 1...Nc6 IA Noirs  | gain    | mat                  |  86 demi-coups | 0.84 s/coup IA | 45 s | reste ~79 min | moy.20 0.83 s (+11%) | 100 % chargée
+156/640 niveau 1600 tour 0 Nimzowitsch 1...Nc6 IA Blancs | gain    | mat                  |  81 demi-coups | 0.82 s/coup IA | 41 s | reste ~79 min | moy.20 0.83 s (+11%) | 100 % chargée
+157/640 niveau 1600 tour 0 Owen 1...b6         IA Blancs | gain    | mat                  |  73 demi-coups | 0.81 s/coup IA | 36 s | reste ~79 min | moy.20 0.83 s (+11%) | 100 % chargée
+158/640 niveau 1900 tour 0 Sicilienne Alapin   IA Blancs | gain    | mat                  |  33 demi-coups | 0.71 s/coup IA | 12 s | reste ~79 min | moy.20 0.82 s (+10%) | 100 % chargée
+159/640 niveau 1600 tour 0 Budapest            IA Blancs | gain    | mat                  |  89 demi-coups | 0.86 s/coup IA | 48 s | reste ~78 min | moy.20 0.82 s (+10%) | 100 % chargée
+160/640 niveau 1600 tour 0 Owen 1...b6         IA Noirs  | gain    | mat                  |  66 demi-coups | 0.84 s/coup IA | 34 s | reste ~78 min | moy.20 0.82 s (+10%) | 100 % chargée
+161/640 niveau 1900 tour 0 Sicilienne Najdorf  IA Blancs | gain    | mat                  |  69 demi-coups | 0.77 s/coup IA | 30 s | reste ~78 min | moy.20 0.82 s (+10%) | 100 % chargée
+162/640 niveau 1600 tour 0 Budapest            IA Noirs  | gain    | mat                  | 120 demi-coups | 0.85 s/coup IA | 65 s | reste ~78 min | moy.20 0.82 s (+10%) | 100 % chargée
+163/640 niveau 1900 tour 0 Sicilienne Alapin   IA Noirs  | gain    | mat                  |  56 demi-coups | 0.87 s/coup IA | 28 s | reste ~77 min | moy.20 0.82 s (+10%) | 100 % chargée
+164/640 niveau 1900 tour 0 Sicilienne Najdorf  IA Noirs  | nulle   | triple répétition    |  91 demi-coups | 0.86 s/coup IA | 47 s | reste ~78 min | moy.20 0.82 s (+10%) | 100 % chargée
+165/640 niveau 1900 tour 0 Sicilienne Rossolimo IA Blancs | gain    | mat                  |  89 demi-coups | 0.84 s/coup IA | 47 s | reste ~78 min | moy.20 0.83 s (+11%) | 100 % chargée
+166/640 niveau 1900 tour 0 Française Winawer   IA Blancs | gain    | mat                  |  89 demi-coups | 0.85 s/coup IA | 46 s | reste ~77 min | moy.20 0.83 s (+11%) | 100 % chargée
+167/640 niveau 1900 tour 0 Française Winawer   IA Noirs  | gain    | mat                  | 118 demi-coups | 0.85 s/coup IA | 62 s | reste ~77 min | moy.20 0.83 s (+11%) | 100 % chargée
+168/640 niveau 1900 tour 0 Française avance    IA Blancs | gain    | mat                  |  75 demi-coups | 0.83 s/coup IA | 38 s | reste ~78 min | moy.20 0.83 s (+11%) | 100 % chargée
+169/640 niveau 1900 tour 0 Sicilienne Rossolimo IA Noirs  | gain    | mat                  | 118 demi-coups | 0.82 s/coup IA | 62 s | reste ~78 min | moy.20 0.83 s (+11%) | 100 % chargée
+170/640 niveau 1900 tour 0 Caro-Kann classique IA Blancs | gain    | mat                  | 111 demi-coups | 0.84 s/coup IA | 58 s | reste ~78 min | moy.20 0.83 s (+11%) | 100 % chargée
+171/640 niveau 1900 tour 0 Française avance    IA Noirs  | gain    | mat                  |  86 demi-coups | 0.86 s/coup IA | 45 s | reste ~77 min | moy.20 0.83 s (+11%) | 100 % chargée
+172/640 niveau 1900 tour 0 Espagnole Berlin    IA Noirs  | gain    | mat                  |  64 demi-coups | 0.84 s/coup IA | 32 s | reste ~77 min | moy.20 0.83 s (+11%) | 100 % chargée
+173/640 niveau 1900 tour 0 Caro-Kann classique IA Noirs  | gain    | mat                  | 116 demi-coups | 0.84 s/coup IA | 60 s | reste ~78 min | moy.20 0.83 s (+11%) | 100 % chargée
+174/640 niveau 1900 tour 0 Italienne Giuoco piano IA Blancs | gain    | mat                  |  87 demi-coups | 0.89 s/coup IA | 47 s | reste ~77 min | moy.20 0.83 s (+12%) | 100 % chargée
+175/640 niveau 1900 tour 0 Espagnole Berlin    IA Blancs | gain    | mat                  |  91 demi-coups | 0.86 s/coup IA | 48 s | reste ~77 min | moy.20 0.84 s (+12%) | 100 % chargée
+176/640 niveau 1900 tour 0 Italienne Giuoco piano IA Noirs  | gain    | mat                  |  92 demi-coups | 0.82 s/coup IA | 46 s | reste ~77 min | moy.20 0.84 s (+12%) | 100 % chargée
+177/640 niveau 1900 tour 0 Petrov              IA Noirs  | gain    | mat                  | 108 demi-coups | 0.83 s/coup IA | 55 s | reste ~78 min | moy.20 0.84 s (+12%) | 100 % chargée
+178/640 niveau 1900 tour 0 Petrov              IA Blancs | gain    | mat                  | 125 demi-coups | 0.82 s/coup IA | 65 s | reste ~78 min | moy.20 0.84 s (+13%) | 100 % chargée
+179/640 niveau 1900 tour 0 Écossaise           IA Blancs | défaite | mat                  | 162 demi-coups | 0.73 s/coup IA | 78 s | reste ~78 min | moy.20 0.84 s (+12%) | 100 % chargée
+180/640 niveau 1900 tour 0 Pirc autrichienne   IA Noirs  | gain    | mat                  |  74 demi-coups | 0.78 s/coup IA | 33 s | reste ~78 min | moy.20 0.83 s (+11%) | 100 % chargée
+181/640 niveau 1900 tour 0 Alekhine moderne    IA Noirs  | gain    | mat                  |  54 demi-coups | 0.84 s/coup IA | 26 s | reste ~77 min | moy.20 0.84 s (+12%) | 100 % chargée
+182/640 niveau 1900 tour 0 Pirc autrichienne   IA Blancs | gain    | mat                  | 117 demi-coups | 0.64 s/coup IA | 50 s | reste ~77 min | moy.20 0.83 s (+10%) | 100 % chargée
+183/640 niveau 1900 tour 0 Écossaise           IA Noirs  | défaite | mat                  | 229 demi-coups | 0.76 s/coup IA | 115 s | reste ~77 min | moy.20 0.82 s (+10%) | 100 % chargée
+184/640 niveau 1900 tour 0 Scandinave Qd6      IA Noirs  | gain    | mat                  |  66 demi-coups | 0.80 s/coup IA | 31 s | reste ~77 min | moy.20 0.82 s (+9%) | 100 % chargée
+185/640 niveau 1900 tour 0 Scandinave Qd6      IA Blancs | gain    | mat                  |  55 demi-coups | 0.82 s/coup IA | 27 s | reste ~77 min | moy.20 0.82 s (+9%) | 100 % chargée
+186/640 niveau 1900 tour 0 Alekhine moderne    IA Blancs | gain    | mat                  |  85 demi-coups | 0.81 s/coup IA | 42 s | reste ~76 min | moy.20 0.81 s (+9%) | 100 % chargée
+187/640 niveau 1900 tour 0 Viennoise           IA Blancs | gain    | mat                  |  73 demi-coups | 0.79 s/coup IA | 36 s | reste ~76 min | moy.20 0.81 s (+8%) | 100 % chargée
+188/640 niveau 1900 tour 0 Gambit du roi accepté IA Noirs  | gain    | mat                  |  58 demi-coups | 0.81 s/coup IA | 28 s | reste ~76 min | moy.20 0.81 s (+8%) | 100 % chargée
+189/640 niveau 1900 tour 0 Gambit du roi accepté IA Blancs | gain    | mat                  |  53 demi-coups | 0.83 s/coup IA | 27 s | reste ~76 min | moy.20 0.81 s (+8%) | 100 % chargée
+190/640 niveau 1900 tour 0 Gambit dame refusé orthodoxe IA Noirs  | gain    | mat                  |  62 demi-coups | 0.81 s/coup IA | 29 s | reste ~76 min | moy.20 0.81 s (+8%) | 100 % chargée
+191/640 niveau 1900 tour 0 Gambit dame refusé orthodoxe IA Blancs | gain    | mat                  | 123 demi-coups | 0.81 s/coup IA | 64 s | reste ~76 min | moy.20 0.81 s (+8%) | 100 % chargée
+192/640 niveau 1900 tour 0 Gambit dame accepté IA Noirs  | défaite | mat                  |  53 demi-coups | 0.76 s/coup IA | 24 s | reste ~76 min | moy.20 0.80 s (+7%) | 100 % chargée
+193/640 niveau 1900 tour 0 Slave               IA Blancs | gain    | mat                  | 123 demi-coups | 0.80 s/coup IA | 63 s | reste ~76 min | moy.20 0.80 s (+7%) | 100 % chargée
+194/640 niveau 1900 tour 0 Semi-slave          IA Blancs | gain    | mat                  |  83 demi-coups | 0.85 s/coup IA | 42 s | reste ~76 min | moy.20 0.80 s (+7%) | 100 % chargée
+195/640 niveau 1900 tour 0 Semi-slave          IA Noirs  | gain    | mat                  | 102 demi-coups | 0.84 s/coup IA | 52 s | reste ~76 min | moy.20 0.80 s (+7%) | 100 % chargée
+196/640 niveau 1900 tour 0 Viennoise           IA Noirs  | gain    | mat                  | 228 demi-coups | 0.83 s/coup IA | 126 s | reste ~76 min | moy.20 0.80 s (+7%) | 100 % chargée
+197/640 niveau 1900 tour 0 Slave               IA Noirs  | défaite | mat                  | 103 demi-coups | 0.87 s/coup IA | 55 s | reste ~76 min | moy.20 0.80 s (+7%) | 100 % chargée
+198/640 niveau 1900 tour 0 Ouest-indienne      IA Noirs  | gain    | mat                  |  90 demi-coups | 0.82 s/coup IA | 45 s | reste ~76 min | moy.20 0.80 s (+7%) | 100 % chargée
+199/640 niveau 1900 tour 0 Nimzo-indienne      IA Noirs  | gain    | mat                  | 108 demi-coups | 0.88 s/coup IA | 58 s | reste ~76 min | moy.20 0.81 s (+8%) | 100 % chargée
+200/640 niveau 1900 tour 0 Gambit dame accepté IA Blancs | nulle   | matériel insuffisant | 124 demi-coups | 0.86 s/coup IA | 68 s | reste ~75 min | moy.20 0.81 s (+8%) | 100 % chargée
+201/640 niveau 1900 tour 0 Ouest-indienne      IA Blancs | gain    | mat                  |  87 demi-coups | 0.83 s/coup IA | 44 s | reste ~76 min | moy.20 0.81 s (+8%) | 100 % chargée
+202/640 niveau 1900 tour 0 Est-indienne classique IA Blancs | défaite | mat                  |  88 demi-coups | 0.83 s/coup IA | 44 s | reste ~76 min | moy.20 0.82 s (+10%) | 100 % chargée
+203/640 niveau 1900 tour 0 Grünfeld échange    IA Blancs | gain    | mat                  |  91 demi-coups | 0.81 s/coup IA | 45 s | reste ~75 min | moy.20 0.82 s (+10%) | 100 % chargée
+204/640 niveau 1900 tour 0 Est-indienne classique IA Noirs  | gain    | mat                  |  98 demi-coups | 0.84 s/coup IA | 50 s | reste ~76 min | moy.20 0.83 s (+10%) | 100 % chargée
+205/640 niveau 1900 tour 0 Nimzo-indienne      IA Blancs | nulle   | matériel insuffisant | 145 demi-coups | 0.80 s/coup IA | 75 s | reste ~75 min | moy.20 0.82 s (+10%) | 100 % chargée
+206/640 niveau 1900 tour 0 Grünfeld échange    IA Noirs  | gain    | mat                  |  72 demi-coups | 0.84 s/coup IA | 34 s | reste ~75 min | moy.20 0.83 s (+10%) | 100 % chargée
+207/640 niveau 1900 tour 0 Benoni moderne      IA Blancs | défaite | mat                  |  82 demi-coups | 0.86 s/coup IA | 42 s | reste ~74 min | moy.20 0.83 s (+11%) | 100 % chargée
+208/640 niveau 1900 tour 0 Benoni moderne      IA Noirs  | gain    | mat                  |  74 demi-coups | 0.85 s/coup IA | 36 s | reste ~75 min | moy.20 0.83 s (+11%) | 100 % chargée
+209/640 niveau 1900 tour 0 Catalane            IA Blancs | gain    | mat                  |  71 demi-coups | 0.87 s/coup IA | 37 s | reste ~75 min | moy.20 0.83 s (+11%) | 100 % chargée
+210/640 niveau 1900 tour 0 Gambit Benko        IA Blancs | gain    | mat                  | 105 demi-coups | 0.85 s/coup IA | 55 s | reste ~74 min | moy.20 0.84 s (+12%) | 100 % chargée
+211/640 niveau 1900 tour 0 Hollandaise Leningrad IA Blancs | défaite | mat                  |  98 demi-coups | 0.82 s/coup IA | 51 s | reste ~75 min | moy.20 0.84 s (+12%) | 100 % chargée
+212/640 niveau 1900 tour 0 Gambit Benko        IA Noirs  | nulle   | triple répétition    | 157 demi-coups | 0.79 s/coup IA | 81 s | reste ~74 min | moy.20 0.84 s (+12%) | 100 % chargée
+213/640 niveau 1900 tour 0 Trompowsky          IA Noirs  | gain    | mat                  | 118 demi-coups | 0.83 s/coup IA | 63 s | reste ~75 min | moy.20 0.84 s (+12%) | 100 % chargée
+214/640 niveau 1900 tour 0 Trompowsky          IA Blancs | défaite | mat                  | 132 demi-coups | 0.83 s/coup IA | 72 s | reste ~75 min | moy.20 0.84 s (+12%) | 100 % chargée
+215/640 niveau 1900 tour 0 London              IA Blancs | gain    | mat                  |  45 demi-coups | 0.78 s/coup IA | 21 s | reste ~74 min | moy.20 0.83 s (+12%) | 100 % chargée
+216/640 niveau 1900 tour 0 Hollandaise Leningrad IA Noirs  | gain    | mat                  |  82 demi-coups | 0.83 s/coup IA | 41 s | reste ~74 min | moy.20 0.83 s (+12%) | 100 % chargée
+217/640 niveau 1900 tour 0 Catalane            IA Noirs  | défaite | mat                  | 107 demi-coups | 0.85 s/coup IA | 57 s | reste ~74 min | moy.20 0.83 s (+11%) | 100 % chargée
+218/640 niveau 1900 tour 0 Anglaise symétrique IA Blancs | gain    | mat                  | 119 demi-coups | 0.65 s/coup IA | 52 s | reste ~74 min | moy.20 0.83 s (+10%) | 100 % chargée
+219/640 niveau 1900 tour 0 Anglaise symétrique IA Noirs  | gain    | mat                  | 106 demi-coups | 0.85 s/coup IA | 55 s | reste ~74 min | moy.20 0.82 s (+10%) | 100 % chargée
+220/640 niveau 1900 tour 0 London              IA Noirs  | gain    | mat                  |  84 demi-coups | 0.85 s/coup IA | 44 s | reste ~74 min | moy.20 0.82 s (+10%) | 100 % chargée
+221/640 niveau 1900 tour 0 Réti                IA Blancs | gain    | mat                  | 149 demi-coups | 0.84 s/coup IA | 80 s | reste ~74 min | moy.20 0.82 s (+10%) | 100 % chargée
+222/640 niveau 1900 tour 0 Polonaise 1.b4      IA Blancs | gain    | mat                  |  75 demi-coups | 0.84 s/coup IA | 39 s | reste ~74 min | moy.20 0.82 s (+10%) | 100 % chargée
+223/640 niveau 1900 tour 0 Anglaise quatre cavaliers IA Noirs  | gain    | mat                  | 104 demi-coups | 0.81 s/coup IA | 54 s | reste ~73 min | moy.20 0.82 s (+10%) | 100 % chargée
+224/640 niveau 1900 tour 0 Réti                IA Noirs  | défaite | mat                  | 103 demi-coups | 0.81 s/coup IA | 52 s | reste ~73 min | moy.20 0.82 s (+10%) | 100 % chargée
+225/640 niveau 1900 tour 0 Anglaise quatre cavaliers IA Blancs | gain    | mat                  |  93 demi-coups | 0.80 s/coup IA | 47 s | reste ~74 min | moy.20 0.82 s (+10%) | 100 % chargée
+226/640 niveau 1900 tour 0 Polonaise 1.b4      IA Noirs  | nulle   | matériel insuffisant | 147 demi-coups | 0.61 s/coup IA | 64 s | reste ~73 min | moy.20 0.81 s (+8%) | 100 % chargée
+227/640 niveau 1900 tour 0 Grob 1.g4           IA Blancs | gain    | mat                  |  91 demi-coups | 0.79 s/coup IA | 46 s | reste ~73 min | moy.20 0.81 s (+8%) | 100 % chargée
+228/640 niveau 1900 tour 0 Bird 1.f4           IA Noirs  | gain    | mat                  | 104 demi-coups | 0.82 s/coup IA | 54 s | reste ~73 min | moy.20 0.81 s (+8%) | 100 % chargée
+229/640 niveau 1900 tour 0 Bird 1.f4           IA Blancs | gain    | mat                  |  67 demi-coups | 0.78 s/coup IA | 33 s | reste ~73 min | moy.20 0.80 s (+7%) | 100 % chargée
+230/640 niveau 1900 tour 0 Larsen 1.b3         IA Blancs | gain    | mat                  |  79 demi-coups | 0.80 s/coup IA | 40 s | reste ~73 min | moy.20 0.80 s (+7%) | 100 % chargée
+231/640 niveau 1900 tour 0 Larsen 1.b3         IA Noirs  | nulle   | triple répétition    |  91 demi-coups | 0.86 s/coup IA | 49 s | reste ~72 min | moy.20 0.80 s (+7%) | 100 % chargée
+232/640 niveau 1900 tour 0 Dunst 1.Nc3         IA Blancs | gain    | mat                  |  75 demi-coups | 0.78 s/coup IA | 37 s | reste ~72 min | moy.20 0.80 s (+7%) | 100 % chargée
+233/640 niveau 1900 tour 0 Grob 1.g4           IA Noirs  | défaite | mat                  | 137 demi-coups | 0.85 s/coup IA | 75 s | reste ~72 min | moy.20 0.80 s (+7%) | 100 % chargée
+234/640 niveau 1900 tour 0 Owen 1...b6         IA Blancs | gain    | mat                  |  59 demi-coups | 0.83 s/coup IA | 29 s | reste ~72 min | moy.20 0.80 s (+7%) | 100 % chargée
+235/640 niveau 1900 tour 0 Nimzowitsch 1...Nc6 IA Noirs  | gain    | mat                  |  98 demi-coups | 0.81 s/coup IA | 51 s | reste ~72 min | moy.20 0.80 s (+7%) | 100 % chargée
+236/640 niveau 1900 tour 0 Nimzowitsch 1...Nc6 IA Blancs | défaite | mat                  | 114 demi-coups | 0.87 s/coup IA | 64 s | reste ~72 min | moy.20 0.80 s (+8%) | 100 % chargée
+237/640 niveau 1900 tour 0 Dunst 1.Nc3         IA Noirs  | gain    | mat                  |  90 demi-coups | 0.86 s/coup IA | 49 s | reste ~71 min | moy.20 0.80 s (+8%) | 100 % chargée
+238/640 niveau 1900 tour 0 Budapest            IA Blancs | gain    | mat                  |  49 demi-coups | 0.76 s/coup IA | 22 s | reste ~71 min | moy.20 0.81 s (+8%) | 100 % chargée
+239/640 niveau 1900 tour 0 Owen 1...b6         IA Noirs  | gain    | mat                  |  84 demi-coups | 0.86 s/coup IA | 44 s | reste ~71 min | moy.20 0.81 s (+9%) | 100 % chargée
+240/640 niveau 1900 tour 0 Budapest            IA Noirs  | gain    | mat                  | 134 demi-coups | 0.75 s/coup IA | 67 s | reste ~71 min | moy.20 0.81 s (+8%) | 100 % chargée
+241/640 niveau 2200 tour 0 Sicilienne Najdorf  IA Blancs | nulle   | triple répétition    |  82 demi-coups | 0.89 s/coup IA | 43 s | reste ~71 min | moy.20 0.81 s (+8%) | 100 % chargée
+242/640 niveau 2200 tour 0 Sicilienne Alapin   IA Noirs  | défaite | mat                  |  75 demi-coups | 0.82 s/coup IA | 37 s | reste ~71 min | moy.20 0.81 s (+8%) | 100 % chargée
+243/640 niveau 2200 tour 0 Sicilienne Rossolimo IA Blancs | nulle   | triple répétition    |  56 demi-coups | 0.89 s/coup IA | 30 s | reste ~71 min | moy.20 0.81 s (+9%) | 100 % chargée
+244/640 niveau 2200 tour 0 Sicilienne Najdorf  IA Noirs  | gain    | mat                  | 136 demi-coups | 0.85 s/coup IA | 72 s | reste ~71 min | moy.20 0.81 s (+9%) | 100 % chargée
+245/640 niveau 2200 tour 0 Française Winawer   IA Blancs | gain    | mat                  |  95 demi-coups | 0.83 s/coup IA | 48 s | reste ~71 min | moy.20 0.82 s (+9%) | 100 % chargée
+246/640 niveau 2200 tour 0 Française Winawer   IA Noirs  | défaite | mat                  |  71 demi-coups | 0.82 s/coup IA | 35 s | reste ~71 min | moy.20 0.83 s (+11%) | 100 % chargée
+247/640 niveau 2200 tour 0 Sicilienne Rossolimo IA Noirs  | défaite | mat                  | 129 demi-coups | 0.86 s/coup IA | 71 s | reste ~71 min | moy.20 0.83 s (+11%) | 100 % chargée
+248/640 niveau 2200 tour 0 Caro-Kann classique IA Noirs  | gain    | mat                  | 106 demi-coups | 0.83 s/coup IA | 55 s | reste ~72 min | moy.20 0.83 s (+11%) | 100 % chargée
+249/640 niveau 2200 tour 0 Sicilienne Alapin   IA Blancs | nulle   | triple répétition    | 297 demi-coups | 0.81 s/coup IA | 161 s | reste ~71 min | moy.20 0.83 s (+11%) | 100 % chargée
+250/640 niveau 2200 tour 0 Française avance    IA Blancs | gain    | mat                  | 191 demi-coups | 0.69 s/coup IA | 90 s | reste ~71 min | moy.20 0.83 s (+11%) | 100 % chargée
+251/640 niveau 2200 tour 0 Caro-Kann classique IA Blancs | nulle   | matériel insuffisant | 202 demi-coups | 0.77 s/coup IA | 104 s | reste ~71 min | moy.20 0.82 s (+10%) | 100 % chargée
+252/640 niveau 2200 tour 0 Française avance    IA Noirs  | gain    | mat                  |  72 demi-coups | 0.81 s/coup IA | 35 s | reste ~71 min | moy.20 0.82 s (+10%) | 100 % chargée
+253/640 niveau 2200 tour 0 Espagnole Berlin    IA Blancs | gain    | mat                  |  85 demi-coups | 0.76 s/coup IA | 40 s | reste ~71 min | moy.20 0.82 s (+9%) | 100 % chargée
+254/640 niveau 2200 tour 0 Petrov              IA Blancs | gain    | mat                  |  71 demi-coups | 0.82 s/coup IA | 35 s | reste ~71 min | moy.20 0.82 s (+9%) | 100 % chargée
+255/640 niveau 2200 tour 0 Italienne Giuoco piano IA Blancs | défaite | mat                  | 104 demi-coups | 0.86 s/coup IA | 55 s | reste ~70 min | moy.20 0.82 s (+10%) | 100 % chargée
+256/640 niveau 2200 tour 0 Espagnole Berlin    IA Noirs  | gain    | mat                  | 140 demi-coups | 0.80 s/coup IA | 72 s | reste ~70 min | moy.20 0.82 s (+9%) | 100 % chargée
+257/640 niveau 2200 tour 0 Italienne Giuoco piano IA Noirs  | gain    | mat                  |  94 demi-coups | 0.79 s/coup IA | 46 s | reste ~70 min | moy.20 0.81 s (+9%) | 100 % chargée
+258/640 niveau 2200 tour 0 Écossaise           IA Noirs  | gain    | mat                  | 122 demi-coups | 0.84 s/coup IA | 65 s | reste ~70 min | moy.20 0.82 s (+9%) | 100 % chargée
+259/640 niveau 2200 tour 0 Écossaise           IA Blancs | gain    | mat                  | 113 demi-coups | 0.82 s/coup IA | 58 s | reste ~70 min | moy.20 0.82 s (+9%) | 100 % chargée
+260/640 niveau 2200 tour 0 Petrov              IA Noirs  | gain    | mat                  | 110 demi-coups | 0.83 s/coup IA | 56 s | reste ~70 min | moy.20 0.82 s (+10%) | 100 % chargée
+261/640 niveau 2200 tour 0 Pirc autrichienne   IA Blancs | gain    | mat                  | 135 demi-coups | 0.86 s/coup IA | 73 s | reste ~70 min | moy.20 0.82 s (+9%) | 100 % chargée
+262/640 niveau 2200 tour 0 Alekhine moderne    IA Blancs | gain    | mat                  |  97 demi-coups | 0.85 s/coup IA | 50 s | reste ~70 min | moy.20 0.82 s (+10%) | 100 % chargée
+263/640 niveau 2200 tour 0 Pirc autrichienne   IA Noirs  | défaite | mat                  | 129 demi-coups | 0.82 s/coup IA | 68 s | reste ~70 min | moy.20 0.82 s (+9%) | 100 % chargée
+264/640 niveau 2200 tour 0 Alekhine moderne    IA Noirs  | défaite | mat                  | 131 demi-coups | 0.84 s/coup IA | 70 s | reste ~69 min | moy.20 0.81 s (+9%) | 100 % chargée
+265/640 niveau 2200 tour 0 Scandinave Qd6      IA Blancs | gain    | mat                  |  71 demi-coups | 0.85 s/coup IA | 37 s | reste ~69 min | moy.20 0.82 s (+9%) | 100 % chargée
+266/640 niveau 2200 tour 0 Gambit du roi accepté IA Blancs | gain    | mat                  |  77 demi-coups | 0.85 s/coup IA | 40 s | reste ~69 min | moy.20 0.82 s (+9%) | 100 % chargée
+267/640 niveau 2200 tour 0 Scandinave Qd6      IA Noirs  | gain    | mat                  | 150 demi-coups | 0.85 s/coup IA | 83 s | reste ~70 min | moy.20 0.82 s (+9%) | 100 % chargée
+268/640 niveau 2200 tour 0 Viennoise           IA Noirs  | défaite | mat                  | 139 demi-coups | 0.84 s/coup IA | 76 s | reste ~70 min | moy.20 0.82 s (+9%) | 100 % chargée
+269/640 niveau 2200 tour 0 Gambit du roi accepté IA Noirs  | nulle   | matériel insuffisant | 161 demi-coups | 0.77 s/coup IA | 83 s | reste ~69 min | moy.20 0.82 s (+9%) | 100 % chargée
+270/640 niveau 2200 tour 0 Viennoise           IA Blancs | nulle   | triple répétition    | 100 demi-coups | 0.86 s/coup IA | 55 s | reste ~69 min | moy.20 0.82 s (+10%) | 100 % chargée
+271/640 niveau 2200 tour 0 Gambit dame refusé orthodoxe IA Blancs | gain    | mat                  |  93 demi-coups | 0.84 s/coup IA | 48 s | reste ~69 min | moy.20 0.83 s (+11%) | 100 % chargée
+272/640 niveau 2200 tour 0 Slave               IA Blancs | gain    | mat                  |  59 demi-coups | 0.83 s/coup IA | 29 s | reste ~69 min | moy.20 0.83 s (+11%) | 100 % chargée
+273/640 niveau 2200 tour 0 Gambit dame accepté IA Noirs  | gain    | mat                  |  66 demi-coups | 0.83 s/coup IA | 32 s | reste ~69 min | moy.20 0.83 s (+11%) | 100 % chargée
+274/640 niveau 2200 tour 0 Gambit dame accepté IA Blancs | nulle   | pat                  | 145 demi-coups | 0.69 s/coup IA | 68 s | reste ~68 min | moy.20 0.83 s (+10%) | 100 % chargée
+275/640 niveau 2200 tour 0 Gambit dame refusé orthodoxe IA Noirs  | défaite | mat                  | 139 demi-coups | 0.83 s/coup IA | 74 s | reste ~68 min | moy.20 0.82 s (+10%) | 100 % chargée
+276/640 niveau 2200 tour 0 Slave               IA Noirs  | gain    | mat                  |  90 demi-coups | 0.85 s/coup IA | 47 s | reste ~68 min | moy.20 0.83 s (+11%) | 100 % chargée
+277/640 niveau 2200 tour 0 Semi-slave          IA Blancs | gain    | mat                  |  65 demi-coups | 0.87 s/coup IA | 32 s | reste ~68 min | moy.20 0.83 s (+11%) | 100 % chargée
+278/640 niveau 2200 tour 0 Ouest-indienne      IA Blancs | gain    | mat                  |  77 demi-coups | 0.82 s/coup IA | 39 s | reste ~68 min | moy.20 0.83 s (+11%) | 100 % chargée
+279/640 niveau 2200 tour 0 Nimzo-indienne      IA Noirs  | gain    | mat                  | 160 demi-coups | 0.77 s/coup IA | 80 s | reste ~68 min | moy.20 0.83 s (+11%) | 100 % chargée
+280/640 niveau 2200 tour 0 Nimzo-indienne      IA Blancs | gain    | mat                  | 161 demi-coups | 0.72 s/coup IA | 77 s | reste ~68 min | moy.20 0.82 s (+10%) | 100 % chargée
+281/640 niveau 2200 tour 0 Grünfeld échange    IA Blancs | nulle   | pat                  |  95 demi-coups | 0.81 s/coup IA | 48 s | reste ~68 min | moy.20 0.82 s (+10%) | 100 % chargée
+282/640 niveau 2200 tour 0 Semi-slave          IA Noirs  | gain    | mat                  | 266 demi-coups | 0.74 s/coup IA | 133 s | reste ~68 min | moy.20 0.81 s (+9%) | 100 % chargée
+283/640 niveau 2200 tour 0 Est-indienne classique IA Noirs  | gain    | mat                  |  96 demi-coups | 0.84 s/coup IA | 48 s | reste ~67 min | moy.20 0.81 s (+9%) | 100 % chargée
+284/640 niveau 2200 tour 0 Est-indienne classique IA Blancs | gain    | mat                  | 125 demi-coups | 0.83 s/coup IA | 65 s | reste ~68 min | moy.20 0.81 s (+9%) | 100 % chargée
+285/640 niveau 2200 tour 0 Grünfeld échange    IA Noirs  | gain    | mat                  |  78 demi-coups | 0.81 s/coup IA | 37 s | reste ~67 min | moy.20 0.81 s (+9%) | 100 % chargée
+286/640 niveau 2200 tour 0 Ouest-indienne      IA Noirs  | nulle   | triple répétition    | 118 demi-coups | 0.82 s/coup IA | 62 s | reste ~67 min | moy.20 0.81 s (+8%) | 100 % chargée
+287/640 niveau 2200 tour 0 Benoni moderne      IA Noirs  | nulle   | matériel insuffisant | 148 demi-coups | 0.51 s/coup IA | 56 s | reste ~67 min | moy.20 0.79 s (+6%) | 100 % chargée
+288/640 niveau 2200 tour 0 Gambit Benko        IA Blancs | nulle   | matériel insuffisant | 113 demi-coups | 0.74 s/coup IA | 55 s | reste ~67 min | moy.20 0.79 s (+6%) | 100 % chargée
+289/640 niveau 2200 tour 0 Benoni moderne      IA Blancs | gain    | mat                  | 141 demi-coups | 0.71 s/coup IA | 65 s | reste ~67 min | moy.20 0.79 s (+5%) | 100 % chargée
+290/640 niveau 2200 tour 0 Catalane            IA Blancs | gain    | mat                  | 159 demi-coups | 0.69 s/coup IA | 75 s | reste ~67 min | moy.20 0.78 s (+4%) | 100 % chargée
+291/640 niveau 2200 tour 0 Hollandaise Leningrad IA Blancs | gain    | mat                  | 211 demi-coups | 0.62 s/coup IA | 94 s | reste ~67 min | moy.20 0.77 s (+3%) | 100 % chargée
+292/640 niveau 2200 tour 0 Gambit Benko        IA Noirs  | gain    | mat                  | 128 demi-coups | 0.82 s/coup IA | 67 s | reste ~67 min | moy.20 0.77 s (+2%) | 100 % chargée
+293/640 niveau 2200 tour 0 Catalane            IA Noirs  | défaite | mat                  | 135 demi-coups | 0.81 s/coup IA | 70 s | reste ~66 min | moy.20 0.77 s (+2%) | 100 % chargée
+294/640 niveau 2200 tour 0 Trompowsky          IA Blancs | gain    | mat                  |  87 demi-coups | 0.81 s/coup IA | 44 s | reste ~66 min | moy.20 0.77 s (+3%) | 100 % chargée
+295/640 niveau 2200 tour 0 London              IA Blancs | gain    | mat                  |  69 demi-coups | 0.84 s/coup IA | 36 s | reste ~66 min | moy.20 0.77 s (+3%) | 100 % chargée
+296/640 niveau 2200 tour 0 Trompowsky          IA Noirs  | gain    | mat                  |  96 demi-coups | 0.88 s/coup IA | 53 s | reste ~66 min | moy.20 0.77 s (+3%) | 100 % chargée
+297/640 niveau 2200 tour 0 Hollandaise Leningrad IA Noirs  | nulle   | triple répétition    | 117 demi-coups | 0.88 s/coup IA | 64 s | reste ~66 min | moy.20 0.77 s (+3%) | 100 % chargée
+298/640 niveau 2200 tour 0 Anglaise symétrique IA Blancs | défaite | mat                  |  86 demi-coups | 0.85 s/coup IA | 45 s | reste ~65 min | moy.20 0.78 s (+4%) | 100 % chargée
+299/640 niveau 2200 tour 0 Anglaise quatre cavaliers IA Blancs | nulle   | triple répétition    |  69 demi-coups | 0.86 s/coup IA | 37 s | reste ~65 min | moy.20 0.78 s (+4%) | 100 % chargée
+300/640 niveau 2200 tour 0 Anglaise symétrique IA Noirs  | gain    | mat                  |  98 demi-coups | 0.85 s/coup IA | 51 s | reste ~66 min | moy.20 0.79 s (+5%) | 100 % chargée
+301/640 niveau 2200 tour 0 Anglaise quatre cavaliers IA Noirs  | défaite | mat                  | 211 demi-coups | 0.49 s/coup IA | 79 s | reste ~66 min | moy.20 0.77 s (+3%) | 100 % chargée
+302/640 niveau 2200 tour 0 Réti                IA Blancs | nulle   | triple répétition    | 122 demi-coups | 0.84 s/coup IA | 65 s | reste ~65 min | moy.20 0.78 s (+4%) | 100 % chargée
+303/640 niveau 2200 tour 0 Réti                IA Noirs  | gain    | mat                  | 106 demi-coups | 0.85 s/coup IA | 55 s | reste ~65 min | moy.20 0.78 s (+4%) | 100 % chargée
+304/640 niveau 2200 tour 0 London              IA Noirs  | nulle   | triple répétition    | 237 demi-coups | 0.88 s/coup IA | 126 s | reste ~65 min | moy.20 0.78 s (+4%) | 100 % chargée
+305/640 niveau 2200 tour 0 Polonaise 1.b4      IA Blancs | nulle   | pat                  |  99 demi-coups | 0.85 s/coup IA | 54 s | reste ~65 min | moy.20 0.78 s (+4%) | 100 % chargée
+306/640 niveau 2200 tour 0 Bird 1.f4           IA Blancs | gain    | mat                  |  71 demi-coups | 0.83 s/coup IA | 36 s | reste ~65 min | moy.20 0.78 s (+4%) | 100 % chargée
+307/640 niveau 2200 tour 0 Grob 1.g4           IA Blancs | défaite | mat                  | 128 demi-coups | 0.85 s/coup IA | 70 s | reste ~65 min | moy.20 0.80 s (+7%) | 100 % chargée
+308/640 niveau 2200 tour 0 Grob 1.g4           IA Noirs  | gain    | mat                  |  64 demi-coups | 0.81 s/coup IA | 32 s | reste ~64 min | moy.20 0.80 s (+7%) | 100 % chargée
+309/640 niveau 2200 tour 0 Polonaise 1.b4      IA Noirs  | gain    | mat                  | 126 demi-coups | 0.85 s/coup IA | 69 s | reste ~64 min | moy.20 0.81 s (+8%) | 100 % chargée
+310/640 niveau 2200 tour 0 Larsen 1.b3         IA Blancs | gain    | mat                  | 137 demi-coups | 0.67 s/coup IA | 63 s | reste ~65 min | moy.20 0.81 s (+8%) | 100 % chargée
+311/640 niveau 2200 tour 0 Bird 1.f4           IA Noirs  | défaite | mat                  | 145 demi-coups | 0.85 s/coup IA | 79 s | reste ~64 min | moy.20 0.82 s (+10%) | 100 % chargée
+312/640 niveau 2200 tour 0 Dunst 1.Nc3         IA Blancs | gain    | mat                  | 107 demi-coups | 0.83 s/coup IA | 57 s | reste ~64 min | moy.20 0.82 s (+10%) | 100 % chargée
+313/640 niveau 2200 tour 0 Larsen 1.b3         IA Noirs  | défaite | mat                  | 197 demi-coups | 0.84 s/coup IA | 108 s | reste ~64 min | moy.20 0.82 s (+10%) | 100 % chargée
+314/640 niveau 2200 tour 0 Nimzowitsch 1...Nc6 IA Noirs  | gain    | mat                  |  84 demi-coups | 0.83 s/coup IA | 43 s | reste ~64 min | moy.20 0.82 s (+10%) | 100 % chargée
+315/640 niveau 2200 tour 0 Dunst 1.Nc3         IA Noirs  | défaite | mat                  | 119 demi-coups | 0.83 s/coup IA | 64 s | reste ~64 min | moy.20 0.82 s (+10%) | 100 % chargée
+316/640 niveau 2200 tour 0 Nimzowitsch 1...Nc6 IA Blancs | gain    | mat                  | 117 demi-coups | 0.85 s/coup IA | 63 s | reste ~64 min | moy.20 0.82 s (+10%) | 100 % chargée
+317/640 niveau 2200 tour 0 Budapest            IA Noirs  | gain    | mat                  |  80 demi-coups | 0.78 s/coup IA | 39 s | reste ~63 min | moy.20 0.81 s (+9%) | 100 % chargée
+318/640 niveau 2200 tour 0 Budapest            IA Blancs | gain    | mat                  |  73 demi-coups | 0.85 s/coup IA | 38 s | reste ~63 min | moy.20 0.81 s (+9%) | 100 % chargée
+319/640 niveau 2200 tour 0 Owen 1...b6         IA Noirs  | gain    | mat                  | 100 demi-coups | 0.86 s/coup IA | 53 s | reste ~63 min | moy.20 0.81 s (+9%) | 100 % chargée
+320/640 niveau 2200 tour 0 Owen 1...b6         IA Blancs | gain    | mat                  | 173 demi-coups | 0.70 s/coup IA | 83 s | reste ~63 min | moy.20 0.81 s (+8%) | 100 % chargée
+321/640 niveau 2500 tour 0 Sicilienne Alapin   IA Noirs  | défaite | mat                  |  81 demi-coups | 0.79 s/coup IA | 40 s | reste ~63 min | moy.20 0.82 s (+10%) | 100 % chargée
+322/640 niveau 2500 tour 0 Sicilienne Najdorf  IA Blancs | gain    | mat                  | 101 demi-coups | 0.84 s/coup IA | 52 s | reste ~63 min | moy.20 0.82 s (+10%) | 100 % chargée
+323/640 niveau 2500 tour 0 Sicilienne Alapin   IA Blancs | gain    | mat                  |  91 demi-coups | 0.80 s/coup IA | 44 s | reste ~62 min | moy.20 0.82 s (+10%) | 100 % chargée
+324/640 niveau 2500 tour 0 Sicilienne Najdorf  IA Noirs  | nulle   | triple répétition    | 146 demi-coups | 0.88 s/coup IA | 80 s | reste ~62 min | moy.20 0.82 s (+10%) | 100 % chargée
+325/640 niveau 2500 tour 0 Sicilienne Rossolimo IA Blancs | gain    | mat                  |  63 demi-coups | 0.83 s/coup IA | 32 s | reste ~62 min | moy.20 0.82 s (+9%) | 100 % chargée
+326/640 niveau 2500 tour 0 Sicilienne Rossolimo IA Noirs  | défaite | mat                  |  89 demi-coups | 0.81 s/coup IA | 45 s | reste ~62 min | moy.20 0.82 s (+9%) | 100 % chargée
+327/640 niveau 2500 tour 0 Française Winawer   IA Blancs | gain    | mat                  |  75 demi-coups | 0.81 s/coup IA | 36 s | reste ~61 min | moy.20 0.82 s (+9%) | 100 % chargée
+328/640 niveau 2500 tour 0 Française Winawer   IA Noirs  | défaite | mat                  | 115 demi-coups | 0.84 s/coup IA | 61 s | reste ~61 min | moy.20 0.82 s (+9%) | 100 % chargée
+329/640 niveau 2500 tour 0 Française avance    IA Blancs | nulle   | triple répétition    | 113 demi-coups | 0.87 s/coup IA | 62 s | reste ~62 min | moy.20 0.82 s (+9%) | 100 % chargée
+330/640 niveau 2500 tour 0 Italienne Giuoco piano IA Blancs | gain    | mat                  | 131 demi-coups | 0.61 s/coup IA | 56 s | reste ~61 min | moy.20 0.81 s (+9%) | 100 % chargée
+331/640 niveau 2500 tour 0 Française avance    IA Noirs  | défaite | mat                  | 195 demi-coups | 0.76 s/coup IA | 97 s | reste ~61 min | moy.20 0.81 s (+8%) | 100 % chargée
+332/640 niveau 2500 tour 0 Caro-Kann classique IA Blancs | nulle   | pat                  | 193 demi-coups | 0.82 s/coup IA | 104 s | reste ~61 min | moy.20 0.81 s (+8%) | 100 % chargée
+333/640 niveau 2500 tour 0 Caro-Kann classique IA Noirs  | gain    | mat                  | 154 demi-coups | 0.71 s/coup IA | 72 s | reste ~61 min | moy.20 0.80 s (+7%) | 100 % chargée
+334/640 niveau 2500 tour 0 Espagnole Berlin    IA Blancs | défaite | mat                  | 122 demi-coups | 0.83 s/coup IA | 64 s | reste ~61 min | moy.20 0.80 s (+7%) | 100 % chargée
+335/640 niveau 2500 tour 0 Italienne Giuoco piano IA Noirs  | gain    | mat                  | 136 demi-coups | 0.83 s/coup IA | 70 s | reste ~61 min | moy.20 0.80 s (+7%) | 100 % chargée
+336/640 niveau 2500 tour 0 Petrov              IA Blancs | défaite | mat                  | 138 demi-coups | 0.87 s/coup IA | 77 s | reste ~61 min | moy.20 0.80 s (+8%) | 100 % chargée
+337/640 niveau 2500 tour 0 Écossaise           IA Blancs | gain    | mat                  | 103 demi-coups | 0.85 s/coup IA | 54 s | reste ~61 min | moy.20 0.81 s (+8%) | 100 % chargée
+338/640 niveau 2500 tour 0 Écossaise           IA Noirs  | nulle   | triple répétition    | 106 demi-coups | 0.76 s/coup IA | 52 s | reste ~60 min | moy.20 0.80 s (+8%) | 100 % chargée
+339/640 niveau 2500 tour 0 Espagnole Berlin    IA Noirs  | gain    | mat                  | 148 demi-coups | 0.83 s/coup IA | 78 s | reste ~60 min | moy.20 0.80 s (+7%) | 100 % chargée
+340/640 niveau 2500 tour 0 Pirc autrichienne   IA Blancs | gain    | mat                  |  97 demi-coups | 0.86 s/coup IA | 51 s | reste ~60 min | moy.20 0.81 s (+8%) | 100 % chargée
+341/640 niveau 2500 tour 0 Scandinave Qd6      IA Blancs | défaite | mat                  |  88 demi-coups | 0.84 s/coup IA | 46 s | reste ~60 min | moy.20 0.81 s (+9%) | 100 % chargée
+342/640 niveau 2500 tour 0 Petrov              IA Noirs  | défaite | mat                  | 139 demi-coups | 0.87 s/coup IA | 76 s | reste ~60 min | moy.20 0.81 s (+9%) | 100 % chargée
+343/640 niveau 2500 tour 0 Pirc autrichienne   IA Noirs  | gain    | mat                  | 126 demi-coups | 0.86 s/coup IA | 68 s | reste ~59 min | moy.20 0.82 s (+9%) | 100 % chargée
+344/640 niveau 2500 tour 0 Alekhine moderne    IA Blancs | nulle   | triple répétition    |  52 demi-coups | 0.77 s/coup IA | 23 s | reste ~59 min | moy.20 0.81 s (+9%) | 100 % chargée
+345/640 niveau 2500 tour 0 Scandinave Qd6      IA Noirs  | gain    | mat                  |  96 demi-coups | 0.86 s/coup IA | 51 s | reste ~59 min | moy.20 0.81 s (+9%) | 100 % chargée
+346/640 niveau 2500 tour 0 Alekhine moderne    IA Noirs  | défaite | mat                  | 109 demi-coups | 0.87 s/coup IA | 59 s | reste ~59 min | moy.20 0.82 s (+9%) | 100 % chargée
+347/640 niveau 2500 tour 0 Viennoise           IA Blancs | gain    | mat                  | 109 demi-coups | 0.82 s/coup IA | 57 s | reste ~59 min | moy.20 0.82 s (+9%) | 100 % chargée
+348/640 niveau 2500 tour 0 Gambit du roi accepté IA Blancs | défaite | mat                  | 136 demi-coups | 0.85 s/coup IA | 75 s | reste ~59 min | moy.20 0.82 s (+9%) | 100 % chargée
+349/640 niveau 2500 tour 0 Gambit dame refusé orthodoxe IA Noirs  | gain    | mat                  | 108 demi-coups | 0.82 s/coup IA | 55 s | reste ~59 min | moy.20 0.81 s (+9%) | 100 % chargée
+350/640 niveau 2500 tour 0 Gambit dame refusé orthodoxe IA Blancs | défaite | mat                  | 116 demi-coups | 0.83 s/coup IA | 61 s | reste ~59 min | moy.20 0.83 s (+10%) | 100 % chargée
+351/640 niveau 2500 tour 0 Viennoise           IA Noirs  | défaite | mat                  | 177 demi-coups | 0.86 s/coup IA | 99 s | reste ~59 min | moy.20 0.83 s (+11%) | 100 % chargée
+352/640 niveau 2500 tour 0 Gambit dame accepté IA Noirs  | défaite | mat                  |  85 demi-coups | 0.81 s/coup IA | 43 s | reste ~58 min | moy.20 0.83 s (+11%) | 100 % chargée
+353/640 niveau 2500 tour 0 Gambit dame accepté IA Blancs | gain    | mat                  | 113 demi-coups | 0.84 s/coup IA | 60 s | reste ~58 min | moy.20 0.84 s (+12%) | 100 % chargée
+354/640 niveau 2500 tour 0 Semi-slave          IA Noirs  | gain    | mat                  |  82 demi-coups | 0.72 s/coup IA | 36 s | reste ~58 min | moy.20 0.83 s (+11%) | 100 % chargée
+355/640 niveau 2500 tour 0 Gambit du roi accepté IA Noirs  | défaite | mat                  | 377 demi-coups | 0.46 s/coup IA | 141 s | reste ~58 min | moy.20 0.81 s (+9%) | 100 % chargée
+356/640 niveau 2500 tour 0 Slave               IA Blancs | gain    | mat                  | 109 demi-coups | 0.83 s/coup IA | 56 s | reste ~58 min | moy.20 0.81 s (+8%) | 100 % chargée
+357/640 niveau 2500 tour 0 Slave               IA Noirs  | gain    | mat                  | 162 demi-coups | 0.72 s/coup IA | 78 s | reste ~58 min | moy.20 0.80 s (+7%) | 100 % chargée
+358/640 niveau 2500 tour 0 Semi-slave          IA Blancs | gain    | mat                  | 135 demi-coups | 0.84 s/coup IA | 70 s | reste ~57 min | moy.20 0.81 s (+8%) | 100 % chargée
+359/640 niveau 2500 tour 0 Nimzo-indienne      IA Blancs | gain    | mat                  | 153 demi-coups | 0.79 s/coup IA | 78 s | reste ~57 min | moy.20 0.81 s (+8%) | 100 % chargée
+360/640 niveau 2500 tour 0 Nimzo-indienne      IA Noirs  | gain    | mat                  |  58 demi-coups | 0.80 s/coup IA | 27 s | reste ~57 min | moy.20 0.80 s (+7%) | 100 % chargée
+361/640 niveau 2500 tour 0 Ouest-indienne      IA Noirs  | nulle   | triple répétition    |  97 demi-coups | 0.78 s/coup IA | 48 s | reste ~57 min | moy.20 0.80 s (+7%) | 100 % chargée
+362/640 niveau 2500 tour 0 Ouest-indienne      IA Blancs | gain    | mat                  | 119 demi-coups | 0.83 s/coup IA | 62 s | reste ~57 min | moy.20 0.80 s (+7%) | 100 % chargée
+363/640 niveau 2500 tour 0 Est-indienne classique IA Blancs | défaite | mat                  | 110 demi-coups | 0.81 s/coup IA | 56 s | reste ~56 min | moy.20 0.80 s (+6%) | 100 % chargée
+364/640 niveau 2500 tour 0 Gambit Benko        IA Blancs | défaite | mat                  |  82 demi-coups | 0.82 s/coup IA | 41 s | reste ~56 min | moy.20 0.80 s (+7%) | 100 % chargée
+365/640 niveau 2500 tour 0 Grünfeld échange    IA Noirs  | gain    | mat                  | 120 demi-coups | 0.81 s/coup IA | 60 s | reste ~56 min | moy.20 0.80 s (+6%) | 100 % chargée
+366/640 niveau 2500 tour 0 Est-indienne classique IA Noirs  | défaite | mat                  | 127 demi-coups | 0.79 s/coup IA | 64 s | reste ~56 min | moy.20 0.79 s (+6%) | 100 % chargée
+367/640 niveau 2500 tour 0 Grünfeld échange    IA Blancs | gain    | mat                  | 123 demi-coups | 0.82 s/coup IA | 64 s | reste ~56 min | moy.20 0.79 s (+6%) | 100 % chargée
+368/640 niveau 2500 tour 0 Benoni moderne      IA Blancs | gain    | mat                  |  83 demi-coups | 0.83 s/coup IA | 41 s | reste ~55 min | moy.20 0.79 s (+6%) | 100 % chargée
+369/640 niveau 2500 tour 0 Benoni moderne      IA Noirs  | défaite | mat                  | 145 demi-coups | 0.69 s/coup IA | 66 s | reste ~56 min | moy.20 0.78 s (+5%) | 100 % chargée
+370/640 niveau 2500 tour 0 Gambit Benko        IA Noirs  | nulle   | matériel insuffisant | 134 demi-coups | 0.73 s/coup IA | 65 s | reste ~55 min | moy.20 0.78 s (+4%) | 100 % chargée
+371/640 niveau 2500 tour 0 Hollandaise Leningrad IA Blancs | défaite | mat                  | 112 demi-coups | 0.83 s/coup IA | 59 s | reste ~55 min | moy.20 0.78 s (+4%) | 100 % chargée
+372/640 niveau 2500 tour 0 Catalane            IA Blancs | gain    | mat                  | 177 demi-coups | 0.86 s/coup IA | 92 s | reste ~55 min | moy.20 0.78 s (+4%) | 100 % chargée
+373/640 niveau 2500 tour 0 Catalane            IA Noirs  | gain    | mat                  |  84 demi-coups | 0.83 s/coup IA | 43 s | reste ~55 min | moy.20 0.78 s (+4%) | 100 % chargée
+374/640 niveau 2500 tour 0 Trompowsky          IA Blancs | gain    | mat                  | 115 demi-coups | 0.88 s/coup IA | 64 s | reste ~55 min | moy.20 0.79 s (+5%) | 100 % chargée
+375/640 niveau 2500 tour 0 Hollandaise Leningrad IA Noirs  | défaite | mat                  | 143 demi-coups | 0.86 s/coup IA | 78 s | reste ~55 min | moy.20 0.81 s (+8%) | 100 % chargée
+376/640 niveau 2500 tour 0 Trompowsky          IA Noirs  | gain    | mat                  | 128 demi-coups | 0.82 s/coup IA | 66 s | reste ~54 min | moy.20 0.81 s (+8%) | 100 % chargée
+377/640 niveau 2500 tour 0 London              IA Blancs | nulle   | triple répétition    | 189 demi-coups | 0.63 s/coup IA | 85 s | reste ~54 min | moy.20 0.80 s (+7%) | 100 % chargée
+378/640 niveau 2500 tour 0 London              IA Noirs  | gain    | mat                  |  94 demi-coups | 0.80 s/coup IA | 46 s | reste ~54 min | moy.20 0.80 s (+7%) | 100 % chargée
+379/640 niveau 2500 tour 0 Anglaise symétrique IA Blancs | gain    | mat                  | 111 demi-coups | 0.85 s/coup IA | 59 s | reste ~54 min | moy.20 0.80 s (+7%) | 100 % chargée
+380/640 niveau 2500 tour 0 Anglaise quatre cavaliers IA Noirs  | défaite | mat                  | 123 demi-coups | 0.87 s/coup IA | 68 s | reste ~54 min | moy.20 0.81 s (+8%) | 100 % chargée
+381/640 niveau 2500 tour 0 Réti                IA Blancs | gain    | mat                  |  81 demi-coups | 0.83 s/coup IA | 41 s | reste ~54 min | moy.20 0.81 s (+8%) | 100 % chargée
+382/640 niveau 2500 tour 0 Anglaise symétrique IA Noirs  | gain    | mat                  | 142 demi-coups | 0.80 s/coup IA | 73 s | reste ~53 min | moy.20 0.81 s (+8%) | 100 % chargée
+383/640 niveau 2500 tour 0 Anglaise quatre cavaliers IA Blancs | défaite | mat                  | 160 demi-coups | 0.80 s/coup IA | 84 s | reste ~53 min | moy.20 0.81 s (+8%) | 100 % chargée
+384/640 niveau 2500 tour 0 Polonaise 1.b4      IA Noirs  | défaite | mat                  | 107 demi-coups | 0.86 s/coup IA | 59 s | reste ~53 min | moy.20 0.81 s (+8%) | 100 % chargée
+385/640 niveau 2500 tour 0 Polonaise 1.b4      IA Blancs | gain    | mat                  | 135 demi-coups | 0.73 s/coup IA | 67 s | reste ~53 min | moy.20 0.81 s (+8%) | 100 % chargée
+386/640 niveau 2500 tour 0 Réti                IA Noirs  | gain    | mat                  | 162 demi-coups | 0.74 s/coup IA | 80 s | reste ~53 min | moy.20 0.80 s (+7%) | 100 % chargée
+387/640 niveau 2500 tour 0 Grob 1.g4           IA Noirs  | gain    | mat                  | 152 demi-coups | 0.49 s/coup IA | 58 s | reste ~53 min | moy.20 0.79 s (+5%) | 100 % chargée
+388/640 niveau 2500 tour 0 Grob 1.g4           IA Blancs | nulle   | triple répétition    | 140 demi-coups | 0.80 s/coup IA | 74 s | reste ~52 min | moy.20 0.79 s (+5%) | 100 % chargée
+389/640 niveau 2500 tour 0 Bird 1.f4           IA Blancs | défaite | mat                  |  64 demi-coups | 0.79 s/coup IA | 32 s | reste ~52 min | moy.20 0.79 s (+6%) | 100 % chargée
+390/640 niveau 2500 tour 0 Dunst 1.Nc3         IA Blancs | défaite | mat                  |  76 demi-coups | 0.82 s/coup IA | 39 s | reste ~52 min | moy.20 0.79 s (+6%) | 100 % chargée
+391/640 niveau 2500 tour 0 Bird 1.f4           IA Noirs  | gain    | mat                  | 108 demi-coups | 0.83 s/coup IA | 57 s | reste ~52 min | moy.20 0.79 s (+6%) | 100 % chargée
+392/640 niveau 2500 tour 0 Larsen 1.b3         IA Noirs  | gain    | mat                  | 144 demi-coups | 0.85 s/coup IA | 78 s | reste ~52 min | moy.20 0.79 s (+6%) | 100 % chargée
+393/640 niveau 2500 tour 0 Dunst 1.Nc3         IA Noirs  | gain    | mat                  | 116 demi-coups | 0.84 s/coup IA | 62 s | reste ~52 min | moy.20 0.79 s (+6%) | 100 % chargée
+394/640 niveau 2500 tour 0 Larsen 1.b3         IA Blancs | défaite | mat                  | 182 demi-coups | 0.72 s/coup IA | 89 s | reste ~51 min | moy.20 0.79 s (+5%) | 100 % chargée
+395/640 niveau 2500 tour 0 Nimzowitsch 1...Nc6 IA Blancs | défaite | mat                  | 152 demi-coups | 0.62 s/coup IA | 66 s | reste ~51 min | moy.20 0.77 s (+4%) | 100 % chargée
+396/640 niveau 2500 tour 0 Owen 1...b6         IA Noirs  | défaite | mat                  | 177 demi-coups | 0.67 s/coup IA | 82 s | reste ~51 min | moy.20 0.77 s (+3%) | 100 % chargée
+397/640 niveau 2500 tour 0 Nimzowitsch 1...Nc6 IA Noirs  | gain    | mat                  |  86 demi-coups | 0.82 s/coup IA | 44 s | reste ~51 min | moy.20 0.78 s (+4%) | 100 % chargée
+398/640 niveau 2500 tour 0 Budapest            IA Blancs | nulle   | triple répétition    |  92 demi-coups | 0.88 s/coup IA | 51 s | reste ~51 min | moy.20 0.78 s (+4%) | 100 % chargée
+399/640 niveau 2500 tour 0 Owen 1...b6         IA Blancs | nulle   | matériel insuffisant | 123 demi-coups | 0.76 s/coup IA | 63 s | reste ~50 min | moy.20 0.78 s (+4%) | 100 % chargée
+400/640 niveau 2250 tour 1 Sicilienne Alapin   IA Blancs | gain    | mat                  |  81 demi-coups | 0.86 s/coup IA | 42 s | reste ~50 min | moy.20 0.78 s (+4%) | 100 % chargée
+401/640 niveau 2500 tour 0 Budapest            IA Noirs  | nulle   | pat                  | 136 demi-coups | 0.68 s/coup IA | 64 s | reste ~50 min | moy.20 0.77 s (+3%) | 100 % chargée
+402/640 niveau 2250 tour 1 Sicilienne Najdorf  IA Blancs | défaite | mat                  |  78 demi-coups | 0.82 s/coup IA | 38 s | reste ~50 min | moy.20 0.77 s (+3%) | 100 % chargée
+403/640 niveau 2250 tour 1 Sicilienne Najdorf  IA Noirs  | gain    | mat                  | 136 demi-coups | 0.85 s/coup IA | 72 s | reste ~50 min | moy.20 0.77 s (+3%) | 100 % chargée
+404/640 niveau 2250 tour 1 Sicilienne Alapin   IA Noirs  | gain    | mat                  | 116 demi-coups | 0.83 s/coup IA | 60 s | reste ~49 min | moy.20 0.77 s (+3%) | 100 % chargée
+405/640 niveau 2250 tour 1 Française Winawer   IA Blancs | gain    | mat                  |  87 demi-coups | 0.83 s/coup IA | 44 s | reste ~49 min | moy.20 0.78 s (+4%) | 100 % chargée
+406/640 niveau 2250 tour 1 Française Winawer   IA Noirs  | défaite | mat                  |  57 demi-coups | 0.78 s/coup IA | 26 s | reste ~49 min | moy.20 0.78 s (+4%) | 100 % chargée
+407/640 niveau 2250 tour 1 Française avance    IA Blancs | défaite | mat                  |  78 demi-coups | 0.76 s/coup IA | 37 s | reste ~49 min | moy.20 0.79 s (+6%) | 100 % chargée
+408/640 niveau 2250 tour 1 Sicilienne Rossolimo IA Blancs | gain    | mat                  | 215 demi-coups | 0.69 s/coup IA | 104 s | reste ~49 min | moy.20 0.79 s (+5%) | 100 % chargée
+409/640 niveau 2250 tour 1 Espagnole Berlin    IA Blancs | gain    | mat                  |  53 demi-coups | 0.78 s/coup IA | 24 s | reste ~48 min | moy.20 0.78 s (+5%) | 100 % chargée
+410/640 niveau 2250 tour 1 Sicilienne Rossolimo IA Noirs  | défaite | mat                  | 181 demi-coups | 0.61 s/coup IA | 78 s | reste ~48 min | moy.20 0.77 s (+4%) | 100 % chargée
+411/640 niveau 2250 tour 1 Caro-Kann classique IA Noirs  | défaite | mat                  |  69 demi-coups | 0.82 s/coup IA | 34 s | reste ~48 min | moy.20 0.77 s (+3%) | 100 % chargée
+412/640 niveau 2250 tour 1 Caro-Kann classique IA Blancs | défaite | mat                  | 100 demi-coups | 0.82 s/coup IA | 51 s | reste ~48 min | moy.20 0.77 s (+3%) | 100 % chargée
+413/640 niveau 2250 tour 1 Française avance    IA Noirs  | gain    | mat                  | 194 demi-coups | 0.84 s/coup IA | 105 s | reste ~48 min | moy.20 0.77 s (+3%) | 100 % chargée
+414/640 niveau 2250 tour 1 Italienne Giuoco piano IA Noirs  | défaite | mat                  |  67 demi-coups | 0.86 s/coup IA | 34 s | reste ~47 min | moy.20 0.78 s (+4%) | 100 % chargée
+415/640 niveau 2250 tour 1 Écossaise           IA Blancs | gain    | mat                  | 101 demi-coups | 0.85 s/coup IA | 53 s | reste ~47 min | moy.20 0.79 s (+6%) | 100 % chargée
+416/640 niveau 2250 tour 1 Espagnole Berlin    IA Noirs  | nulle   | triple répétition    | 149 demi-coups | 0.85 s/coup IA | 81 s | reste ~47 min | moy.20 0.80 s (+7%) | 100 % chargée
+417/640 niveau 2250 tour 1 Petrov              IA Blancs | gain    | mat                  |  69 demi-coups | 0.81 s/coup IA | 34 s | reste ~47 min | moy.20 0.80 s (+7%) | 100 % chargée
+418/640 niveau 2250 tour 1 Italienne Giuoco piano IA Blancs | gain    | mat                  | 125 demi-coups | 0.80 s/coup IA | 64 s | reste ~47 min | moy.20 0.80 s (+6%) | 100 % chargée
+419/640 niveau 2250 tour 1 Petrov              IA Noirs  | gain    | mat                  | 132 demi-coups | 0.66 s/coup IA | 59 s | reste ~46 min | moy.20 0.79 s (+6%) | 100 % chargée
+420/640 niveau 2250 tour 1 Écossaise           IA Noirs  | gain    | mat                  | 156 demi-coups | 0.86 s/coup IA | 86 s | reste ~46 min | moy.20 0.79 s (+6%) | 100 % chargée
+421/640 niveau 2250 tour 1 Pirc autrichienne   IA Blancs | gain    | mat                  | 131 demi-coups | 0.69 s/coup IA | 61 s | reste ~46 min | moy.20 0.79 s (+6%) | 100 % chargée
+422/640 niveau 2250 tour 1 Pirc autrichienne   IA Noirs  | gain    | mat                  |  90 demi-coups | 0.85 s/coup IA | 46 s | reste ~46 min | moy.20 0.79 s (+6%) | 100 % chargée
+423/640 niveau 2250 tour 1 Alekhine moderne    IA Blancs | gain    | mat                  | 121 demi-coups | 0.80 s/coup IA | 62 s | reste ~46 min | moy.20 0.79 s (+6%) | 100 % chargée
+424/640 niveau 2250 tour 1 Alekhine moderne    IA Noirs  | défaite | mat                  | 141 demi-coups | 0.74 s/coup IA | 68 s | reste ~45 min | moy.20 0.79 s (+5%) | 100 % chargée
+425/640 niveau 2250 tour 1 Scandinave Qd6      IA Blancs | gain    | mat                  | 107 demi-coups | 0.84 s/coup IA | 57 s | reste ~45 min | moy.20 0.79 s (+5%) | 100 % chargée
+426/640 niveau 2250 tour 1 Scandinave Qd6      IA Noirs  | gain    | mat                  |  76 demi-coups | 0.76 s/coup IA | 36 s | reste ~45 min | moy.20 0.79 s (+5%) | 100 % chargée
+427/640 niveau 2250 tour 1 Gambit du roi accepté IA Noirs  | nulle   | triple répétition    |  72 demi-coups | 0.77 s/coup IA | 35 s | reste ~45 min | moy.20 0.79 s (+5%) | 100 % chargée
+428/640 niveau 2250 tour 1 Gambit du roi accepté IA Blancs | défaite | mat                  | 158 demi-coups | 0.64 s/coup IA | 65 s | reste ~45 min | moy.20 0.78 s (+5%) | 100 % chargée
+429/640 niveau 2250 tour 1 Viennoise           IA Noirs  | gain    | mat                  |  62 demi-coups | 0.83 s/coup IA | 32 s | reste ~44 min | moy.20 0.79 s (+5%) | 100 % chargée
+430/640 niveau 2250 tour 1 Viennoise           IA Blancs | nulle   | matériel insuffisant | 123 demi-coups | 0.77 s/coup IA | 63 s | reste ~44 min | moy.20 0.79 s (+6%) | 100 % chargée
+431/640 niveau 2250 tour 1 Gambit dame accepté IA Blancs | gain    | mat                  |  99 demi-coups | 0.84 s/coup IA | 51 s | reste ~44 min | moy.20 0.79 s (+6%) | 100 % chargée
+432/640 niveau 2250 tour 1 Gambit dame refusé orthodoxe IA Noirs  | gain    | mat                  |  94 demi-coups | 0.82 s/coup IA | 47 s | reste ~44 min | moy.20 0.79 s (+6%) | 100 % chargée
+433/640 niveau 2250 tour 1 Semi-slave          IA Blancs | gain    | mat                  |  33 demi-coups | 0.65 s/coup IA | 10 s | reste ~43 min | moy.20 0.78 s (+5%) | 100 % chargée
+434/640 niveau 2250 tour 1 Gambit dame refusé orthodoxe IA Blancs | gain    | mat                  |  89 demi-coups | 0.86 s/coup IA | 47 s | reste ~43 min | moy.20 0.78 s (+5%) | 100 % chargée
+435/640 niveau 2250 tour 1 Slave               IA Noirs  | gain    | mat                  |  96 demi-coups | 0.85 s/coup IA | 50 s | reste ~43 min | moy.20 0.78 s (+5%) | 100 % chargée
+436/640 niveau 2250 tour 1 Gambit dame accepté IA Noirs  | nulle   | matériel insuffisant | 126 demi-coups | 0.73 s/coup IA | 61 s | reste ~43 min | moy.20 0.78 s (+4%) | 100 % chargée
+437/640 niveau 2250 tour 1 Nimzo-indienne      IA Noirs  | gain    | mat                  |  88 demi-coups | 0.83 s/coup IA | 45 s | reste ~43 min | moy.20 0.78 s (+4%) | 100 % chargée
+438/640 niveau 2250 tour 1 Semi-slave          IA Noirs  | gain    | mat                  |  94 demi-coups | 0.78 s/coup IA | 45 s | reste ~43 min | moy.20 0.78 s (+4%) | 100 % chargée
+439/640 niveau 2250 tour 1 Slave               IA Blancs | gain    | mat                  | 189 demi-coups | 0.82 s/coup IA | 101 s | reste ~42 min | moy.20 0.79 s (+5%) | 100 % chargée
+440/640 niveau 2250 tour 1 Ouest-indienne      IA Blancs | gain    | mat                  | 115 demi-coups | 0.83 s/coup IA | 60 s | reste ~42 min | moy.20 0.78 s (+5%) | 100 % chargée
+441/640 niveau 2250 tour 1 Nimzo-indienne      IA Blancs | nulle   | matériel insuffisant | 170 demi-coups | 0.83 s/coup IA | 91 s | reste ~42 min | moy.20 0.79 s (+6%) | 100 % chargée
+442/640 niveau 2250 tour 1 Ouest-indienne      IA Noirs  | gain    | mat                  |  80 demi-coups | 0.81 s/coup IA | 40 s | reste ~42 min | moy.20 0.79 s (+6%) | 100 % chargée
+443/640 niveau 2250 tour 1 Est-indienne classique IA Blancs | nulle   | matériel insuffisant | 137 demi-coups | 0.80 s/coup IA | 71 s | reste ~42 min | moy.20 0.79 s (+6%) | 100 % chargée
+444/640 niveau 2250 tour 1 Grünfeld échange    IA Noirs  | gain    | mat                  |  98 demi-coups | 0.87 s/coup IA | 50 s | reste ~41 min | moy.20 0.80 s (+6%) | 100 % chargée
+445/640 niveau 2250 tour 1 Est-indienne classique IA Noirs  | gain    | mat                  | 148 demi-coups | 0.64 s/coup IA | 63 s | reste ~41 min | moy.20 0.79 s (+5%) | 100 % chargée
+446/640 niveau 2250 tour 1 Benoni moderne      IA Noirs  | gain    | mat                  |  94 demi-coups | 0.82 s/coup IA | 46 s | reste ~41 min | moy.20 0.79 s (+5%) | 100 % chargée
+447/640 niveau 2250 tour 1 Grünfeld échange    IA Blancs | nulle   | matériel insuffisant | 240 demi-coups | 0.77 s/coup IA | 123 s | reste ~41 min | moy.20 0.79 s (+5%) | 100 % chargée
+448/640 niveau 2250 tour 1 Gambit Benko        IA Blancs | gain    | mat                  | 117 demi-coups | 0.85 s/coup IA | 61 s | reste ~41 min | moy.20 0.80 s (+7%) | 100 % chargée
+449/640 niveau 2250 tour 1 Benoni moderne      IA Blancs | gain    | mat                  | 127 demi-coups | 0.78 s/coup IA | 62 s | reste ~41 min | moy.20 0.80 s (+6%) | 100 % chargée
+450/640 niveau 2250 tour 1 Catalane            IA Noirs  | gain    | mat                  |  96 demi-coups | 0.81 s/coup IA | 48 s | reste ~40 min | moy.20 0.80 s (+7%) | 100 % chargée
+451/640 niveau 2250 tour 1 Gambit Benko        IA Noirs  | gain    | mat                  | 132 demi-coups | 0.72 s/coup IA | 63 s | reste ~40 min | moy.20 0.79 s (+6%) | 100 % chargée
+452/640 niveau 2250 tour 1 Catalane            IA Blancs | nulle   | triple répétition    | 119 demi-coups | 0.84 s/coup IA | 64 s | reste ~40 min | moy.20 0.79 s (+6%) | 100 % chargée
+453/640 niveau 2250 tour 1 Trompowsky          IA Blancs | gain    | mat                  | 141 demi-coups | 0.82 s/coup IA | 74 s | reste ~40 min | moy.20 0.80 s (+7%) | 100 % chargée
+454/640 niveau 2250 tour 1 Hollandaise Leningrad IA Blancs | gain    | mat                  | 105 demi-coups | 0.81 s/coup IA | 53 s | reste ~40 min | moy.20 0.80 s (+7%) | 100 % chargée
+455/640 niveau 2250 tour 1 Hollandaise Leningrad IA Noirs  | gain    | mat                  | 152 demi-coups | 0.68 s/coup IA | 70 s | reste ~39 min | moy.20 0.79 s (+6%) | 100 % chargée
+456/640 niveau 2250 tour 1 Trompowsky          IA Noirs  | gain    | mat                  |  82 demi-coups | 0.80 s/coup IA | 41 s | reste ~39 min | moy.20 0.79 s (+6%) | 100 % chargée
+457/640 niveau 2250 tour 1 Anglaise symétrique IA Blancs | défaite | mat                  | 202 demi-coups | 0.71 s/coup IA | 97 s | reste ~39 min | moy.20 0.79 s (+5%) | 100 % chargée
+458/640 niveau 2250 tour 1 London              IA Blancs | nulle   | matériel insuffisant | 115 demi-coups | 0.77 s/coup IA | 59 s | reste ~39 min | moy.20 0.79 s (+5%) | 100 % chargée
+459/640 niveau 2250 tour 1 Anglaise symétrique IA Noirs  | gain    | mat                  | 148 demi-coups | 0.78 s/coup IA | 74 s | reste ~39 min | moy.20 0.79 s (+5%) | 100 % chargée
+460/640 niveau 2250 tour 1 Anglaise quatre cavaliers IA Noirs  | gain    | mat                  | 100 demi-coups | 0.82 s/coup IA | 52 s | reste ~38 min | moy.20 0.79 s (+5%) | 100 % chargée
+461/640 niveau 2250 tour 1 Anglaise quatre cavaliers IA Blancs | gain    | mat                  | 101 demi-coups | 0.83 s/coup IA | 52 s | reste ~38 min | moy.20 0.79 s (+5%) | 100 % chargée
+462/640 niveau 2250 tour 1 London              IA Noirs  | gain    | mat                  | 192 demi-coups | 0.69 s/coup IA | 91 s | reste ~38 min | moy.20 0.78 s (+4%) | 100 % chargée
+463/640 niveau 2250 tour 1 Réti                IA Blancs | gain    | mat                  |  79 demi-coups | 0.82 s/coup IA | 38 s | reste ~38 min | moy.20 0.78 s (+4%) | 100 % chargée
+464/640 niveau 2250 tour 1 Réti                IA Noirs  | nulle   | pat                  | 114 demi-coups | 0.86 s/coup IA | 62 s | reste ~38 min | moy.20 0.78 s (+4%) | 100 % chargée
+465/640 niveau 2250 tour 1 Grob 1.g4           IA Blancs | gain    | mat                  | 125 demi-coups | 0.81 s/coup IA | 65 s | reste ~37 min | moy.20 0.79 s (+6%) | 100 % chargée
+466/640 niveau 2250 tour 1 Polonaise 1.b4      IA Noirs  | gain    | mat                  |  78 demi-coups | 0.81 s/coup IA | 39 s | reste ~37 min | moy.20 0.79 s (+5%) | 100 % chargée
+467/640 niveau 2250 tour 1 Polonaise 1.b4      IA Blancs | défaite | mat                  | 134 demi-coups | 0.70 s/coup IA | 62 s | reste ~37 min | moy.20 0.79 s (+5%) | 100 % chargée
+468/640 niveau 2250 tour 1 Grob 1.g4           IA Noirs  | défaite | mat                  | 121 demi-coups | 0.83 s/coup IA | 65 s | reste ~37 min | moy.20 0.78 s (+5%) | 100 % chargée
+469/640 niveau 2250 tour 1 Larsen 1.b3         IA Blancs | défaite | mat                  |  96 demi-coups | 0.82 s/coup IA | 50 s | reste ~37 min | moy.20 0.79 s (+5%) | 100 % chargée
+470/640 niveau 2250 tour 1 Bird 1.f4           IA Blancs | défaite | mat                  | 154 demi-coups | 0.81 s/coup IA | 82 s | reste ~37 min | moy.20 0.79 s (+5%) | 100 % chargée
+471/640 niveau 2250 tour 1 Larsen 1.b3         IA Noirs  | gain    | mat                  |  88 demi-coups | 0.83 s/coup IA | 46 s | reste ~36 min | moy.20 0.79 s (+6%) | 100 % chargée
+472/640 niveau 2250 tour 1 Dunst 1.Nc3         IA Blancs | défaite | mat                  | 152 demi-coups | 0.77 s/coup IA | 78 s | reste ~36 min | moy.20 0.79 s (+5%) | 100 % chargée
+473/640 niveau 2250 tour 1 Bird 1.f4           IA Noirs  | gain    | mat                  | 112 demi-coups | 0.83 s/coup IA | 60 s | reste ~36 min | moy.20 0.79 s (+6%) | 100 % chargée
+474/640 niveau 2250 tour 1 Nimzowitsch 1...Nc6 IA Blancs | gain    | mat                  | 117 demi-coups | 0.84 s/coup IA | 63 s | reste ~36 min | moy.20 0.79 s (+6%) | 100 % chargée
+475/640 niveau 2250 tour 1 Owen 1...b6         IA Blancs | gain    | mat                  |  97 demi-coups | 0.84 s/coup IA | 52 s | reste ~35 min | moy.20 0.80 s (+7%) | 100 % chargée
+476/640 niveau 2250 tour 1 Nimzowitsch 1...Nc6 IA Noirs  | gain    | mat                  | 118 demi-coups | 0.82 s/coup IA | 62 s | reste ~35 min | moy.20 0.80 s (+7%) | 100 % chargée
+477/640 niveau 2250 tour 1 Dunst 1.Nc3         IA Noirs  | gain    | mat                  | 154 demi-coups | 0.71 s/coup IA | 74 s | reste ~35 min | moy.20 0.80 s (+7%) | 100 % chargée
+478/640 niveau 2350 tour 1 Sicilienne Najdorf  IA Blancs | défaite | mat                  |  98 demi-coups | 0.87 s/coup IA | 52 s | reste ~35 min | moy.20 0.80 s (+8%) | 100 % chargée
+479/640 niveau 2250 tour 1 Budapest            IA Noirs  | nulle   | triple répétition    |  99 demi-coups | 0.86 s/coup IA | 54 s | reste ~35 min | moy.20 0.81 s (+8%) | 100 % chargée
+480/640 niveau 2250 tour 1 Owen 1...b6         IA Noirs  | nulle   | triple répétition    | 129 demi-coups | 0.83 s/coup IA | 70 s | reste ~34 min | moy.20 0.81 s (+8%) | 100 % chargée
+481/640 niveau 2350 tour 1 Sicilienne Alapin   IA Blancs | gain    | mat                  | 131 demi-coups | 0.60 s/coup IA | 55 s | reste ~34 min | moy.20 0.80 s (+7%) | 100 % chargée
+482/640 niveau 2250 tour 1 Budapest            IA Blancs | gain    | mat                  |  71 demi-coups | 0.84 s/coup IA | 36 s | reste ~34 min | moy.20 0.80 s (+8%) | 100 % chargée
+483/640 niveau 2350 tour 1 Sicilienne Rossolimo IA Blancs | gain    | mat                  |  89 demi-coups | 0.84 s/coup IA | 47 s | reste ~34 min | moy.20 0.81 s (+8%) | 100 % chargée
+484/640 niveau 2350 tour 1 Sicilienne Najdorf  IA Noirs  | nulle   | matériel insuffisant | 125 demi-coups | 0.87 s/coup IA | 67 s | reste ~34 min | moy.20 0.81 s (+8%) | 100 % chargée
+485/640 niveau 2350 tour 1 Sicilienne Rossolimo IA Noirs  | défaite | mat                  | 201 demi-coups | 0.78 s/coup IA | 102 s | reste ~33 min | moy.20 0.80 s (+8%) | 100 % chargée
+486/640 niveau 2350 tour 1 Française Winawer   IA Blancs | défaite | mat                  |  98 demi-coups | 0.85 s/coup IA | 51 s | reste ~33 min | moy.20 0.81 s (+8%) | 100 % chargée
+487/640 niveau 2350 tour 1 Française Winawer   IA Noirs  | défaite | mat                  |  93 demi-coups | 0.78 s/coup IA | 44 s | reste ~33 min | moy.20 0.81 s (+9%) | 100 % chargée
+488/640 niveau 2350 tour 1 Sicilienne Alapin   IA Noirs  | gain    | mat                  | 184 demi-coups | 0.69 s/coup IA | 86 s | reste ~33 min | moy.20 0.80 s (+8%) | 100 % chargée
+489/640 niveau 2350 tour 1 Caro-Kann classique IA Blancs | défaite | mat                  | 112 demi-coups | 0.77 s/coup IA | 55 s | reste ~33 min | moy.20 0.80 s (+7%) | 100 % chargée
+490/640 niveau 2350 tour 1 Française avance    IA Noirs  | gain    | mat                  | 116 demi-coups | 0.83 s/coup IA | 60 s | reste ~32 min | moy.20 0.80 s (+7%) | 100 % chargée
+491/640 niveau 2350 tour 1 Espagnole Berlin    IA Blancs | gain    | mat                  | 103 demi-coups | 0.83 s/coup IA | 53 s | reste ~32 min | moy.20 0.80 s (+7%) | 100 % chargée
+492/640 niveau 2350 tour 1 Française avance    IA Blancs | défaite | mat                  | 152 demi-coups | 0.83 s/coup IA | 81 s | reste ~32 min | moy.20 0.81 s (+8%) | 100 % chargée
+493/640 niveau 2350 tour 1 Espagnole Berlin    IA Noirs  | gain    | mat                  |  98 demi-coups | 0.83 s/coup IA | 50 s | reste ~32 min | moy.20 0.81 s (+8%) | 100 % chargée
+494/640 niveau 2350 tour 1 Caro-Kann classique IA Noirs  | gain    | mat                  | 122 demi-coups | 0.86 s/coup IA | 66 s | reste ~32 min | moy.20 0.81 s (+8%) | 100 % chargée
+495/640 niveau 2350 tour 1 Italienne Giuoco piano IA Blancs | gain    | mat                  | 109 demi-coups | 0.85 s/coup IA | 57 s | reste ~31 min | moy.20 0.81 s (+8%) | 100 % chargée
+496/640 niveau 2350 tour 1 Écossaise           IA Blancs | gain    | mat                  | 117 demi-coups | 0.89 s/coup IA | 65 s | reste ~31 min | moy.20 0.81 s (+8%) | 100 % chargée
+497/640 niveau 2350 tour 1 Écossaise           IA Noirs  | gain    | mat                  | 122 demi-coups | 0.81 s/coup IA | 63 s | reste ~31 min | moy.20 0.82 s (+9%) | 100 % chargée
+498/640 niveau 2350 tour 1 Italienne Giuoco piano IA Noirs  | gain    | mat                  | 164 demi-coups | 0.74 s/coup IA | 79 s | reste ~31 min | moy.20 0.81 s (+8%) | 100 % chargée
+499/640 niveau 2350 tour 1 Pirc autrichienne   IA Blancs | défaite | mat                  | 126 demi-coups | 0.86 s/coup IA | 68 s | reste ~31 min | moy.20 0.81 s (+8%) | 100 % chargée
+500/640 niveau 2350 tour 1 Petrov              IA Noirs  | défaite | mat                  | 119 demi-coups | 0.87 s/coup IA | 65 s | reste ~30 min | moy.20 0.81 s (+8%) | 100 % chargée
+501/640 niveau 2350 tour 1 Petrov              IA Blancs | gain    | mat                  |  95 demi-coups | 0.85 s/coup IA | 49 s | reste ~30 min | moy.20 0.82 s (+10%) | 100 % chargée
+502/640 niveau 2350 tour 1 Pirc autrichienne   IA Noirs  | défaite | mat                  |  93 demi-coups | 0.77 s/coup IA | 44 s | reste ~30 min | moy.20 0.82 s (+10%) | 100 % chargée
+503/640 niveau 2350 tour 1 Alekhine moderne    IA Noirs  | gain    | mat                  | 130 demi-coups | 0.86 s/coup IA | 70 s | reste ~30 min | moy.20 0.82 s (+10%) | 100 % chargée
+504/640 niveau 2350 tour 1 Gambit du roi accepté IA Noirs  | gain    | mat                  |  96 demi-coups | 0.87 s/coup IA | 52 s | reste ~30 min | moy.20 0.82 s (+10%) | 100 % chargée
+505/640 niveau 2350 tour 1 Alekhine moderne    IA Blancs | gain    | mat                  | 135 demi-coups | 0.80 s/coup IA | 70 s | reste ~29 min | moy.20 0.82 s (+10%) | 100 % chargée
+506/640 niveau 2350 tour 1 Viennoise           IA Blancs | défaite | mat                  | 108 demi-coups | 0.84 s/coup IA | 58 s | reste ~29 min | moy.20 0.82 s (+10%) | 100 % chargée
+507/640 niveau 2350 tour 1 Scandinave Qd6      IA Blancs | nulle   | 50 coups             | 251 demi-coups | 0.52 s/coup IA | 101 s | reste ~29 min | moy.20 0.81 s (+8%) | 100 % chargée
+508/640 niveau 2350 tour 1 Scandinave Qd6      IA Noirs  | défaite | mat                  |  93 demi-coups | 0.83 s/coup IA | 49 s | reste ~29 min | moy.20 0.82 s (+9%) | 100 % chargée
+509/640 niveau 2350 tour 1 Gambit du roi accepté IA Blancs | gain    | mat                  |  87 demi-coups | 0.77 s/coup IA | 42 s | reste ~28 min | moy.20 0.82 s (+9%) | 100 % chargée
+510/640 niveau 2350 tour 1 Gambit dame refusé orthodoxe IA Noirs  | défaite | mat                  | 117 demi-coups | 0.85 s/coup IA | 62 s | reste ~28 min | moy.20 0.82 s (+9%) | 100 % chargée
+511/640 niveau 2350 tour 1 Gambit dame accepté IA Noirs  | gain    | mat                  | 104 demi-coups | 0.83 s/coup IA | 53 s | reste ~28 min | moy.20 0.82 s (+9%) | 100 % chargée
+512/640 niveau 2350 tour 1 Viennoise           IA Noirs  | gain    | mat                  | 132 demi-coups | 0.84 s/coup IA | 71 s | reste ~28 min | moy.20 0.82 s (+9%) | 100 % chargée
+513/640 niveau 2350 tour 1 Gambit dame refusé orthodoxe IA Blancs | nulle   | triple répétition    | 138 demi-coups | 0.86 s/coup IA | 75 s | reste ~28 min | moy.20 0.82 s (+9%) | 100 % chargée
+514/640 niveau 2350 tour 1 Slave               IA Blancs | gain    | mat                  |  53 demi-coups | 0.86 s/coup IA | 27 s | reste ~27 min | moy.20 0.82 s (+9%) | 100 % chargée
+515/640 niveau 2350 tour 1 Gambit dame accepté IA Blancs | gain    | mat                  | 115 demi-coups | 0.87 s/coup IA | 62 s | reste ~27 min | moy.20 0.82 s (+10%) | 100 % chargée
+516/640 niveau 2350 tour 1 Slave               IA Noirs  | défaite | mat                  | 139 demi-coups | 0.74 s/coup IA | 67 s | reste ~27 min | moy.20 0.81 s (+9%) | 100 % chargée
+517/640 niveau 2350 tour 1 Semi-slave          IA Blancs | gain    | mat                  | 119 demi-coups | 0.85 s/coup IA | 63 s | reste ~27 min | moy.20 0.81 s (+9%) | 100 % chargée
+518/640 niveau 2350 tour 1 Semi-slave          IA Noirs  | défaite | mat                  | 147 demi-coups | 0.85 s/coup IA | 78 s | reste ~27 min | moy.20 0.82 s (+10%) | 100 % chargée
+519/640 niveau 2350 tour 1 Ouest-indienne      IA Blancs | gain    | mat                  | 111 demi-coups | 0.88 s/coup IA | 60 s | reste ~26 min | moy.20 0.82 s (+10%) | 100 % chargée
+520/640 niveau 2350 tour 1 Ouest-indienne      IA Noirs  | gain    | mat                  |  68 demi-coups | 0.83 s/coup IA | 33 s | reste ~26 min | moy.20 0.82 s (+9%) | 100 % chargée
+521/640 niveau 2350 tour 1 Nimzo-indienne      IA Noirs  | nulle   | pat                  | 164 demi-coups | 0.76 s/coup IA | 83 s | reste ~26 min | moy.20 0.81 s (+9%) | 100 % chargée
+522/640 niveau 2350 tour 1 Grünfeld échange    IA Blancs | gain    | mat                  |  81 demi-coups | 0.84 s/coup IA | 40 s | reste ~26 min | moy.20 0.82 s (+9%) | 100 % chargée
+523/640 niveau 2350 tour 1 Grünfeld échange    IA Noirs  | défaite | mat                  |  37 demi-coups | 0.78 s/coup IA | 14 s | reste ~25 min | moy.20 0.81 s (+9%) | 100 % chargée
+524/640 niveau 2350 tour 1 Benoni moderne      IA Blancs | défaite | mat                  |  46 demi-coups | 0.84 s/coup IA | 21 s | reste ~25 min | moy.20 0.81 s (+9%) | 100 % chargée
+525/640 niveau 2350 tour 1 Nimzo-indienne      IA Blancs | nulle   | triple répétition    | 190 demi-coups | 0.83 s/coup IA | 103 s | reste ~25 min | moy.20 0.81 s (+9%) | 100 % chargée
+526/640 niveau 2350 tour 1 Benoni moderne      IA Noirs  | gain    | mat                  |  84 demi-coups | 0.84 s/coup IA | 42 s | reste ~25 min | moy.20 0.81 s (+9%) | 100 % chargée
+527/640 niveau 2350 tour 1 Gambit Benko        IA Blancs | nulle   | triple répétition    | 124 demi-coups | 0.74 s/coup IA | 61 s | reste ~25 min | moy.20 0.82 s (+10%) | 100 % chargée
+528/640 niveau 2350 tour 1 Est-indienne classique IA Noirs  | nulle   | triple répétition    | 175 demi-coups | 0.87 s/coup IA | 97 s | reste ~24 min | moy.20 0.83 s (+10%) | 100 % chargée
+529/640 niveau 2350 tour 1 Est-indienne classique IA Blancs | gain    | mat                  | 183 demi-coups | 0.80 s/coup IA | 95 s | reste ~24 min | moy.20 0.83 s (+11%) | 100 % chargée
+530/640 niveau 2350 tour 1 Catalane            IA Blancs | défaite | mat                  |  80 demi-coups | 0.78 s/coup IA | 39 s | reste ~24 min | moy.20 0.82 s (+10%) | 100 % chargée
+531/640 niveau 2350 tour 1 Gambit Benko        IA Noirs  | gain    | mat                  |  94 demi-coups | 0.86 s/coup IA | 49 s | reste ~24 min | moy.20 0.83 s (+10%) | 100 % chargée
+532/640 niveau 2350 tour 1 Hollandaise Leningrad IA Blancs | défaite | mat                  | 104 demi-coups | 0.81 s/coup IA | 54 s | reste ~24 min | moy.20 0.82 s (+10%) | 100 % chargée
+533/640 niveau 2350 tour 1 Catalane            IA Noirs  | gain    | mat                  | 116 demi-coups | 0.76 s/coup IA | 57 s | reste ~23 min | moy.20 0.82 s (+10%) | 100 % chargée
+534/640 niveau 2350 tour 1 Trompowsky          IA Noirs  | gain    | mat                  |  70 demi-coups | 0.85 s/coup IA | 36 s | reste ~23 min | moy.20 0.82 s (+10%) | 100 % chargée
+535/640 niveau 2350 tour 1 London              IA Blancs | nulle   | triple répétition    |  78 demi-coups | 0.83 s/coup IA | 41 s | reste ~23 min | moy.20 0.82 s (+9%) | 100 % chargée
+536/640 niveau 2350 tour 1 Hollandaise Leningrad IA Noirs  | défaite | mat                  | 101 demi-coups | 0.85 s/coup IA | 53 s | reste ~23 min | moy.20 0.82 s (+10%) | 100 % chargée
+537/640 niveau 2350 tour 1 Trompowsky          IA Blancs | nulle   | triple répétition    |  95 demi-coups | 0.88 s/coup IA | 53 s | reste ~23 min | moy.20 0.82 s (+10%) | 100 % chargée
+538/640 niveau 2350 tour 1 London              IA Noirs  | gain    | mat                  | 132 demi-coups | 0.77 s/coup IA | 67 s | reste ~22 min | moy.20 0.82 s (+10%) | 100 % chargée
+539/640 niveau 2350 tour 1 Anglaise quatre cavaliers IA Blancs | gain    | mat                  | 113 demi-coups | 0.87 s/coup IA | 62 s | reste ~22 min | moy.20 0.82 s (+10%) | 100 % chargée
+540/640 niveau 2350 tour 1 Anglaise symétrique IA Noirs  | gain    | mat                  | 130 demi-coups | 0.83 s/coup IA | 69 s | reste ~22 min | moy.20 0.82 s (+10%) | 100 % chargée
+541/640 niveau 2350 tour 1 Polonaise 1.b4      IA Blancs | gain    | mat                  | 107 demi-coups | 0.85 s/coup IA | 58 s | reste ~22 min | moy.20 0.82 s (+10%) | 100 % chargée
+542/640 niveau 2350 tour 1 Anglaise symétrique IA Blancs | gain    | mat                  | 161 demi-coups | 0.84 s/coup IA | 85 s | reste ~21 min | moy.20 0.82 s (+10%) | 100 % chargée
+543/640 niveau 2350 tour 1 Anglaise quatre cavaliers IA Noirs  | défaite | mat                  | 159 demi-coups | 0.85 s/coup IA | 88 s | reste ~21 min | moy.20 0.83 s (+11%) | 100 % chargée
+544/640 niveau 2350 tour 1 Réti                IA Noirs  | gain    | mat                  |  96 demi-coups | 0.83 s/coup IA | 49 s | reste ~21 min | moy.20 0.83 s (+11%) | 100 % chargée
+545/640 niveau 2350 tour 1 Réti                IA Blancs | gain    | mat                  |  97 demi-coups | 0.84 s/coup IA | 50 s | reste ~21 min | moy.20 0.83 s (+11%) | 100 % chargée
+546/640 niveau 2350 tour 1 Bird 1.f4           IA Blancs | défaite | mat                  |  74 demi-coups | 0.80 s/coup IA | 38 s | reste ~21 min | moy.20 0.83 s (+11%) | 100 % chargée
+547/640 niveau 2350 tour 1 Polonaise 1.b4      IA Noirs  | gain    | mat                  | 168 demi-coups | 0.80 s/coup IA | 88 s | reste ~20 min | moy.20 0.83 s (+11%) | 100 % chargée
+548/640 niveau 2350 tour 1 Grob 1.g4           IA Blancs | nulle   | pat                  | 141 demi-coups | 0.68 s/coup IA | 66 s | reste ~20 min | moy.20 0.82 s (+10%) | 100 % chargée
+549/640 niveau 2350 tour 1 Larsen 1.b3         IA Blancs | défaite | mat                  |  66 demi-coups | 0.83 s/coup IA | 34 s | reste ~20 min | moy.20 0.82 s (+10%) | 100 % chargée
+550/640 niveau 2350 tour 1 Grob 1.g4           IA Noirs  | nulle   | triple répétition    | 172 demi-coups | 0.73 s/coup IA | 86 s | reste ~20 min | moy.20 0.82 s (+9%) | 100 % chargée
+551/640 niveau 2350 tour 1 Nimzowitsch 1...Nc6 IA Noirs  | défaite | mat                  |  69 demi-coups | 0.80 s/coup IA | 34 s | reste ~20 min | moy.20 0.82 s (+9%) | 100 % chargée
+552/640 niveau 2350 tour 1 Bird 1.f4           IA Noirs  | gain    | mat                  | 102 demi-coups | 0.84 s/coup IA | 55 s | reste ~19 min | moy.20 0.82 s (+9%) | 100 % chargée
+553/640 niveau 2350 tour 1 Larsen 1.b3         IA Noirs  | nulle   | triple répétition    | 133 demi-coups | 0.83 s/coup IA | 71 s | reste ~19 min | moy.20 0.82 s (+10%) | 100 % chargée
+554/640 niveau 2350 tour 1 Dunst 1.Nc3         IA Blancs | gain    | mat                  | 125 demi-coups | 0.86 s/coup IA | 68 s | reste ~19 min | moy.20 0.82 s (+10%) | 100 % chargée
+555/640 niveau 2350 tour 1 Owen 1...b6         IA Blancs | gain    | mat                  |  65 demi-coups | 0.79 s/coup IA | 32 s | reste ~19 min | moy.20 0.82 s (+10%) | 100 % chargée
+556/640 niveau 2350 tour 1 Budapest            IA Blancs | gain    | mat                  |  75 demi-coups | 0.74 s/coup IA | 35 s | reste ~18 min | moy.20 0.81 s (+9%) | 100 % chargée
+557/640 niveau 2350 tour 1 Nimzowitsch 1...Nc6 IA Blancs | nulle   | triple répétition    | 146 demi-coups | 0.77 s/coup IA | 75 s | reste ~18 min | moy.20 0.81 s (+8%) | 100 % chargée
+558/640 niveau 2450 tour 1 Sicilienne Najdorf  IA Blancs | défaite | mat                  |  38 demi-coups | 0.76 s/coup IA | 15 s | reste ~18 min | moy.20 0.81 s (+8%) | 100 % chargée
+559/640 niveau 2350 tour 1 Owen 1...b6         IA Noirs  | gain    | mat                  | 160 demi-coups | 0.81 s/coup IA | 85 s | reste ~18 min | moy.20 0.80 s (+8%) | 100 % chargée
+560/640 niveau 2350 tour 1 Dunst 1.Nc3         IA Noirs  | défaite | mat                  | 115 demi-coups | 0.82 s/coup IA | 60 s | reste ~18 min | moy.20 0.80 s (+7%) | 100 % chargée
+561/640 niveau 2350 tour 1 Budapest            IA Noirs  | nulle   | pat                  | 150 demi-coups | 0.69 s/coup IA | 72 s | reste ~17 min | moy.20 0.80 s (+6%) | 100 % chargée
+562/640 niveau 2450 tour 1 Sicilienne Najdorf  IA Noirs  | défaite | mat                  | 111 demi-coups | 0.82 s/coup IA | 57 s | reste ~17 min | moy.20 0.79 s (+6%) | 100 % chargée
+563/640 niveau 2450 tour 1 Sicilienne Alapin   IA Noirs  | gain    | mat                  | 144 demi-coups | 0.56 s/coup IA | 58 s | reste ~17 min | moy.20 0.78 s (+4%) | 100 % chargée
+564/640 niveau 2450 tour 1 Sicilienne Alapin   IA Blancs | nulle   | triple répétition    | 244 demi-coups | 0.56 s/coup IA | 102 s | reste ~17 min | moy.20 0.77 s (+3%) | 100 % chargée
+565/640 niveau 2450 tour 1 Sicilienne Rossolimo IA Blancs | gain    | mat                  | 103 demi-coups | 0.79 s/coup IA | 53 s | reste ~17 min | moy.20 0.77 s (+2%) | 100 % chargée
+566/640 niveau 2450 tour 1 Sicilienne Rossolimo IA Noirs  | défaite | mat                  |  65 demi-coups | 0.77 s/coup IA | 31 s | reste ~16 min | moy.20 0.76 s (+2%) | 100 % chargée
+567/640 niveau 2450 tour 1 Française Winawer   IA Blancs | nulle   | triple répétition    | 162 demi-coups | 0.73 s/coup IA | 80 s | reste ~16 min | moy.20 0.76 s (+2%) | 100 % chargée
+568/640 niveau 2450 tour 1 Française Winawer   IA Noirs  | défaite | mat                  |  85 demi-coups | 0.82 s/coup IA | 43 s | reste ~16 min | moy.20 0.77 s (+3%) | 100 % chargée
+569/640 niveau 2450 tour 1 Française avance    IA Blancs | défaite | mat                  | 156 demi-coups | 0.80 s/coup IA | 82 s | reste ~16 min | moy.20 0.77 s (+2%) | 100 % chargée
+570/640 niveau 2450 tour 1 Française avance    IA Noirs  | défaite | mat                  |  89 demi-coups | 0.83 s/coup IA | 45 s | reste ~15 min | moy.20 0.77 s (+3%) | 100 % chargée
+571/640 niveau 2450 tour 1 Espagnole Berlin    IA Blancs | nulle   | triple répétition    | 218 demi-coups | 0.50 s/coup IA | 84 s | reste ~15 min | moy.20 0.76 s (+1%) | 100 % chargée
+572/640 niveau 2450 tour 1 Caro-Kann classique IA Blancs | défaite | mat                  | 140 demi-coups | 0.76 s/coup IA | 70 s | reste ~15 min | moy.20 0.75 s (+1%) | 100 % chargée
+573/640 niveau 2450 tour 1 Caro-Kann classique IA Noirs  | gain    | mat                  |  96 demi-coups | 0.78 s/coup IA | 46 s | reste ~15 min | moy.20 0.75 s (+0%) | 100 % chargée
+574/640 niveau 2450 tour 1 Italienne Giuoco piano IA Blancs | nulle   | triple répétition    | 132 demi-coups | 0.79 s/coup IA | 68 s | reste ~15 min | moy.20 0.75 s (-0%) | 100 % chargée
+575/640 niveau 2450 tour 1 Italienne Giuoco piano IA Noirs  | gain    | mat                  | 114 demi-coups | 0.81 s/coup IA | 59 s | reste ~14 min | moy.20 0.75 s (-0%) | 100 % chargée
+576/640 niveau 2450 tour 1 Espagnole Berlin    IA Noirs  | défaite | mat                  |  67 demi-coups | 0.82 s/coup IA | 33 s | reste ~14 min | moy.20 0.75 s (+0%) | 100 % chargée
+577/640 niveau 2450 tour 1 Écossaise           IA Noirs  | défaite | mat                  | 149 demi-coups | 0.80 s/coup IA | 77 s | reste ~14 min | moy.20 0.75 s (+1%) | 100 % chargée
+578/640 niveau 2450 tour 1 Pirc autrichienne   IA Blancs | gain    | mat                  |  61 demi-coups | 0.88 s/coup IA | 32 s | reste ~14 min | moy.20 0.76 s (+1%) | 100 % chargée
+579/640 niveau 2450 tour 1 Écossaise           IA Blancs | nulle   | triple répétition    | 134 demi-coups | 0.78 s/coup IA | 68 s | reste ~13 min | moy.20 0.76 s (+1%) | 100 % chargée
+580/640 niveau 2450 tour 1 Petrov              IA Blancs | gain    | mat                  | 123 demi-coups | 0.63 s/coup IA | 53 s | reste ~13 min | moy.20 0.75 s (-0%) | 100 % chargée
+581/640 niveau 2450 tour 1 Pirc autrichienne   IA Noirs  | défaite | mat                  | 153 demi-coups | 0.61 s/coup IA | 65 s | reste ~13 min | moy.20 0.74 s (-1%) | 100 % chargée
+582/640 niveau 2450 tour 1 Petrov              IA Noirs  | nulle   | matériel insuffisant | 164 demi-coups | 0.76 s/coup IA | 83 s | reste ~13 min | moy.20 0.74 s (-1%) | 100 % chargée
+583/640 niveau 2450 tour 1 Alekhine moderne    IA Noirs  | gain    | mat                  |  92 demi-coups | 0.75 s/coup IA | 43 s | reste ~13 min | moy.20 0.75 s (+0%) | 100 % chargée
+584/640 niveau 2450 tour 1 Scandinave Qd6      IA Noirs  | gain    | mat                  | 130 demi-coups | 0.77 s/coup IA | 66 s | reste ~12 min | moy.20 0.76 s (+2%) | 100 % chargée
+585/640 niveau 2450 tour 1 Scandinave Qd6      IA Blancs | défaite | mat                  | 124 demi-coups | 0.78 s/coup IA | 63 s | reste ~12 min | moy.20 0.76 s (+2%) | 100 % chargée
+586/640 niveau 2450 tour 1 Viennoise           IA Blancs | gain    | mat                  | 135 demi-coups | 0.80 s/coup IA | 70 s | reste ~12 min | moy.20 0.76 s (+2%) | 100 % chargée
+587/640 niveau 2450 tour 1 Alekhine moderne    IA Blancs | nulle   | triple répétition    | 208 demi-coups | 0.81 s/coup IA | 111 s | reste ~12 min | moy.20 0.76 s (+2%) | 100 % chargée
+588/640 niveau 2450 tour 1 Gambit dame refusé orthodoxe IA Blancs | gain    | mat                  | 123 demi-coups | 0.62 s/coup IA | 53 s | reste ~12 min | moy.20 0.75 s (+1%) | 100 % chargée
+589/640 niveau 2450 tour 1 Gambit du roi accepté IA Noirs  | défaite | mat                  | 197 demi-coups | 0.64 s/coup IA | 88 s | reste ~11 min | moy.20 0.75 s (-0%) | 100 % chargée
+590/640 niveau 2450 tour 1 Gambit du roi accepté IA Blancs | défaite | mat                  | 118 demi-coups | 0.79 s/coup IA | 61 s | reste ~11 min | moy.20 0.74 s (-0%) | 100 % chargée
+591/640 niveau 2450 tour 1 Gambit dame refusé orthodoxe IA Noirs  | défaite | mat                  |  71 demi-coups | 0.79 s/coup IA | 34 s | reste ~11 min | moy.20 0.76 s (+2%) | 100 % chargée
+592/640 niveau 2450 tour 1 Viennoise           IA Noirs  | gain    | mat                  |  82 demi-coups | 0.77 s/coup IA | 40 s | reste ~11 min | moy.20 0.76 s (+2%) | 100 % chargée
+593/640 niveau 2450 tour 1 Gambit dame accepté IA Noirs  | gain    | mat                  | 110 demi-coups | 0.83 s/coup IA | 57 s | reste ~10 min | moy.20 0.76 s (+2%) | 100 % chargée
+594/640 niveau 2450 tour 1 Slave               IA Blancs | gain    | mat                  | 101 demi-coups | 0.81 s/coup IA | 51 s | reste ~10 min | moy.20 0.76 s (+2%) | 100 % chargée
+595/640 niveau 2450 tour 1 Gambit dame accepté IA Blancs | gain    | mat                  | 119 demi-coups | 0.64 s/coup IA | 51 s | reste ~10 min | moy.20 0.75 s (+1%) | 100 % chargée
+596/640 niveau 2450 tour 1 Nimzo-indienne      IA Blancs | défaite | mat                  |  42 demi-coups | 0.74 s/coup IA | 18 s | reste ~10 min | moy.20 0.75 s (+0%) | 100 % chargée
+597/640 niveau 2450 tour 1 Slave               IA Noirs  | nulle   | triple répétition    | 141 demi-coups | 0.68 s/coup IA | 65 s | reste ~10 min | moy.20 0.74 s (-0%) | 100 % chargée
+598/640 niveau 2450 tour 1 Semi-slave          IA Blancs | défaite | mat                  |  76 demi-coups | 0.74 s/coup IA | 34 s | reste ~9 min | moy.20 0.74 s (-1%) | 100 % chargée
+599/640 niveau 2450 tour 1 Semi-slave          IA Noirs  | gain    | mat                  |  92 demi-coups | 0.77 s/coup IA | 44 s | reste ~9 min | moy.20 0.74 s (-1%) | 100 % chargée
+600/640 niveau 2450 tour 1 Est-indienne classique IA Noirs  | gain    | mat                  | 100 demi-coups | 0.78 s/coup IA | 48 s | reste ~9 min | moy.20 0.74 s (-0%) | 100 % chargée
+601/640 niveau 2450 tour 1 Ouest-indienne      IA Noirs  | nulle   | triple répétition    | 104 demi-coups | 0.76 s/coup IA | 51 s | reste ~9 min | moy.20 0.75 s (+1%) | 100 % chargée
+602/640 niveau 2450 tour 1 Nimzo-indienne      IA Noirs  | nulle   | matériel insuffisant | 151 demi-coups | 0.77 s/coup IA | 77 s | reste ~8 min | moy.20 0.75 s (+1%) | 100 % chargée
+603/640 niveau 2450 tour 1 Ouest-indienne      IA Blancs | nulle   | triple répétition    |  97 demi-coups | 0.73 s/coup IA | 46 s | reste ~8 min | moy.20 0.75 s (+1%) | 100 % chargée
+604/640 niveau 2450 tour 1 Benoni moderne      IA Blancs | défaite | mat                  |  78 demi-coups | 0.80 s/coup IA | 37 s | reste ~8 min | moy.20 0.75 s (+1%) | 100 % chargée
+605/640 niveau 2450 tour 1 Grünfeld échange    IA Blancs | gain    | mat                  |  85 demi-coups | 0.78 s/coup IA | 40 s | reste ~8 min | moy.20 0.75 s (+1%) | 100 % chargée
+606/640 niveau 2450 tour 1 Est-indienne classique IA Blancs | défaite | mat                  | 188 demi-coups | 0.79 s/coup IA | 97 s | reste ~8 min | moy.20 0.75 s (+1%) | 100 % chargée
+607/640 niveau 2450 tour 1 Benoni moderne      IA Noirs  | défaite | mat                  |  95 demi-coups | 0.78 s/coup IA | 46 s | reste ~7 min | moy.20 0.75 s (+1%) | 100 % chargée
+608/640 niveau 2450 tour 1 Gambit Benko        IA Blancs | gain    | mat                  | 119 demi-coups | 0.68 s/coup IA | 54 s | reste ~7 min | moy.20 0.75 s (+1%) | 100 % chargée
+609/640 niveau 2450 tour 1 Catalane            IA Blancs | gain    | mat                  |  83 demi-coups | 0.77 s/coup IA | 40 s | reste ~7 min | moy.20 0.76 s (+2%) | 100 % chargée
+610/640 niveau 2450 tour 1 Grünfeld échange    IA Noirs  | défaite | mat                  | 161 demi-coups | 0.70 s/coup IA | 75 s | reste ~7 min | moy.20 0.76 s (+1%) | 100 % chargée
+611/640 niveau 2450 tour 1 Catalane            IA Noirs  | gain    | mat                  | 112 demi-coups | 0.79 s/coup IA | 56 s | reste ~6 min | moy.20 0.76 s (+1%) | 100 % chargée
+612/640 niveau 2450 tour 1 Hollandaise Leningrad IA Noirs  | défaite | mat                  |  77 demi-coups | 0.82 s/coup IA | 39 s | reste ~6 min | moy.20 0.76 s (+1%) | 100 % chargée
+613/640 niveau 2450 tour 1 Gambit Benko        IA Noirs  | nulle   | triple répétition    |  95 demi-coups | 0.82 s/coup IA | 49 s | reste ~6 min | moy.20 0.76 s (+1%) | 100 % chargée
+614/640 niveau 2450 tour 1 Trompowsky          IA Blancs | gain    | mat                  |  77 demi-coups | 0.82 s/coup IA | 40 s | reste ~6 min | moy.20 0.76 s (+1%) | 100 % chargée
+615/640 niveau 2450 tour 1 Hollandaise Leningrad IA Blancs | gain    | mat                  | 143 demi-coups | 0.78 s/coup IA | 73 s | reste ~6 min | moy.20 0.77 s (+2%) | 100 % chargée
+616/640 niveau 2450 tour 1 London              IA Noirs  | gain    | mat                  | 136 demi-coups | 0.80 s/coup IA | 71 s | reste ~5 min | moy.20 0.77 s (+3%) | 100 % chargée
+617/640 niveau 2450 tour 1 Trompowsky          IA Noirs  | défaite | mat                  | 129 demi-coups | 0.81 s/coup IA | 67 s | reste ~5 min | moy.20 0.78 s (+4%) | 100 % chargée
+618/640 niveau 2450 tour 1 Anglaise symétrique IA Blancs | nulle   | triple répétition    | 140 demi-coups | 0.77 s/coup IA | 71 s | reste ~5 min | moy.20 0.78 s (+4%) | 100 % chargée
+619/640 niveau 2450 tour 1 Anglaise symétrique IA Noirs  | défaite | mat                  |  83 demi-coups | 0.77 s/coup IA | 40 s | reste ~5 min | moy.20 0.78 s (+4%) | 100 % chargée
+620/640 niveau 2450 tour 1 London              IA Blancs | nulle   | triple répétition    | 204 demi-coups | 0.79 s/coup IA | 109 s | reste ~4 min | moy.20 0.78 s (+4%) | 100 % chargée
+621/640 niveau 2450 tour 1 Anglaise quatre cavaliers IA Noirs  | défaite | mat                  |  55 demi-coups | 0.83 s/coup IA | 27 s | reste ~4 min | moy.20 0.78 s (+4%) | 100 % chargée
+622/640 niveau 2450 tour 1 Réti                IA Blancs | nulle   | triple répétition    |  96 demi-coups | 0.83 s/coup IA | 50 s | reste ~4 min | moy.20 0.78 s (+5%) | 100 % chargée
+623/640 niveau 2450 tour 1 Anglaise quatre cavaliers IA Blancs | gain    | mat                  | 125 demi-coups | 0.76 s/coup IA | 62 s | reste ~4 min | moy.20 0.78 s (+5%) | 100 % chargée
+624/640 niveau 2450 tour 1 Polonaise 1.b4      IA Noirs  | gain    | mat                  | 104 demi-coups | 0.78 s/coup IA | 52 s | reste ~4 min | moy.20 0.78 s (+5%) | 100 % chargée
+625/640 niveau 2450 tour 1 Réti                IA Noirs  | gain    | mat                  | 106 demi-coups | 0.79 s/coup IA | 53 s | reste ~3 min | moy.20 0.78 s (+5%) | 100 % chargée
+626/640 niveau 2450 tour 1 Bird 1.f4           IA Blancs | nulle   | triple répétition    | 106 demi-coups | 0.80 s/coup IA | 55 s | reste ~3 min | moy.20 0.78 s (+5%) | 100 % chargée
+627/640 niveau 2450 tour 1 Grob 1.g4           IA Noirs  | gain    | mat                  | 110 demi-coups | 0.77 s/coup IA | 55 s | reste ~3 min | moy.20 0.78 s (+5%) | 100 % chargée
+628/640 niveau 2450 tour 1 Polonaise 1.b4      IA Blancs | défaite | mat                  | 112 demi-coups | 0.81 s/coup IA | 59 s | reste ~3 min | moy.20 0.79 s (+6%) | 100 % chargée
+629/640 niveau 2450 tour 1 Bird 1.f4           IA Noirs  | gain    | mat                  | 144 demi-coups | 0.81 s/coup IA | 76 s | reste ~2 min | moy.20 0.79 s (+6%) | 100 % chargée
+630/640 niveau 2450 tour 1 Grob 1.g4           IA Blancs | gain    | mat                  | 125 demi-coups | 0.65 s/coup IA | 54 s | reste ~2 min | moy.20 0.79 s (+6%) | 100 % chargée
+631/640 niveau 2450 tour 1 Larsen 1.b3         IA Blancs | gain    | mat                  | 131 demi-coups | 0.80 s/coup IA | 68 s | reste ~2 min | moy.20 0.79 s (+6%) | 100 % chargée
+632/640 niveau 2450 tour 1 Dunst 1.Nc3         IA Blancs | gain    | mat                  | 133 demi-coups | 0.81 s/coup IA | 70 s | reste ~2 min | moy.20 0.79 s (+6%) | 100 % chargée
+633/640 niveau 2450 tour 1 Larsen 1.b3         IA Noirs  | défaite | mat                  | 171 demi-coups | 0.62 s/coup IA | 75 s | reste ~2 min | moy.20 0.78 s (+4%) | 100 % chargée
+634/640 niveau 2450 tour 1 Dunst 1.Nc3         IA Noirs  | défaite | mat                  | 119 demi-coups | 0.79 s/coup IA | 61 s | reste ~1 min | moy.20 0.78 s (+4%) | 100 % chargée
+635/640 niveau 2450 tour 1 Owen 1...b6         IA Noirs  | défaite | mat                  | 113 demi-coups | 0.79 s/coup IA | 58 s | reste ~1 min | moy.20 0.78 s (+4%) | 100 % chargée
+636/640 niveau 2450 tour 1 Owen 1...b6         IA Blancs | nulle   | triple répétition    |  56 demi-coups | 0.72 s/coup IA | 26 s | reste ~1 min | moy.20 0.78 s (+4%) | 100 % chargée
+637/640 niveau 2450 tour 1 Nimzowitsch 1...Nc6 IA Blancs | défaite | mat                  | 142 demi-coups | 0.78 s/coup IA | 74 s | reste ~1 min | moy.20 0.77 s (+4%) | 100 % chargée
+638/640 niveau 2450 tour 1 Nimzowitsch 1...Nc6 IA Noirs  | gain    | mat                  |  96 demi-coups | 0.74 s/coup IA | 46 s | reste ~0 min | moy.20 0.77 s (+3%) | 100 % chargée
+639/640 niveau 2450 tour 1 Budapest            IA Blancs | nulle   | triple répétition    |  84 demi-coups | 0.66 s/coup IA | 38 s | reste ~0 min | moy.20 0.77 s (+3%) | 100 % chargée
+640/640 niveau 2450 tour 1 Budapest            IA Noirs  | défaite | mat                  | 177 demi-coups | 0.62 s/coup IA | 77 s | reste ~0 min | moy.20 0.76 s (+1%) | 100 % chargée
+Terminé en 143.6 min
+=== v2/kaggle_sup_r2 (stockfish-ladder-v2, 40 ouvertures) : 640 parties, checkpoint pas [92000], IA Syzygy 5 pièces, Stockfish 19 ===
+niveau SF parties   V   N   D   score   Elo implicite (95 %)
+     1320      80  77   1   2   96.9%   1917 (1776 à 2520)
+     1600      80  76   1   3   95.6%   2136 (2008 à 2800)
+     1900      80  62   6  12   81.2%   2155 (2074 à 2269)
+     2200      80  49  16  15   71.2%   2358 (2289 à 2440)
+     2250      80  53  12  15   73.8%   2429 (2358 à 2519)
+     2350      80  42  14  24   61.3%   2430 (2361 à 2505)
+     2450      80  32  18  30   51.2%   2459 (2391 à 2527)
+     2500      80  40  12  28   57.5%   2553 (2482 à 2627)
+Elo estimé (échelle UCI_Elo de Stockfish, ajustement sur toutes les parties) : 2419 ± 36 (intervalle à 95 % : 2384 à 2455)
+Durée moyenne d'une partie : 53 s ; 0.80 s par coup de l'IA
+vitesse de l'IA : référence 0.75 s par coup (bench de départ, nominal 0.80), moyenne glissante sur 20 parties, tolérance ±25% : mesure STABLE du début à la fin (640 parties suivies, aucune alerte)
+alimentation : départ 100 % (chargée), fin 100 % (chargée), 1 état(s) successif(s) : chargée 100 % (partie 0)
+Limites : échelle CCRL Blitz de Stockfish (pas FIDE/Lichess), calibrée à 60 s + 0,6 s par coup alors que Stockfish joue ici 300 ms ; parties rejouées depuis les mêmes ouvertures non indépendantes ; intervalle donc un peu optimiste.
+=== Comparaison : v2/kaggle_sup -> v2/kaggle_sup_r2 ===
+       v2/kaggle_sup : 2427 ± 37 (intervalle à 95 % : 2390 à 2464)  (640 parties, IA Syzygy 5 pièces)
+    v2/kaggle_sup_r2 : 2419 ± 36 (intervalle à 95 % : 2384 à 2455)  (640 parties, IA Syzygy 5 pièces)
+Différence : -8 Elo (± 51 à 95 %) : pas significatif à 95 %
+ niveau        v2/kaggle_sup     v2/kaggle_sup_r2
+   1320             99% (80)             97% (80)
+   1600             92% (80)             96% (80)
+   1900             85% (80)             81% (80)
+   2200             61% (80)             71% (80)
+   2250             69% (80)             74% (80)
+   2350             68% (80)             61% (80)
+   2450             60% (80)             51% (80)
+   2500             58% (80)             57% (80)
