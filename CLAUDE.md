@@ -15,17 +15,20 @@
 > de 648).
 > **Le secteur ne suffit pas** (nuit du 2026-10-22) : sur secteur toute la nuit, le processeur a tourné ~3 fois
 > moins vite (2,48 s par coup au lieu de 0,80) et la mesure v2 a été écartée. **Cause probable, vue le 2026-10-23** : Windows
-> bascule par moments les processus de la mesure sur les **cœurs E** (logiques 12-19 à ~90 %, cœurs P endormis), environ 3 fois plus lent
-> (plateau 2,4-2,5 s par coup, comme la nuit) ; la bascule peut survenir quelques minutes après le début, indépendamment de la batterie
-> (vue à 98-99 % « en charge » comme à 100 % « chargée ») et de Chrome. **Remède qui a tenu 143 min** : lancer la mesure avec le bridage d'efficacité
-> (EcoQoS) désactivé explicitement sur chaque processus (`SetProcessInformation`, `ProcessPowerThrottling`, ControlMask 1 / StateMask 0), procédé de
-> `data\nuit\lance_r2.ps1` (hors git) ; épingler sur les cœurs P donne 1,05 s par coup (non comparable). Un seul essai concluant : à confirmer.
-> Un processus Chrome emballé (~8 cœurs) peut aussi tout fausser : fermer le navigateur. Absence + capot ouvert + écran allumé = aucun ralentissement ;
-> capot fermé non testé, pas de règle. **Contrôler aussi la vitesse** : `match_stockfish.py run`
-> joue un bench de départ (≈ 0,76-0,80 s par coup attendu, avertissement hors ±25 %), suit la moyenne glissante sur 20 parties
-> (bandeau d'avertissement hors ±25 % du bench de départ) et son résumé final dit « stable », « perturbée brièvement »,
-> « NON STABLE » ou « NON COMPARABLE » : **seule une mesure stable (ou brièvement perturbée) se combine avec la référence**.
-> Lancer une mesure sans surveillance seulement si l'on relit ce résumé le lendemain.
+> bascule par moments les processus d'un calcul long sur les **cœurs E** (logiques 12-19 à ~90 %, cœurs P endormis), environ 3 fois plus lent
+> (plateau 2,4-2,5 s par coup, comme la nuit), parfois quelques minutes après le début, sans lien avec la batterie (vue à 98-99 % « en charge »
+> comme à 100 % « chargée »), le capot (absence + capot ouvert + écran allumé = aucun ralentissement ; capot fermé non testé) ni Chrome.
+> **Protection dans le code** (`src/chesszero/cpu_guard.py`, appelée au début de chaque script de calcul local long) : EcoQoS (`ProcessPowerThrottling`)
+> désactivé sur le processus et, par un thread, sur tous ses descendants (workers, Stockfish) ; ce remède a tenu 143 min (une mesure) ;
+> épingler sur les cœurs P ne marche pas (1,05 s par coup). **Tout nouveau script de calcul long doit appeler `cpu_guard.protect()`** (un test le
+> vérifie pour la liste existante). Hors Windows (Kaggle), sans effet.
+> **Contrôles de `match_stockfish.py run`** : avertissement au départ si un autre programme occupe plus de 2 cœurs (un onglet Chrome emballé a pris ~8 cœurs
+> le 2026-10-23 : fermer le navigateur) ; bench de départ (≈ 0,76-0,87 s par coup attendu, avertissement hors ±25 % de 0,80) avec mesure du placement
+> sur les cœurs P/E (alerte si > 60 % sur les cœurs E) ; moyenne glissante sur 20 parties (bandeau hors ±25 % du bench de départ, avec processus
+> gourmands et placement) ; **arrêt automatique (code 3, message clair, parties gardées, relancer = reprendre) quand la moyenne glissante ET chacune des
+> parties restent hors de ±25 % pendant 20 parties d'affilée** ; résumé final « stable », « perturbée brièvement », « NON STABLE » ou
+> « NON COMPARABLE » : **seule une mesure stable (ou brièvement perturbée) se combine avec la référence**. Lancer une mesure sans surveillance
+> seulement si l'on relit ce résumé le lendemain.
 
 IA d'échecs en Python (PyTorch + python-chess) : un réseau de neurones à deux têtes
 (**politique** = probabilité de chaque coup, **valeur** = qui gagne) guide une recherche
@@ -76,7 +79,7 @@ pip install -e .        # NE PAS réinstaller torch : garder le torch CUDA de Ka
 ## Arborescence
 
 ```
-src/chesszero/   device.py, checkpoint.py, encoding.py, model.py, data.py, train.py, mcts.py, rating.py (Elo par ajustement logistique), uci.py (interface UCI), syzygy.py (tables de finales), book.py (livre d'ouvertures du self-play), selfplay.py (parties, enregistrement, tampon entre sessions), selfplay_train.py (entraînement par tours sur le tampon + Lichess, garde-fous, candidat puis verdict de l'arène, `read_train_state`), arena.py (arène candidat contre accepté / ancre, Elo par paires, décision, reprise), loop.py (orchestrateur de la boucle : phases, budget, contrôles, rapport, `validate_input` / `check_inputs`), kaggle_inputs.py (découverte des entrées d'une session Kaggle par leur contenu), memwatch.py (RAM du système relevée toutes les 30 s), agreement.py (accord politique brute / cible MCTS par phase), speedwatch.py (moyenne glissante du temps par coup de l'IA pendant les mesures)
+src/chesszero/   device.py, checkpoint.py, encoding.py, model.py, data.py, train.py, mcts.py, rating.py (Elo par ajustement logistique), uci.py (interface UCI), syzygy.py (tables de finales), book.py (livre d'ouvertures du self-play), selfplay.py (parties, enregistrement, tampon entre sessions), selfplay_train.py (entraînement par tours sur le tampon + Lichess, garde-fous, candidat puis verdict de l'arène, `read_train_state`), arena.py (arène candidat contre accepté / ancre, Elo par paires, décision, reprise), loop.py (orchestrateur de la boucle : phases, budget, contrôles, rapport, `validate_input` / `check_inputs`), kaggle_inputs.py (découverte des entrées d'une session Kaggle par leur contenu), memwatch.py (RAM du système relevée toutes les 30 s), agreement.py (accord politique brute / cible MCTS par phase), speedwatch.py (moyenne glissante du temps par coup de l'IA pendant les mesures, batterie, arrêt automatique), cpu_guard.py (EcoQoS désactivé sur le processus et ses descendants, placement sur les cœurs P/E, processus concurrents : Windows seulement)
 scripts/         points d'entrée (smoke_resume.py = démo reprise, show_encoding.py = démo encodage, bench_inference.py = vitesse du réseau, prepare_data.py = extraction Lichess (un ou plusieurs mois), make_kaggle_zip.py = archive des shards pour un Dataset Kaggle, summarize_run.py = débit/GPU/attente d'un entraînement + verdict, train.py = pré-entraînement, plot_curves.py = courbes PNG, show_policy.py = meilleurs coups d'un checkpoint, show_search.py = ce que voit le MCTS sur une position, bench_mcts.py = simulations/s selon la taille de lot, bench_selfplay.py = débit du self-play (plusieurs parties par appel au réseau, `--stub` = coût CPU seul), match.py = MCTS contre politique seule, uci.py + chesszero.bat (+ chesszero_50/200/800/pendule.bat = profils) = moteur UCI, match_stockfish.py = échelle Elo contre Stockfish bridé (protocoles v1 / v2, + `endgames`), match_sims.py = même réseau, deux budgets de simulations l'un contre l'autre, prepare_book.py = livre d'ouvertures du self-play, selfplay.py = self-play multi-processus (+ tampon), check_selfplay.py = vérification + résumé des fichiers de self-play, train_selfplay.py = un tour d'entraînement sur le self-play (relancer = reprendre), eval_value_target.py = cible de valeur mélangée contre résultat seul (Stockfish + résultats réels), download_syzygy.py = tables Syzygy du miroir Lichess avec SHA-256 (`--wdl-only` sur Kaggle), selfplay_session.py = session de self-play (essai de débit en 2 phases ou session complète, mesure GPU/CPU, rapport), ladder_openings.py = les 40 ouvertures du protocole v2, arena.py = arène entre deux réseaux (relancer = reprendre, `--expect-min/--expect-max` pour les contrôles), alphazero_session.py = session de la boucle AlphaZero (orchestrateur ; `--smoke` = essai local), ab_value_target.py = A/B de la cible de valeur d'une traite, analyse_generation.py = rejeu / PGN / accord politique-cible MCTS du tampon d'une génération (`check|pgn|agreement`), lancer_cutechess.bat = prépare la liste des moteurs puis lance Cute Chess)
 configs/         tiny.toml (4 blocs × 64, CPU) et kaggle.toml (10 blocs × 128), sections [model], [train], [mcts] (+ [selfplay], [arena], [selfplay_train] et [loop] dans kaggle.toml) ; smoke.toml = essai local de la boucle ; data.toml = filtres Lichess
 tests/           pytest

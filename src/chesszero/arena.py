@@ -271,6 +271,9 @@ def _worker(task: dict, queue) -> None:
     import sys
     import traceback
 
+    from chesszero.cpu_guard import disable_ecoqos
+
+    disable_ecoqos()  # pas de bridage d'efficacité de Windows (sans effet ailleurs)
     try:
         import torch
 

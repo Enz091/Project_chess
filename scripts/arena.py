@@ -26,6 +26,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    from chesszero import cpu_guard
+
+    cpu_guard.protect()  # EcoQoS désactivé sur ce processus et ses descendants (chesszero/cpu_guard.py)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("--a", required=True, help="checkpoint du joueur A (candidat)")
     ap.add_argument("--b", required=True, help="checkpoint du joueur B (accepté ou ancre)")

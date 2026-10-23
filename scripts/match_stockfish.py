@@ -58,6 +58,7 @@ import chess
 import chess.engine
 import chess.pgn
 
+from chesszero import cpu_guard
 from chesszero.rating import difference, elo_from_score, fit_elo, per_level
 from chesszero.speedwatch import SpeedWatch, read_power
 from chesszero.speedwatch import verdict as speed_verdict
@@ -113,11 +114,16 @@ def init_worker(checkpoint: str, stockfish: str, protocol: dict, torch_threads: 
     from chesszero.mcts import MCTSConfig, NetEvaluator
     from chesszero.syzygy import Tablebase
 
+    cpu_guard.disable_ecoqos()  # ce processus : pas de bridage d'efficacité (voir chesszero/cpu_guard.py)
     torch.set_num_threads(torch_threads)
     _W["tb"] = Tablebase(syzygy) if syzygy else None
     model, meta = load_for_inference(checkpoint, "cpu")
     cfg = replace(MCTSConfig.named(protocol["mcts_config"]), num_simulations=protocol["simulations"])
     engine = chess.engine.SimpleEngine.popen_uci(stockfish)
+    try:
+        cpu_guard.disable_ecoqos(engine.transport.get_pid())  # Stockfish aussi (le thread du processus principal le refait)
+    except Exception:  # noqa: BLE001 : protection de confort, jamais bloquante
+        pass
     engine.configure({"Threads": protocol["stockfish_threads"], "Hash": protocol["stockfish_hash_mb"]})
     _W.update(evaluator=NetEvaluator(model), cfg=cfg, engine=engine, protocol=protocol, step=meta["step"],
               sf_name=engine.id["name"])
@@ -223,6 +229,29 @@ def power_warning(power: dict) -> str | None:
             f"(simulations fixes) non, et l'Elo mesuré est gonflé.\n{line}")
 
 
+_GUARD_INFO: dict = {}
+
+
+def startup_checks() -> dict:
+    """Protection du processeur avant une mesure (chesszero/cpu_guard.py) : EcoQoS désactivé sur ce processus et ses
+    descendants, cœurs P/E, et avertissement si un autre programme occupe plus de 2 cœurs."""
+    info = cpu_guard.protect()
+    layout = cpu_guard.core_layout()
+    info.update({"p_cores": len(layout["p"]), "e_cores": len(layout["e"])})
+    busy = cpu_guard.busy_processes(window=3.0, threshold=2.0)
+    info["busy_at_start"] = busy
+    print(f"Protection du processeur : EcoQoS {'désactivé' if info['ecoqos_disabled'] else 'non désactivé (hors Windows ou refusé)'}"
+          f" sur ce processus et ses descendants ; cœurs P {info['p_cores']}, cœurs E {info['e_cores']}", flush=True)
+    if busy:
+        line = "!" * 100
+        print(f"{line}\nATTENTION : un autre programme occupe beaucoup de processeur au départ : "
+              f"{cpu_guard.describe_busy(busy)}.\nFermer ce programme (onglet de navigateur emballé : 8 cœurs le 2026-10-23) "
+              f"avant de laisser tourner la mesure.\n{line}", flush=True)
+    _GUARD_INFO.clear()
+    _GUARD_INFO.update(info)
+    return info
+
+
 def environment(args) -> dict:
     import torch
 
@@ -236,7 +265,8 @@ def environment(args) -> dict:
     return {"cpu": cpu, "logical_cpus": os.cpu_count(), "os": platform.platform(), "python": platform.python_version(),
             "torch": torch.__version__, "workers": args.workers, "torch_threads_per_worker": args.torch_threads,
             "checkpoint": str(checkpoint.relative_to(ROOT)) if checkpoint.is_relative_to(ROOT) else str(checkpoint),
-            "power": power_status()}  # au dernier lancement (une reprise le remplace)
+            "power": power_status(),  # au dernier lancement (une reprise le remplace)
+            "cpu_guard": dict(_GUARD_INFO)}
 
 
 def task_key(t: dict) -> tuple:
@@ -351,7 +381,34 @@ def play_tasks(pool, results: Results | None, tasks: list[dict], label: str) -> 
               f"IA {'Blancs' if game['ai_white'] else 'Noirs '} | {res:<7} | {game['termination']:<20} | "
               f"{game['plies']:>3} demi-coups | {game['ai_sec_per_move']:.2f} s/coup IA | {game['seconds']:.0f} s | "
               f"reste ~{eta / 60:.0f} min{speed}", flush=True)
+        if watch is not None and info["abort"]:
+            message = abort_message(watch, info)
+            results.save()  # parties déjà jouées gardées : relancer la même commande reprend
+            raise SpeedAbort(message)
     return out
+
+
+class SpeedAbort(Exception):
+    """La vitesse de l'IA est restée hors tolérance pendant `abort_after` parties d'affilée : mesure arrêtée."""
+
+
+def abort_message(watch: SpeedWatch, info: dict) -> str:
+    line = "#" * 100
+    return (f"{line}\nMESURE ARRÊTÉE AUTOMATIQUEMENT : la moyenne glissante du temps par coup de l'IA, et chacune des "
+            f"parties, sont restées hors de ±{watch.tolerance:.0%} de la référence ({watch.reference:.2f} s) pendant "
+            f"{watch.abort_after} parties d'affilée "
+            f"(maintenant {info['rolling']:.2f} s, {info['deviation']:+.0%}).\nLe processeur ne tourne plus à la vitesse de "
+            f"la référence : Stockfish, qui joue au temps, change de force, et la mesure ne serait pas combinable.\n"
+            f"Causes connues : (1) le travail tourne sur les cœurs E (Windows) ; (2) un autre programme occupe le processeur "
+            f"(navigateur, antivirus, mise à jour) ; (3) alimentation ({(info.get('power') or {}).get('percent')} % "
+            f"{(info.get('power') or {}).get('state', 'non relevée')}).\nDiagnostic : processus gourmands : {_busy_text()} ; "
+            f"placement : {cpu_guard.placement_verdict(cpu_guard.measure_placement(2.0))[1]}.\n"
+            f"Les parties déjà jouées sont enregistrées ; une fois la cause réglée, relancer la même commande reprend la "
+            f"mesure (le résumé final la classera « NON STABLE »).\n{line}")
+
+
+def _busy_text(threshold: float = 1.0) -> str:
+    return cpu_guard.describe_busy(cpu_guard.busy_processes(window=1.5, threshold=threshold), threshold)
 
 
 def speed_banner(watch: SpeedWatch, info: dict) -> str:
@@ -363,7 +420,10 @@ def speed_banner(watch: SpeedWatch, info: dict) -> str:
             f"l'IA non.\nChercher la cause ; si cela dure, interrompre (relancer = reprendre) : la mesure ne sera pas "
             f"combinable avec la référence.\nAlimentation à cet instant : "
             f"{(info.get('power') or {}).get('percent')} % {(info.get('power') or {}).get('state', 'non relevée')} "
-            f"(piste du bridage pendant la recharge : voir les changements d'état dans le résumé final).\n{line}")
+            f"(piste du bridage pendant la recharge : voir les changements d'état dans le résumé final).\n"
+            f"Processus gourmands maintenant : {_busy_text()}.\n"
+            f"Placement : {cpu_guard.placement_verdict(cpu_guard.measure_placement(2.0))[1]}.\n"
+            f"Si cela dure {watch.abort_after} parties d'affilée, la mesure s'arrête d'elle-même.\n{line}")
 
 
 def resolve_syzygy(path: str | None) -> dict:
@@ -486,11 +546,21 @@ def bench_tasks(protocol: dict, n: int) -> list[dict]:
 def start_speed_watch(pool, results: Results, games: int) -> SpeedWatch:
     """Bench de départ (une partie par processus, non enregistrées) = vitesse de référence de la mesure. Une
     reprise garde la référence du premier lancement et compare le nouveau bench à elle."""
+    probe = cpu_guard.PlacementProbe(delay=20.0, window=8.0).start()  # placement P/E pendant que le bench tourne
     played = play_tasks(pool, None, bench_tasks(results.protocol, games), "bench de départ de la vitesse")
     s_move = statistics.mean(g["ai_sec_per_move"] for g in played)
     previous = results.data.get("speed")
     watch = SpeedWatch(s_move, state=previous if previous and previous.get("games") else None)
     problem = watch.bench(s_move, len(played))
+    placement = probe.finish(timeout=15.0)
+    state_p, text_p = cpu_guard.placement_verdict(placement)
+    print(f"Placement sur les cœurs au bench de départ : {text_p}", flush=True)
+    watch.state.setdefault("placements", []).append({"moment": "bench de départ", "state": state_p, **(placement or {})})
+    if state_p == "E_DOMINANT":
+        line = "!" * 100
+        print(f"{line}\nATTENTION PLACEMENT : le calcul tourne surtout sur les cœurs E du processeur (Windows). C'est l'état "
+              f"lent vu le 2026-10-23.\nEcoQoS est désactivé sur les processus de la mesure ; si la vitesse est aussi "
+              f"hors tolérance, arrêter, attendre et relancer.\n{line}", flush=True)
     power = read_power()
     if power:
         print(f"Alimentation au départ : {power['percent']} % {power['state']}", flush=True)
@@ -512,6 +582,7 @@ def bench(args) -> None:
     """Parties en parallèle (niveaux et ouvertures variés) pour estimer la durée du protocole."""
     protocol = PROTOCOLS[args.protocol]
     n_open = len(protocol["openings"])
+    startup_checks()
     tasks = bench_tasks(protocol, args.bench_games or args.workers)
     power = power_status()
     print(f"Alimentation : {'secteur' if power.get('on_ac') else 'batterie' if power.get('on_ac') is False else '?'}, "
@@ -631,20 +702,25 @@ def main() -> None:
             sys.exit(f"« {results.label} » a été commencé avec d'autres options d'IA ({results.data['ai']}) : "
                      "choisir un autre --tag.")
         results.data["protocol"], results.data["ai"] = results.protocol, ai
+        startup_checks()
         results.data["environment"] = environment(args)
         warning = power_warning(results.data["environment"]["power"])
         if warning:
             print(warning, flush=True)
         print(f"{results.label} : {results.protocol['name']}, IA {results.ai}", flush=True)
         start = time.perf_counter()
-        with make_pool(args, results.protocol, ai) as pool:
-            if not args.no_speed_watch:
-                start_speed_watch(pool, results, args.workers)
-                results.save()
-            if like is not None:
-                replay_protocol(pool, results, like)
-            else:
-                run_protocol(pool, results)
+        try:
+            with make_pool(args, results.protocol, ai) as pool:
+                if not args.no_speed_watch:
+                    start_speed_watch(pool, results, args.workers)
+                    results.save()
+                if like is not None:
+                    replay_protocol(pool, results, like)
+                else:
+                    run_protocol(pool, results)
+        except SpeedAbort as stop:
+            print(f"\n{stop}", flush=True)
+            sys.exit(3)  # code 3 : arrêt automatique pour vitesse hors tolérance (parties gardées, relancer = reprendre)
         results.save()
         print(f"\nTerminé en {(time.perf_counter() - start) / 60:.1f} min")
         report(results)

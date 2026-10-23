@@ -40,8 +40,8 @@ def test_no_alert_before_the_window_is_full():
 
 def test_throttling_that_starts_midway_is_detected_at_the_right_game():
     """Vitesse normale pendant 50 parties, puis 3 fois plus lent : moyenne glissante > 1,0 s (+25 %) dès la 3e partie lente
-    ((20 - k) x 0,8 + k x 2,4) / 20 > 1,0  <=>  k >= 3."""
-    w = SpeedWatch(0.8)
+    ((20 - k) x 0,8 + k x 2,4) / 20 > 1,0  <=>  k >= 3. (Sans arrêt automatique : voir les tests d'arrêt plus bas.)"""
+    w = SpeedWatch(0.8, abort_after=None)
     infos = feed(w, [0.8] * 50 + [2.4] * 30)
     first = next(i for i, x in enumerate(infos) if x["alert"])
     assert first == 52 and infos[first]["event"] == "start"  # 53e partie
@@ -118,6 +118,25 @@ class FakePool:
                    "ai_sec_per_move": v, "ai_tb_moves": 0, "seconds": 10.0, "checkpoint_step": 1, "stockfish": "SF"}
 
 
+@pytest.fixture(autouse=True)
+def quick_diagnostics(monkeypatch):
+    """Les bandeaux interrogent le système (processus gourmands 1,5 s, placement 2 s) : remplacés par des valeurs fixes."""
+    monkeypatch.setattr(ms.cpu_guard, "busy_processes", lambda *a, **k: [])
+    monkeypatch.setattr(ms.cpu_guard, "measure_placement", lambda *a, **k: None)
+
+    class NoProbe:  # la vraie sonde attend 20 s avant de mesurer
+        def __init__(self, *a, **k):
+            pass
+
+        def start(self):
+            return self
+
+        def finish(self, timeout=0):
+            return None
+
+    monkeypatch.setattr(ms.cpu_guard, "PlacementProbe", NoProbe)
+
+
 @pytest.fixture
 def results(tmp_path, monkeypatch):
     monkeypatch.setattr(ms, "OUT_DIR", tmp_path)
@@ -158,8 +177,7 @@ def test_start_speed_watch_uses_unrecorded_bench_games(results, capsys):
 
 
 def test_final_report_states_whether_the_measurement_was_stable(results, capsys):
-    ms.PROTOCOLS  # le rapport a besoin du protocole du tag
-    results.watch = SpeedWatch(0.8)
+    results.watch = SpeedWatch(0.8, abort_after=None)  # arrêt automatique testé à part
     levels = [1320, 1600, 1900, 2200]
     tasks = [{"level": levels[i % 4], "round": 0, "opening": i, "ai_white": i % 2 == 0, "phase": 1} for i in range(60)]
     ms.play_tasks(FakePool([0.8] * 30 + [2.5] * 30), results, tasks, "essai")
@@ -256,3 +274,127 @@ def test_speed_banner_and_start_bench_show_the_power_state(results, monkeypatch,
     ms.play_tasks(FakePool([0.8] * 15 + [2.4] * 15), results, tasks, "essai")
     out = capsys.readouterr().out
     assert "Alimentation à cet instant : 71 % en charge" in out
+
+
+# --------------------------------------------------------------------------- arrêt automatique (20 parties d'affilée hors tolérance)
+
+
+def test_abort_fires_on_the_20th_consecutive_game_out_of_tolerance_and_not_before():
+    w = SpeedWatch(0.8)  # abort_after = 20 par défaut
+    infos = feed(w, [0.8] * 40 + [2.4] * 40)
+    first_alert = next(i for i, x in enumerate(infos) if x["alert"])
+    aborts = [i for i, x in enumerate(infos) if x["abort"]]
+    assert aborts[0] == first_alert + 19  # la 20e partie d'affilée hors tolérance
+    assert not any(x["abort"] for x in infos[:aborts[0]])
+    assert w.state["aborted"]["consecutive_games"] == 20 and w.state["aborted"]["game"] == aborts[0] + 1
+    state, text = verdict(w.state)
+    assert state == "NON STABLE" and "ARRÊTÉE AUTOMATIQUEMENT" in text and "20 parties d'affilée" in text
+
+
+def test_recovery_resets_the_consecutive_count():
+    """La moyenne glissante a de la mémoire : 6 parties 3 fois trop lentes la laissent hors tolérance 23 parties. L'arrêt compte
+    donc les parties d'affilée où la moyenne ET la partie elle-même sont hors tolérance : 6, puis retour à la normale, pas 23."""
+    w = SpeedWatch(0.8)
+    infos = feed(w, [0.8] * 30 + [3.0] * 6 + [0.8] * 40 + [3.0] * 6 + [0.8] * 30)
+    streaks, run = [], 0
+    for x in infos:
+        if x["alert"]:
+            run += 1
+        elif run:
+            streaks.append(run)
+            run = 0
+    assert streaks[0] >= 20  # la moyenne glissante, elle, reste bien hors tolérance plus de 20 parties...
+    assert not any(x["abort"] for x in infos) and "aborted" not in w.state  # ...mais cela n'arrête pas la mesure
+    assert w.state["consecutive_alert"] == 0
+
+
+def test_a_blip_of_a_few_games_never_stops_but_20_slow_games_in_a_row_do():
+    blip = SpeedWatch(0.8)
+    assert not any(x["abort"] for x in feed(blip, [0.8] * 30 + [2.4] * 5 + [0.8] * 60))
+    w = SpeedWatch(0.8)
+    infos = feed(w, [0.8] * 30 + [2.4] * 40)
+    first_stop = next(i for i, x in enumerate(infos) if x["abort"])
+    assert first_stop == 30 + 2 + 19  # la 3e partie lente fait sortir la moyenne ; 20 parties d'affilée à partir de là
+    fast = SpeedWatch(1.6)  # plus rapide que la référence, dans la durée : arrêt aussi
+    assert any(x["abort"] for x in feed(fast, [1.6] * 25 + [0.8] * 60))
+
+
+def test_abort_can_be_disabled_and_a_resume_starts_from_zero():
+    w = SpeedWatch(0.8, abort_after=None)
+    assert not any(x["abort"] for x in feed(w, [0.8] * 20 + [3.0] * 60))
+    a = SpeedWatch(0.8)
+    feed(a, [0.8] * 20 + [3.0] * 60)
+    assert a.state["aborted"]
+    saved = json.loads(json.dumps(a.state))
+    again = SpeedWatch(0.8, state=saved)  # relance de la même commande
+    assert again.state["consecutive_alert"] == 0 and "aborted" not in again.state and len(again.state["past_aborts"]) == 1
+    assert not again.add(0.8)["abort"]
+
+
+def test_reference_measurements_would_not_have_been_stopped():
+    """La mesure de référence a un épisode de 19 parties hors tolérance (parties 522-540) : sous le seuil de 20."""
+    for name in ("kaggle_sup", "kaggle_sup_r2"):
+        path = Path(__file__).resolve().parents[1] / "docs" / "stockfish" / "v2" / f"{name}.json"
+        if not path.exists():
+            pytest.skip("résultats absents")
+        speeds = [g["ai_sec_per_move"] for g in json.loads(path.read_text(encoding="utf-8"))["games"]]
+        w = SpeedWatch(sum(speeds[:4]) / 4)
+        assert not any(i["abort"] for i in feed(w, speeds)), name
+
+
+def test_play_tasks_stops_the_measurement_with_a_clear_message_and_keeps_the_games(results, capsys):
+    results.watch = SpeedWatch(0.8)
+    tasks = [{"level": 1320 + i, "round": 0, "opening": 0, "ai_white": True, "phase": 1} for i in range(120)]
+    with pytest.raises(ms.SpeedAbort) as stop:
+        ms.play_tasks(FakePool([0.8] * 30 + [2.5] * 90), results, tasks, "essai")
+    msg = str(stop.value)
+    assert "MESURE ARRÊTÉE AUTOMATIQUEMENT" in msg and "20 parties d'affilée" in msg and "relancer la même commande" in msg
+    assert "cœurs E" in msg and "processus gourmands" in msg and "alimentation (" in msg
+    saved = json.loads(results.path.read_text(encoding="utf-8"))
+    played = len(saved["games"])
+    assert 30 < played < 120 and saved["speed"]["aborted"]["game"] == played  # la partie fatale est enregistrée aussi
+    assert saved["speed"]["consecutive_alert"] >= 20
+
+
+def test_main_exits_with_code_3_on_abort(tmp_path, monkeypatch, capsys):
+    """Le point d'entrée convertit l'arrêt automatique en code de sortie 3 (parties gardées)."""
+    monkeypatch.setattr(ms, "OUT_DIR", tmp_path)
+    monkeypatch.setattr(ms, "resolve_syzygy", lambda path: {"syzygy": None})
+
+    class Pool:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr(ms, "make_pool", lambda *a, **k: Pool())
+    monkeypatch.setattr(ms, "startup_checks", lambda: {})
+    monkeypatch.setattr(ms, "environment", lambda args: {"power": {"on_ac": True, "power_mode": "meilleures performances"}})
+
+    def boom(pool, results, games):
+        raise ms.SpeedAbort("MESURE ARRÊTÉE AUTOMATIQUEMENT (test)")
+
+    monkeypatch.setattr(ms, "start_speed_watch", boom)
+    monkeypatch.setattr(sys, "argv", ["match_stockfish.py", "run", "--tag", "essai_arret"])
+    with pytest.raises(SystemExit) as e:
+        ms.main()
+    assert e.value.code == 3 and "MESURE ARRÊTÉE AUTOMATIQUEMENT (test)" in capsys.readouterr().out
+
+
+def test_start_bench_reports_the_core_placement(results, monkeypatch, capsys):
+    class Probe:
+        def __init__(self, *a, **k):
+            pass
+
+        def start(self):
+            return self
+
+        def finish(self, timeout=0):
+            return {"p_cores_busy": 0.4, "e_cores_busy": 4.8, "e_share": 0.923, "total_cores_busy": 5.2}
+
+    monkeypatch.setattr(ms.cpu_guard, "PlacementProbe", Probe)
+    watch = ms.start_speed_watch(FakePool([0.8] * 4), results, 4)
+    out = capsys.readouterr().out
+    assert "ATTENTION PLACEMENT" in out and "cœurs E" in out and "92%" in out
+    assert watch.state["placements"][0]["state"] == "E_DOMINANT"

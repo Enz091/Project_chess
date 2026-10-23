@@ -40,6 +40,9 @@ def worker(task: dict) -> dict:
     from chesszero.syzygy import Tablebase
 
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # processus fils : même encodage que le parent
+    from chesszero import cpu_guard
+
+    cpu_guard.disable_ecoqos()  # processus de self-play : pas de bridage d'efficacité
     torch.set_num_threads(task["threads"])
     cfg = SelfPlayConfig.named(task["config"])
     if task["overrides"]:
@@ -105,6 +108,9 @@ def agreement_indicator(own: list[dict], args) -> dict | None:
 
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    from chesszero import cpu_guard
+
+    cpu_guard.protect()  # EcoQoS désactivé sur ce processus et ses descendants (chesszero/cpu_guard.py)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("--checkpoint", default=str(ROOT / "checkpoints" / "kaggle_sup" / "best.pt"))
     ap.add_argument("--config", default="kaggle", help="configs/<nom>.toml, sections [mcts] et [selfplay]")

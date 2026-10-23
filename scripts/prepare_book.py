@@ -97,6 +97,9 @@ def save_arena_reserve(out: str) -> None:
 
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    from chesszero import cpu_guard
+
+    cpu_guard.protect()  # EcoQoS désactivé sur ce processus et ses descendants (chesszero/cpu_guard.py)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("--months", nargs="+", default=["2026-01"], metavar="AAAA-MM")
     ap.add_argument("--out", default=str(ROOT / "books" / "lichess_2000"), help="chemin sans extension")

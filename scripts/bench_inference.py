@@ -31,6 +31,9 @@ def positions_per_second(model, x: torch.Tensor, min_time: float = 1.5) -> float
 
 
 def main() -> None:
+    from chesszero import cpu_guard
+
+    cpu_guard.protect()  # EcoQoS désactivé sur ce processus et ses descendants (chesszero/cpu_guard.py)
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--configs", nargs="+", default=["tiny", "kaggle"])
     parser.add_argument("--batches", nargs="+", type=int, default=[1, 8, 32, 64, 128, 256])

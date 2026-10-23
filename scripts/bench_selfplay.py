@@ -86,6 +86,9 @@ def worker(args_dict: dict) -> dict:
 
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    from chesszero import cpu_guard
+
+    cpu_guard.protect()  # EcoQoS désactivé sur ce processus et ses descendants (chesszero/cpu_guard.py)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("--processes", type=int, default=3)
     ap.add_argument("--games", type=int, default=64, help="parties en parallèle par processus")

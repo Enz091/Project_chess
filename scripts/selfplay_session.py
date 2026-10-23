@@ -199,6 +199,9 @@ def report_bench(throughput: dict, games: dict, res: dict, cfg) -> None:
 
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    from chesszero import cpu_guard
+
+    cpu_guard.protect()  # EcoQoS désactivé sur ce processus et ses descendants (chesszero/cpu_guard.py)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("mode", choices=["bench", "full"])
     ap.add_argument("--minutes", type=float, required=True, help="budget (bench : durée du jeu ; full : toute la session)")

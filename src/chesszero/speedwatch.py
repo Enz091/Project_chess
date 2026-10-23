@@ -84,10 +84,13 @@ class SpeedWatch:
     """`reference` : secondes par coup du bench de départ. `state` : dictionnaire enregistré dans le fichier de
     résultats (clé « speed »), mis à jour à chaque partie ; une reprise de la mesure le continue."""
 
-    def __init__(self, reference: float, window: int = 20, tolerance: float = 0.25, state: dict | None = None):
+    def __init__(self, reference: float, window: int = 20, tolerance: float = 0.25, state: dict | None = None,
+                 abort_after: int | None = 20):
+        """`abort_after` : nombre de parties d'affilée où la moyenne glissante ET la partie elle-même sont hors
+        tolérance (même sens) au bout duquel `add` demande l'arrêt de la mesure (`info["abort"]`) ; None = jamais."""
         if reference <= 0:
             raise ValueError("vitesse de référence invalide")
-        self.window, self.tolerance = window, tolerance
+        self.window, self.tolerance, self.abort_after = window, tolerance, abort_after
         st = state or {}
         self.state = st
         st.setdefault("reference_s_per_move", reference)
@@ -100,6 +103,10 @@ class SpeedWatch:
         st.setdefault("worst", None)  # {"game": n, "rolling": s, "deviation": d}
         st.setdefault("episodes", [])  # [{"start": n, "end": n, "max_deviation": d}] ; end None = en cours
         st.setdefault("series", [])  # [[n, moyenne glissante]] une valeur toutes les `window` parties
+        st["abort_after"] = abort_after
+        st["consecutive_alert"] = 0  # une reprise repart de zéro
+        if st.get("aborted"):  # la mesure avait été arrêtée automatiquement : on garde la trace dans l'historique
+            st.setdefault("past_aborts", []).append(st.pop("aborted"))
         self.recent = deque(st.get("recent", []), maxlen=window)
         st["recent"] = list(self.recent)
 
@@ -139,6 +146,15 @@ class SpeedWatch:
         alert = len(self.recent) >= self.window and abs(dev) > self.tolerance
         event = None
         open_ep = st["episodes"][-1] if st["episodes"] and st["episodes"][-1]["end"] is None else None
+        # Arrêt : la moyenne glissante a de la mémoire (6 parties lentes la laissent hors tolérance ~23 parties), donc on compte
+        # les parties d'affilée où elle ET la partie elle-même sont hors tolérance dans le même sens : un blip de quelques
+        # parties n'arrête rien, un ralentissement qui dure 20 parties l'arrête.
+        own_out = abs(seconds_per_move / self.reference - 1) > self.tolerance and (seconds_per_move > self.reference) == (dev > 0)
+        st["consecutive_alert"] = st["consecutive_alert"] + 1 if (alert and own_out) else 0
+        abort = bool(self.abort_after) and st["consecutive_alert"] >= self.abort_after
+        if abort and "aborted" not in st:  # le premier déclenchement fait foi
+            st["aborted"] = {"game": st["games"], "rolling": rolling, "deviation": dev,
+                             "consecutive_games": st["consecutive_alert"], "power": _power_brief(power)}
         if alert:
             st["alert_games"] += 1
             if open_ep is None:
@@ -156,7 +172,7 @@ class SpeedWatch:
             event = "end"
         if st["games"] % self.window == 0:  # [partie, moyenne glissante, % batterie, état de charge]
             st["series"].append([st["games"], round(rolling, 4), (power or {}).get("percent"), (power or {}).get("state")])
-        return {"rolling": rolling, "deviation": dev, "alert": alert, "event": event, "power": power}
+        return {"rolling": rolling, "deviation": dev, "alert": alert, "event": event, "power": power, "abort": abort}
 
     def bench(self, seconds_per_move: float, games: int) -> str | None:
         """Enregistre un bench de départ (un par lancement) ; avertit s'il s'écarte de la référence ou de la vitesse
@@ -199,6 +215,12 @@ def _stability(state: dict | None) -> tuple[str, str]:
             f"±{state['tolerance']:.0%}")
     eps = state["episodes"]
     ongoing = bool(eps) and eps[-1]["end"] is None
+    if state.get("aborted"):
+        a = state["aborted"]
+        return "NON STABLE", (f"{head} : MESURE ARRÊTÉE AUTOMATIQUEMENT à la partie {a['game']} (moyenne glissante et "
+                              f"parties elles-mêmes hors tolérance pendant {a['consecutive_games']} parties d'affilée, {a['rolling']:.2f} s par coup, "
+                              f"{a['deviation']:+.0%}) ; {bad} parties sur {n} hors tolérance ; relancer pour reprendre une "
+                              "fois la cause réglée, le résultat ne se combine pas avec la référence tant qu'il contient ces parties")
     if bad == 0:
         return "stable", f"{head} : mesure STABLE du début à la fin ({n} parties suivies, aucune alerte)"
     worst = state["worst"]
