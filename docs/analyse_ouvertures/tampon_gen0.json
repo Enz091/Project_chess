@@ -1,0 +1,72 @@
+{
+ "games": 3803,
+ "book_games": 3413,
+ "initial_position_games": 390,
+ "book_games_q": {
+  "n": 3413,
+  "mean_abs_q": 0.103,
+  "median_abs_q": 0.08,
+  "share_gt_0.3": 0.0331,
+  "share_gt_0.5": 0.0029,
+  "favored_side": {
+   "won": 0.371,
+   "drawn": 0.381,
+   "lost": 0.248
+  }
+ },
+ "initial_position_q": {
+  "n": 390,
+  "mean_abs_q": 0.043,
+  "median_abs_q": 0.043,
+  "share_gt_0.3": 0.0,
+  "share_gt_0.5": 0.0,
+  "favored_side": {
+   "won": 0.356,
+   "drawn": 0.367,
+   "lost": 0.277
+  }
+ },
+ "by_band_book_games": {
+  "|Q| < 0.1": {
+   "n": 2018,
+   "share": 0.591,
+   "decisive": 0.611,
+   "favored_won": 0.335,
+   "favored_lost": 0.275
+  },
+  "0.1 à 0.3": {
+   "n": 1282,
+   "share": 0.376,
+   "decisive": 0.617,
+   "favored_won": 0.4,
+   "favored_lost": 0.217
+  },
+  "0.3 à 0.5": {
+   "n": 102,
+   "share": 0.03,
+   "decisive": 0.784,
+   "favored_won": 0.657,
+   "favored_lost": 0.127
+  },
+  "> 0.5": {
+   "n": 11,
+   "share": 0.003,
+   "decisive": 0.909,
+   "favored_won": 0.909,
+   "favored_lost": 0.0
+  }
+ },
+ "q_white_quantiles_book": {
+  "0.05": -0.173,
+  "0.25": -0.034,
+  "0.5": 0.041,
+  "0.75": 0.115,
+  "0.95": 0.248
+ },
+ "resign_share_by_band_book_games": {
+  "|Q| < 0.1": 0.368,
+  "0.1 à 0.3": 0.363,
+  "0.3 à 0.5": 0.529,
+  "> 0.5": 0.636
+ }
+}

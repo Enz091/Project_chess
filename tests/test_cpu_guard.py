@@ -139,7 +139,7 @@ def test_everything_is_a_noop_elsewhere(monkeypatch):
 
 LONG_SCRIPTS = ["match_stockfish", "ab_value_target", "analyse_generation", "train", "train_selfplay", "selfplay", "arena",
                 "bench_selfplay", "selfplay_session", "alphazero_session", "eval_value_target", "prepare_data",
-                "prepare_book", "match", "match_sims", "bench_mcts", "bench_inference"]
+                "prepare_book", "match", "match_sims", "bench_mcts", "bench_inference", "analyse_openings"]
 
 
 @pytest.mark.parametrize("name", LONG_SCRIPTS)
