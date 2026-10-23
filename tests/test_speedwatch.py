@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from chesszero.speedwatch import NOMINAL_SECONDS_PER_MOVE, SpeedWatch, verdict
+from chesszero.speedwatch import NOMINAL_SECONDS_PER_MOVE, SpeedWatch, classify_power, describe_power, read_power, verdict
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -137,7 +137,7 @@ def test_play_tasks_records_rolling_speed_and_prints_banner(results, capsys):
     assert all("ai_rolling_s_per_move" in g for g in saved["games"])
     assert saved["games"][0]["ai_rolling_s_per_move"] == 0.8
     assert saved["games"][-1]["ai_rolling_s_per_move"] > 1.0
-    assert saved["speed"]["series"] == [[20, 0.8], [40, saved["speed"]["series"][1][1]]]
+    assert [s[:2] for s in saved["speed"]["series"]] == [[20, 0.8], [40, saved["speed"]["series"][1][1]]]
 
 
 def test_play_tasks_without_watch_is_unchanged(results, capsys):
@@ -178,3 +178,81 @@ def test_final_report_states_whether_the_measurement_was_stable(results, capsys)
 def test_old_results_without_speed_still_report(capsys):
     ms.report(ms.Results("v2/kaggle_sup"))
     assert "vitesse non suivie" in capsys.readouterr().out
+
+
+# --------------------------------------------------------------------------- batterie et état de charge (piste du bridage pendant la recharge)
+
+
+def test_classify_power_states():
+    assert classify_power(0, 0, 87) == {"percent": 87, "state": "sur batterie"}
+    assert classify_power(1, 8, 71) == {"percent": 71, "state": "en charge"}
+    assert classify_power(1, 0, 100) == {"percent": 100, "state": "chargée"}
+    assert classify_power(1, 9, 100)["state"] == "en charge"  # le drapeau de charge prime
+    assert classify_power(1, 0, 80) == {"percent": 80, "state": "secteur sans charge"}
+    assert classify_power(1, 128, 255) == {"percent": None, "state": "secteur (pas de batterie)"}
+    assert classify_power(255, 255, 255) == {"percent": None, "state": "inconnu"}
+
+
+def test_read_power_returns_a_known_state_on_this_machine():
+    p = read_power()
+    if p is None:
+        pytest.skip("alimentation non lisible ici")
+    assert p["state"] in {"sur batterie", "en charge", "chargée", "secteur sans charge", "secteur (pas de batterie)",
+                          "inconnu"}
+    assert p["percent"] is None or 0 <= p["percent"] <= 100
+
+
+def test_power_log_records_changes_episodes_and_series():
+    w = SpeedWatch(0.8)
+    states = [{"percent": 71 + i // 10, "state": "en charge"} for i in range(30)]
+    states += [{"percent": 100, "state": "chargée"}] * 30
+    speeds = [2.4] * 30 + [0.8] * 30  # lent pendant la charge, normal une fois chargée
+    infos = [w.add(s, p) for s, p in zip(speeds, states)]
+    log = w.state["power"]
+    assert log["first"]["state"] == "en charge" and log["first"]["percent"] == 71 and log["first"]["game"] == 1
+    assert log["last"] == {"game": 60, "percent": 100, "state": "chargée"}
+    assert [(c["state"], c["game"]) for c in log["changes"]] == [("en charge", 1), ("chargée", 31)]  # un seul changement
+    assert infos[0]["power"]["percent"] == 71
+    ep = w.state["episodes"][0]
+    assert ep["power_start"] == {"percent": 71 + 14 // 10, "state": "en charge"}  # l'alerte commence à la 15e partie
+    assert ep["power_end"]["state"] == "chargée"  # elle finit une fois chargée
+    assert [s[2:] for s in w.state["series"]] == [[72, "en charge"], [100, "chargée"], [100, "chargée"]]
+    text = describe_power(w.state)
+    assert "départ 71 % (en charge)" in text and "fin 100 % (chargée)" in text and "chargée 100 % (partie 31)" in text
+    assert "commencé en charge à 72 %" in text
+    assert "alimentation : départ" in verdict(w.state)[1].splitlines()[-1]
+
+
+def test_power_is_optional_and_old_state_still_works():
+    w = SpeedWatch(0.8)
+    feed(w, [0.8] * 25)
+    assert "power" not in w.state and "alimentation non relevée" in describe_power(w.state)
+    assert w.state["series"][0] == [20, 0.8, None, None]
+    legacy = {"games": 3, "alert_games": 0, "reference_s_per_move": 0.8, "nominal_s_per_move": 0.8, "window": 20,
+              "tolerance": 0.25, "episodes": [], "series": [[20, 0.8]], "worst": None}  # fichier d'avant cette version
+    state, text = verdict(legacy)
+    assert state == "stable" and "alimentation non relevée" in text
+
+
+def test_play_tasks_records_battery_and_charge_state_in_every_game(results, monkeypatch, capsys):
+    readings = iter([{"percent": 80 + i // 5, "state": "en charge" if i < 10 else "chargée"} for i in range(40)])
+    monkeypatch.setattr(ms, "read_power", lambda: next(readings))
+    results.watch = SpeedWatch(0.8)
+    tasks = [{"level": 1320 + i, "round": 0, "opening": 0, "ai_white": True, "phase": 1} for i in range(10)]
+    ms.play_tasks(FakePool([0.8] * 10), results, tasks, "essai")
+    out = capsys.readouterr().out
+    assert "| 80 % en charge" in out and "| 81 % en charge" in out
+    saved = json.loads(results.path.read_text(encoding="utf-8"))
+    assert [(g["battery_percent"], g["power_state"]) for g in saved["games"]][:6] == [(80, "en charge")] * 5 + [(81, "en charge")]
+    assert saved["speed"]["power"]["first"]["percent"] == 80 and saved["speed"]["power"]["last"]["game"] == 10
+
+
+def test_speed_banner_and_start_bench_show_the_power_state(results, monkeypatch, capsys):
+    monkeypatch.setattr(ms, "read_power", lambda: {"percent": 71, "state": "en charge"})
+    ms.start_speed_watch(FakePool([0.8] * 4), results, 4)
+    assert "Alimentation au départ : 71 % en charge" in capsys.readouterr().out
+    assert results.data["speed"]["benches"][0]["battery_percent"] == 71
+    tasks = [{"level": 1320 + i, "round": 0, "opening": 0, "ai_white": True, "phase": 1} for i in range(30)]
+    ms.play_tasks(FakePool([0.8] * 15 + [2.4] * 15), results, tasks, "essai")
+    out = capsys.readouterr().out
+    assert "Alimentation à cet instant : 71 % en charge" in out

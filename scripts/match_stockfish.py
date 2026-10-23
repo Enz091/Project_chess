@@ -59,7 +59,7 @@ import chess.engine
 import chess.pgn
 
 from chesszero.rating import difference, elo_from_score, fit_elo, per_level
-from chesszero.speedwatch import SpeedWatch
+from chesszero.speedwatch import SpeedWatch, read_power
 from chesszero.speedwatch import verdict as speed_verdict
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -328,10 +328,15 @@ def play_tasks(pool, results: Results | None, tasks: list[dict], label: str) -> 
         out.append(game)
         speed = ""
         if watch is not None:
-            info = watch.add(game["ai_sec_per_move"])
+            power = read_power()  # appel système direct : instantané
+            info = watch.add(game["ai_sec_per_move"], power)
             game["ai_rolling_s_per_move"] = round(info["rolling"], 4)
+            if power:  # piste du bridage pendant la recharge : batterie et état de charge à chaque partie
+                game["battery_percent"], game["power_state"] = power["percent"], power["state"]
             results.data["speed"] = watch.state
             speed = f" | moy.{watch.window} {info['rolling']:.2f} s ({info['deviation']:+.0%})"
+            if power:
+                speed += f" | {power['percent']} % {power['state']}"
             if info["event"] == "start":
                 print(speed_banner(watch, info), flush=True)
             elif info["event"] == "end":
@@ -356,7 +361,9 @@ def speed_banner(watch: SpeedWatch, info: dict) -> str:
             f"({watch.reference:.2f} s ; tolérance ±{watch.tolerance:.0%}).\nLe processeur a changé de vitesse en cours "
             f"de mesure (bridage, autre charge, veille d'écran ?) : Stockfish joue au temps et change de force, "
             f"l'IA non.\nChercher la cause ; si cela dure, interrompre (relancer = reprendre) : la mesure ne sera pas "
-            f"combinable avec la référence.\n{line}")
+            f"combinable avec la référence.\nAlimentation à cet instant : "
+            f"{(info.get('power') or {}).get('percent')} % {(info.get('power') or {}).get('state', 'non relevée')} "
+            f"(piste du bridage pendant la recharge : voir les changements d'état dans le résumé final).\n{line}")
 
 
 def resolve_syzygy(path: str | None) -> dict:
@@ -484,6 +491,11 @@ def start_speed_watch(pool, results: Results, games: int) -> SpeedWatch:
     previous = results.data.get("speed")
     watch = SpeedWatch(s_move, state=previous if previous and previous.get("games") else None)
     problem = watch.bench(s_move, len(played))
+    power = read_power()
+    if power:
+        print(f"Alimentation au départ : {power['percent']} % {power['state']}", flush=True)
+        watch.note_power({**power, "game": 0})
+        watch.state["benches"][-1].update({"battery_percent": power["percent"], "power_state": power["state"]})
     print(f"Vitesse de l'IA au bench de départ : {s_move:.2f} s par coup (référence de cette mesure : "
           f"{watch.reference:.2f} s ; mesure v2 de référence : {watch.state['nominal_s_per_move']:.2f} s)", flush=True)
     if problem:

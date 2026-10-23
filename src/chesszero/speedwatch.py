@@ -22,6 +22,64 @@ NOMINAL_SECONDS_PER_MOVE = 0.80  # mesure v2 de référence (kaggle_sup, 2026-10
 BRIEF_SHARE = 0.05  # alerte sur au plus 5 % des parties : épisode bref
 
 
+def classify_power(ac_line: int, flag: int, percent: int) -> dict | None:
+    """État d'alimentation d'après GetSystemPowerStatus : ACLineStatus (0 batterie, 1 secteur, 255 inconnu),
+    BatteryFlag (8 = en charge, 128 = pas de batterie), BatteryLifePercent (255 = inconnu)."""
+    pct = None if percent == 255 else int(percent)
+    if ac_line == 255:
+        return {"percent": pct, "state": "inconnu"}
+    if ac_line == 0:
+        return {"percent": pct, "state": "sur batterie"}
+    if flag != 255 and flag & 128:
+        return {"percent": None, "state": "secteur (pas de batterie)"}
+    if flag != 255 and flag & 8:
+        return {"percent": pct, "state": "en charge"}
+    if pct is not None and pct >= 100:
+        return {"percent": pct, "state": "chargée"}
+    return {"percent": pct, "state": "secteur sans charge"}  # branchée mais ne charge pas (limite de charge...)
+
+
+def read_power() -> dict | None:
+    """{"percent", "state"} maintenant (Windows, appel système direct : instantané) ; None ailleurs ou en cas d'échec."""
+    import sys
+
+    if sys.platform != "win32":
+        return None
+    try:
+        import ctypes
+
+        class Status(ctypes.Structure):
+            _fields_ = [("ac", ctypes.c_ubyte), ("flag", ctypes.c_ubyte), ("percent", ctypes.c_ubyte),
+                        ("saver", ctypes.c_ubyte), ("life", ctypes.c_ulong), ("full_life", ctypes.c_ulong)]
+
+        s = Status()
+        if not ctypes.windll.kernel32.GetSystemPowerStatus(ctypes.byref(s)):
+            return None
+        return classify_power(s.ac, s.flag, s.percent)
+    except (OSError, AttributeError):
+        return None
+
+
+def _power_brief(power: dict | None) -> dict | None:
+    return None if not power else {"percent": power.get("percent"), "state": power.get("state")}
+
+
+def describe_power(state: dict) -> str:
+    """Résumé de l'alimentation au fil de la mesure (pour le résumé final et le rapport)."""
+    log = state.get("power")
+    if not log or not log.get("first"):
+        return "alimentation non relevée"
+    f, last = log["first"], log["last"]
+    text = (f"alimentation : départ {f['percent']} % ({f['state']}), fin {last['percent']} % ({last['state']}), "
+            f"{len(log['changes'])} état(s) successif(s) : " + " -> ".join(
+                f"{c['state']} {c['percent']} % (partie {c['game']})" for c in log["changes"][:8]))
+    for e in state.get("episodes", [])[:4]:
+        ps = e.get("power_start")
+        if ps:
+            text += f" ; épisode des parties {e['start']}-{e['end'] or state['games']} commencé {ps['state']} à {ps['percent']} %"
+    return text
+
+
 class SpeedWatch:
     """`reference` : secondes par coup du bench de départ. `state` : dictionnaire enregistré dans le fichier de
     résultats (clé « speed »), mis à jour à chaque partie ; une reprise de la mesure le continue."""
@@ -52,11 +110,27 @@ class SpeedWatch:
     def deviation(self, rolling: float) -> float:
         return rolling / self.reference - 1.0
 
-    def add(self, seconds_per_move: float) -> dict:
-        """Enregistre une partie finie. Renvoie {"rolling", "deviation", "alert", "event"} où `event` vaut
-        "start" (début d'un épisode), "end" (retour à la normale) ou None."""
+    def note_power(self, power: dict | None) -> None:
+        """Mémorise l'alimentation de la partie qui vient de finir : premier relevé, dernier relevé et changements
+        d'état (en charge / chargée / sur batterie...), pour confirmer ou écarter un bridage pendant la recharge."""
+        if not power:
+            return
+        st, n = self.state, self.state["games"]
+        rec = {"game": n, "percent": power.get("percent"), "state": power.get("state")}
+        log = st.setdefault("power", {"first": None, "last": None, "changes": []})
+        if log["first"] is None:
+            log["first"] = rec
+        if log["last"] is None or log["last"]["state"] != rec["state"]:
+            log["changes"].append(rec)
+        log["last"] = rec
+
+    def add(self, seconds_per_move: float, power: dict | None = None) -> dict:
+        """Enregistre une partie finie (`power` : alimentation relevée à cet instant, voir `read_power`). Renvoie
+        {"rolling", "deviation", "alert", "event", "power"} où `event` vaut "start" (début d'un épisode), "end" (retour
+        à la normale) ou None."""
         st = self.state
         st["games"] += 1
+        self.note_power(power)
         self.recent.append(float(seconds_per_move))
         st["recent"] = list(self.recent)
         rolling = sum(self.recent) / len(self.recent)
@@ -68,7 +142,8 @@ class SpeedWatch:
         if alert:
             st["alert_games"] += 1
             if open_ep is None:
-                st["episodes"].append({"start": st["games"], "end": None, "max_deviation": dev})
+                st["episodes"].append({"start": st["games"], "end": None, "max_deviation": dev,
+                                       "power_start": _power_brief(power)})
                 event = "start"
             elif abs(dev) > abs(open_ep["max_deviation"]):
                 open_ep["max_deviation"] = dev
@@ -77,10 +152,11 @@ class SpeedWatch:
                 st["worst"] = {"game": st["games"], "rolling": rolling, "deviation": dev}
         elif open_ep is not None:
             open_ep["end"] = st["games"]
+            open_ep["power_end"] = _power_brief(power)
             event = "end"
-        if st["games"] % self.window == 0:
-            st["series"].append([st["games"], round(rolling, 4)])
-        return {"rolling": rolling, "deviation": dev, "alert": alert, "event": event}
+        if st["games"] % self.window == 0:  # [partie, moyenne glissante, % batterie, état de charge]
+            st["series"].append([st["games"], round(rolling, 4), (power or {}).get("percent"), (power or {}).get("state")])
+        return {"rolling": rolling, "deviation": dev, "alert": alert, "event": event, "power": power}
 
     def bench(self, seconds_per_move: float, games: int) -> str | None:
         """Enregistre un bench de départ (un par lancement) ; avertit s'il s'écarte de la référence ou de la vitesse
@@ -109,6 +185,7 @@ def verdict(state: dict | None) -> tuple[str, str]:
                      "mesure NON COMPARABLE avec la référence")
             if state_name in ("stable", "perturbée brièvement"):
                 state_name = "NON COMPARABLE"
+        text += "\n" + describe_power(state)
     return state_name, text
 
 

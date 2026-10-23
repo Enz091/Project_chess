@@ -14,8 +14,9 @@
 > et les débits mesurés seraient faux (le 2026-10-22, sur batterie : self-play local à 447 simulations/s au lieu
 > de 648).
 > **Le secteur ne suffit pas** (nuit du 2026-10-22) : sur secteur toute la nuit, le processeur a tourné ~3 fois
-> moins vite (2,48 s par coup au lieu de 0,80, **cause non identifiée** ; le capot fermé 2 min sur secteur a été
-> testé le 2026-10-23 : aucun effet) et la mesure v2 a été écartée. **Contrôler aussi la vitesse** : `match_stockfish.py run`
+> moins vite (2,48 s par coup au lieu de 0,80, **cause non identifiée** ; piste : bridage pendant la recharge
+> sous forte charge (lent dès 21 h 55, juste après le retour sur secteur à 71 %) ; absence + capot ouvert + écran allumé = aucun
+> ralentissement, le capot fermé n'a pas été testé et ne fait pas l'objet d'une règle) et la mesure v2 a été écartée. **Contrôler aussi la vitesse** : `match_stockfish.py run`
 > joue un bench de départ (≈ 0,80 s par coup attendu, avertissement hors ±25 %), suit la moyenne glissante sur 20 parties
 > (bandeau d'avertissement hors ±25 % du bench de départ) et son résumé final dit « stable », « perturbée brièvement »,
 > « NON STABLE » ou « NON COMPARABLE » : **seule une mesure stable (ou brièvement perturbée) se combine avec la référence**.
