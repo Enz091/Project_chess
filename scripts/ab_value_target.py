@@ -34,7 +34,12 @@ def main() -> None:
     ap.add_argument("--sf-workers", type=int, default=8, help="processus Stockfish (1 thread chacun)")
     ap.add_argument("--threads", type=int, default=14, help="threads torch pour l'entraînement")
     ap.add_argument("--mask-workers", type=int, default=3, help="processus des masques Lichess")
+    ap.add_argument("--steps", type=int, default=None, help="essai réduit : pas imposés par tour")
+    ap.add_argument("--batch-size", type=int, default=None, help="essai réduit : taille des lots")
+    ap.add_argument("--lichess-val", type=int, default=None, help="essai réduit : positions de validation Lichess")
     args = ap.parse_args()
+    trial = [x for opt, v in (("--steps", args.steps), ("--batch-size", args.batch_size),
+                              ("--lichess-val", args.lichess_val)) if v is not None for x in (opt, v)]
 
     sys.path.insert(0, str(ROOT / "scripts"))
     from match_stockfish import power_status, power_warning
@@ -66,7 +71,7 @@ def main() -> None:
                       [py, ROOT / "scripts" / "train_selfplay.py", "--out", out / target, "--buffer", args.buffer,
                        "--human", args.human, "--init", args.init, "--value-target", target, "--device", "cpu",
                        "--threads", args.threads, "--workers", args.mask_workers,
-                       "--export-trained", out / f"{target}_trained.pt"], {0, 1}))  # 1 = rejeté : réseau gardé
+                       "--export-trained", out / f"{target}_trained.pt", *trial], {0, 1}))  # 1 = rejeté : gardé
     start = time.time()
     for name, product, cmd, ok in steps:
         if product.exists():

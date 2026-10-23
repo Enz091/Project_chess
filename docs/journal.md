@@ -1176,3 +1176,41 @@ Réseau `tiny_sup`, configuration `smoke` (16 simulations, 3 ouvertures par arè
 ### A/B de la cible de valeur : préparé, pas lancé (`scripts/ab_value_target.py`)
 `ab_value_target.py --buffer data\kaggle_out\selfplay_session1\selfplay --out data\ab_value` : (1) étiquetage Stockfish de 20 000 positions des parties mises de côté (sur 36 447, 368 parties) + 20 000 de la validation Lichess, 200 ms par position, 8 processus ; (2) un tour `result` puis un tour `blend` depuis `kaggle_sup` (mêmes lots : même graine, même tour 0, même tampon ; 435 pas de 1 024 positions chacun ; `--export-trained`) ; (3) `compare`. Reprise : une étape faite est sautée, un tour coupé reprend au pas près. Avertissement si le PC n'est pas sur secteur en « meilleures performances ».
 - **Durée estimée : ~1 h 35 à 2 h** sur secteur : étiquetage ~17 min (40 000 × 0,2 s / 8) ; chaque tour ~35 à 40 min (mesure : **4,4 s par pas** de 1 024 positions sur l'i9 à 14 threads, un peu pessimiste car mesurée pendant une autre tâche ; 435 pas ≈ 32 min, + évaluations Lichess et parties mises de côté ~3 min) ; comparaison ~2 min.
+
+## Bilan de la chaîne de nuit du 2026-10-22 (relu le 2026-10-23)
+
+Chaîne lancée dans un processus détaché (`data\nuit\chaine_nuit.bat`, PID 22892) : (1) A/B de la cible de valeur depuis le dépôt ; (2) seconde mesure v2 de `kaggle_sup` (tag `kaggle_sup_r2`, `--like kaggle_sup`) depuis la copie figée `..\Projet_chess_nuit` au commit `c995d12`.
+
+### Déroulement
+- 21 h 55 → 0 h 58 : A/B, code 0 (182,7 min au lieu de ~1 h 35 à 2 h). 0 h 58 → 6 h 58 : mesure v2, code 0, 640 parties (**360,4 min au lieu de ~142**). Aucune erreur dans `1_ab_value.log` ni `2_stockfish_v2.log`.
+
+### Alimentation et vitesse : mesure v2 NON VALIDE (processeur bridé toute la nuit)
+- **Secteur toute la nuit** (journal Système, Kernel-Power 105) : batterie de 21 h 14 (`AcOnline=false`) à **21 h 54 min 28 s** (`AcOnline=true`), aucun changement ensuite ; batterie 71 % au départ de la chaîne, 100 % au début de la mesure v2 ; mode « meilleures performances » relevé au départ des deux étapes. Aucun événement de veille ni de bridage thermique dans le journal Système.
+- **Mais le processeur a tourné ~3 fois moins vite, du premier au dernier coup** : 2,48 s par coup de l'IA en médiane (référence `v2/kaggle_sup` : 0,80 s ; aucune partie sous 1,25 s ; médiane par tranche de 80 parties constante entre 2,42 et 2,55) ; l'entraînement de l'A/B à ~102 positions/s (10 s par pas au lieu de ~4,4 s).
+- Ce matin, même machine, sur secteur : `match_stockfish.py bench --bench-games 8` = **0,76 s par coup**, lancé normalement **et** lancé détaché par WMI comme la chaîne (`Win32_Process.Create`) : le mode de lancement n'est pas en cause. **Cause non identifiée** ; hypothèse principale : bridage du portable quand l'utilisateur est absent (capot fermé ou écran éteint ; Intel DTT `ipf_helper` est actif), à tester.
+- **Effet sur la mesure** : Stockfish joue au temps (300 ms). Bridé (profondeur sondée à 100 ms au lieu de 300 ms, ~60 positions des parties de la nuit, `UCI_Elo` 2500, 1 thread) : profondeur médiane **12 au lieu de 14** (10e centile 10 au lieu de 12). Or `UCI_Elo` choisit son coup à la profondeur 1 + niveau : 10 pour 2200-2250, 12 pour 2350, 13 pour 2450, **14 pour 2500** (déjà juste atteinte à pleine vitesse). Les niveaux ≥ 2350 ont donc joué plus faible que dans la référence. **Décision (règle des mesures) : ne pas combiner `kaggle_sup_r2` avec la référence.**
+- Pour information seulement : 2428 ± 36 (2392 à 2463) ; `compare` : +1 ± 51 (scores par niveau 100 / 94 / 80 / 68 / 76 / 67 / 62 / 47 % de 1320 à 2500). Fichiers gardés hors du dépôt dans `data\nuit\` (`kaggle_sup_r2.json`, `.pgn`, `2_stockfish_v2.log`), **pas dans `docs/stockfish/v2/`**. La référence reste `v2/kaggle_sup` seule (2427 ± 37, écart minimal significatif ~55 Elo).
+
+### A/B de la cible de valeur (`data\ab_value\compare.txt`)
+Mêmes lots, 435 pas chacun depuis `kaggle_sup` ; 40 000 positions fixes (20 000 des parties mises de côté, 368 parties ; 20 000 de la validation Lichess) notées par Stockfish plein à 200 ms (étiquetage fait processeur bridé : profondeur moindre, mais **mêmes étiquettes pour A et B**, la comparaison reste équitable). Erreur quadratique, intervalle à 95 % par bootstrap apparié sur les parties :
+
+| Mesure | `kaggle_sup` (départ) | `result` | `blend` | blend − result |
+|---|---|---|---|---|
+| contre Stockfish, toutes positions | 0,1937 | **0,1801** | 0,1906 | **+0,0104 (+0,0091 à +0,0116)** |
+| contre Stockfish, self-play | 0,2189 | **0,1986** | 0,2095 | +0,0108 (+0,0085 à +0,0132) |
+| contre Stockfish, Lichess | 0,1685 | **0,1616** | 0,1716 | +0,0100 (+0,0092 à +0,0109) |
+| contre le résultat réel, self-play mis de côté | 0,3820 | 0,3745 | 0,3730 | −0,0015 (−0,0056 à +0,0028) |
+
+- Les deux tours améliorent le réseau de départ sur les deux mesures (`result` − départ : −0,0136 contre Stockfish, −0,0075 contre les résultats ; `blend` − départ : −0,0031 et −0,0090, tous significatifs).
+- **Contre Stockfish, `result` est significativement meilleur** ; contre les résultats réels, **égalité** (intervalle centré sur 0). Verdict du script : mesures de sens opposés → garder `result`.
+- Explication probable : le réseau de départ est trop prudent (pente de la régression Stockfish ~ valeur : 1,22 ; |valeur| moyenne 0,35 contre 0,54 pour Stockfish). `result` le rend plus tranché (pente 1,16, |v| 0,38) ; `blend` le tire vers la Q racine, calculée par ce même réseau prudent (pente 1,26, |v| 0,34), et renforce donc son biais. La réduction de variance attendue du mélange ne se voit pas sur les résultats réels.
+- Autres chiffres : valeur Lichess `result` 0,7355 (départ 0,7267, +0,009, sous l'alerte G3 de +0,05), `blend` 0,7267 ; politique Lichess 1,4239 / 1,4230 ; top-1 53,3 % pour les deux.
+- **Recommandation : garder `value_target = "result"`** (aucun changement de code). À reconsidérer seulement si la Q racine vient un jour d'un réseau nettement plus fort que celui qui apprend.
+
+### Script
+- `ab_value_target.py` : trois options d'essai réduit transmises aux deux tours (`--steps`, `--batch-size`, `--lichess-val`), utilisées pour vérifier la chaîne avant la nuit.
+
+### Mémoire sur Kaggle (mesures sur le PC, CPU)
+- **Tour d'entraînement** (`train_selfplay.py`, 30 pas, tampon de 370 840 positions, `lichess_24m`) : processus principal **~3,4 à 3,6 Go stables** (23,6 M positions Lichess = 1,8 Go, + torch, réseau, validation Lichess de 50 000 positions, tampon) ; pics à 6,3 Go pendant les pas, dus aux activations du lot de 1 024 calculées **sur CPU** (sur Kaggle elles sont sur le GPU) ; 3 processus de masques à ~0,64 Go chacun (Windows = spawn, chacun importe torch ; sous Linux = fork, pages partagées). Pic de chargement estimé à ~+1,6 Go (`load_split` concatène shard par shard). Tampon de 500 000 positions : ~0,1 Go.
+- **Self-play** (1 processus × 64 parties, 4 min) : ~1,1 à 1,2 Go privés, en lente hausse (arbres) ; sur GPU, ajouter le contexte CUDA côté hôte (~1 à 2 Go par processus, estimation non mesurée).
+- **Bilan Kaggle** (~31 Go) : phase d'entraînement ≈ 6 à 8,5 Go (principal avec CUDA ~5 à 6,5 Go au pic + masques ≤ 2 Go) ; phase de self-play ou d'arène ≈ 3 × 3 à 3,5 Go ≈ 9 à 10,5 Go ; l'orchestrateur arrête le self-play pendant l'entraînement, donc pas de cumul. Même cumulés : ~19 Go. **Marge confortable : rien à changer.** À confirmer par une mesure de la RAM sur la première session de boucle.
