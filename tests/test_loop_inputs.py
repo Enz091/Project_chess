@@ -272,7 +272,6 @@ def test_notebook_pins_an_exact_commit_that_exists_in_this_repository():
     assert m, "COMMIT absent de la cellule de réglages"
     commit = m.group(1)
     assert re.fullmatch(r"[0-9a-f]{40}", commit), "COMMIT doit être un hash complet, jamais None ni main"
-    assert "None" not in settings.split("COMMIT")[1].splitlines()[0]
     shallow = subprocess.run(["git", "rev-parse", "--is-shallow-repository"], cwd=ROOT, capture_output=True, text=True)
     if shallow.returncode != 0 or shallow.stdout.strip() == "true":
         pytest.skip("pas de dépôt git complet : existence du commit non vérifiable")
