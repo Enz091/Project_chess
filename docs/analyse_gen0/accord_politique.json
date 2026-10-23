@@ -1,0 +1,35 @@
+{
+ "buffer": "data\\kaggle_out\\selfplay_session1\\selfplay",
+ "positions": 20000,
+ "seed": 0,
+ "sample": "positions d'entraînement (parties mises de côté exclues, fraction 0.1)",
+ "definitions": "accord = coup préféré du réseau (softmax sur les coups légaux) = coup le plus visité ; KL = KL(cible MCTS || politique brute)",
+ "note": "biais : les visites viennent d'une recherche avec bruit de Dirichlet à la racine (epsilon 0,25), ce qui baisse un peu l'accord et monte la KL ; à comparer d'une génération à l'autre, pas à une valeur absolue",
+ "networks": {
+  "checkpoints/kaggle_sup/best.pt": {
+   "step": 92000,
+   "phases": {
+    "all": {
+     "n": 20000,
+     "agree": 0.5982,
+     "kl": 0.5346270528588654
+    },
+    "opening": {
+     "n": 3463,
+     "agree": 0.6615651169506208,
+     "kl": 0.4922381688422777
+    },
+    "middle": {
+     "n": 12431,
+     "agree": 0.5572359424020593,
+     "kl": 0.5816555859231192
+    },
+    "endgame": {
+     "n": 4106,
+     "agree": 0.6687773989283975,
+     "kl": 0.4279979760999032
+    }
+   }
+  }
+ }
+}

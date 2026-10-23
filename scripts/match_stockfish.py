@@ -30,6 +30,13 @@ Commandes (à lancer avec .venv\\Scripts\\python.exe) :
   match_stockfish.py endgames kaggle_sup          finales : résultat exact à l'entrée dans les tables -> score
 Un tag peut nommer un autre protocole : « v1/kaggle_sup » (sinon celui de --protocol).
 
+Surveillance de la vitesse (règle de mesure) : `run` joue d'abord un bench de départ (une partie par processus,
+rien n'est enregistré) puis suit la moyenne glissante (20 dernières parties) du temps par coup de l'IA ; un
+avertissement visible apparaît quand elle s'écarte de plus de 25 % du bench de départ (processeur bridé en cours de
+mesure : Stockfish, au temps, s'affaiblit et l'Elo est gonflé). Les valeurs sont dans le fichier de résultats (clé
+« speed », et « ai_rolling_s_per_move » dans chaque partie) ; le résumé final dit si la mesure a été stable.
+--no-speed-watch désactive le bench de départ et le suivi.
+
 Résultats : docs/stockfish/<protocole>/<tag>.json (toutes les parties, protocole, IA, environnement), parties
 en PGN dans docs/stockfish/<protocole>/<tag>.pgn. Stockfish n'est pas déterministe (le tirage des coups
 faibles dépend de l'horloge) : deux lancements du même protocole ne rejouent pas exactement les mêmes coups.
@@ -52,6 +59,8 @@ import chess.engine
 import chess.pgn
 
 from chesszero.rating import difference, elo_from_score, fit_elo, per_level
+from chesszero.speedwatch import SpeedWatch
+from chesszero.speedwatch import verdict as speed_verdict
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -260,6 +269,7 @@ class Results:
         self.pgn_path = OUT_DIR / self.version / f"{self.tag}.pgn"
         self.data = {"tag": self.tag, "protocol": self.protocol, "ai": {"syzygy": None}, "environment": {},
                      "refine_levels": None, "games": []}
+        self.watch: SpeedWatch | None = None  # surveillance de la vitesse (voir chesszero/speedwatch.py)
         if self.path.exists():
             self.data = json.loads(self.path.read_text(encoding="utf-8"))
             self.data.setdefault("ai", {"syzygy": None})  # résultats v1 : jamais de tables
@@ -313,8 +323,20 @@ def play_tasks(pool, results: Results | None, tasks: list[dict], label: str) -> 
     todo = [t for t in tasks if task_key(t) not in done]
     print(f"\n== {label} : {len(todo)} parties à jouer ({len(tasks) - len(todo)} déjà faites)", flush=True)
     out, start = [], time.perf_counter()
+    watch = results.watch if results is not None else None
     for game in pool.imap_unordered(play_game, todo):
         out.append(game)
+        speed = ""
+        if watch is not None:
+            info = watch.add(game["ai_sec_per_move"])
+            game["ai_rolling_s_per_move"] = round(info["rolling"], 4)
+            results.data["speed"] = watch.state
+            speed = f" | moy.{watch.window} {info['rolling']:.2f} s ({info['deviation']:+.0%})"
+            if info["event"] == "start":
+                print(speed_banner(watch, info), flush=True)
+            elif info["event"] == "end":
+                print(f"--- vitesse revenue dans la tolérance (moyenne glissante {info['rolling']:.2f} s par coup) ---",
+                      flush=True)
         if results:
             results.add(game)
         n = len(out)
@@ -323,8 +345,18 @@ def play_tasks(pool, results: Results | None, tasks: list[dict], label: str) -> 
         print(f"{n:>3}/{len(todo)} niveau {game['level']} tour {game['round']} {game['opening_name']:<19} "
               f"IA {'Blancs' if game['ai_white'] else 'Noirs '} | {res:<7} | {game['termination']:<20} | "
               f"{game['plies']:>3} demi-coups | {game['ai_sec_per_move']:.2f} s/coup IA | {game['seconds']:.0f} s | "
-              f"reste ~{eta / 60:.0f} min", flush=True)
+              f"reste ~{eta / 60:.0f} min{speed}", flush=True)
     return out
+
+
+def speed_banner(watch: SpeedWatch, info: dict) -> str:
+    line = "!" * 100
+    return (f"{line}\nATTENTION VITESSE : temps par coup de l'IA (moyenne des {watch.window} dernières parties) = "
+            f"{info['rolling']:.2f} s, soit {info['deviation']:+.0%} par rapport au bench de départ "
+            f"({watch.reference:.2f} s ; tolérance ±{watch.tolerance:.0%}).\nLe processeur a changé de vitesse en cours "
+            f"de mesure (bridage, autre charge, veille d'écran ?) : Stockfish joue au temps et change de force, "
+            f"l'IA non.\nChercher la cause ; si cela dure, interrompre (relancer = reprendre) : la mesure ne sera pas "
+            f"combinable avec la référence.\n{line}")
 
 
 def resolve_syzygy(path: str | None) -> dict:
@@ -408,6 +440,8 @@ def report(results: Results) -> None:
     secs = [g["seconds"] for g in results.games]
     print(f"Durée moyenne d'une partie : {statistics.mean(secs):.0f} s ; "
           f"{statistics.mean(g['ai_sec_per_move'] for g in results.games):.2f} s par coup de l'IA")
+    state, text = speed_verdict(results.data.get("speed"))
+    print(("ATTENTION : " if state == "NON STABLE" else "") + text)
     print("Limites : échelle CCRL Blitz de Stockfish (pas FIDE/Lichess), calibrée à 60 s + 0,6 s par coup alors que "
           f"Stockfish joue ici {results.protocol['stockfish_movetime_ms']} ms ; parties rejouées depuis les mêmes ouvertures "
           "non indépendantes ; intervalle donc un peu optimiste.")
@@ -434,13 +468,39 @@ def compare(a: Results, b: Results, force: bool = False) -> None:
         print(f"{lv:>7.0f} {fmt(sa.get(lv)):>20} {fmt(sb.get(lv)):>20}")
 
 
+def bench_tasks(protocol: dict, n: int) -> list[dict]:
+    """`n` parties de bench (niveaux et ouvertures variés ; rien n'est enregistré)."""
+    n_open = len(protocol["openings"])
+    levels = [1320, 1600, 1900, 2200, 2500, 2300, 2400, 2500]
+    return [{"level": levels[i % len(levels)], "round": 0, "opening": (i * 7) % n_open, "ai_white": i % 2 == 0,
+             "phase": "bench"} for i in range(n)]
+
+
+def start_speed_watch(pool, results: Results, games: int) -> SpeedWatch:
+    """Bench de départ (une partie par processus, non enregistrées) = vitesse de référence de la mesure. Une
+    reprise garde la référence du premier lancement et compare le nouveau bench à elle."""
+    played = play_tasks(pool, None, bench_tasks(results.protocol, games), "bench de départ de la vitesse")
+    s_move = statistics.mean(g["ai_sec_per_move"] for g in played)
+    previous = results.data.get("speed")
+    watch = SpeedWatch(s_move, state=previous if previous and previous.get("games") else None)
+    problem = watch.bench(s_move, len(played))
+    print(f"Vitesse de l'IA au bench de départ : {s_move:.2f} s par coup (référence de cette mesure : "
+          f"{watch.reference:.2f} s ; mesure v2 de référence : {watch.state['nominal_s_per_move']:.2f} s)", flush=True)
+    if problem:
+        line = "!" * 100
+        print(f"{line}\nATTENTION VITESSE AU DÉPART : {problem}.\nMême cause possible que la nuit du 2026-10-22 "
+              f"(processeur ~3 fois plus lent sur secteur). Ne pas laisser tourner une mesure dans cet état.\n{line}",
+              flush=True)
+    results.watch = watch
+    results.data["speed"] = watch.state
+    return watch
+
+
 def bench(args) -> None:
     """Parties en parallèle (niveaux et ouvertures variés) pour estimer la durée du protocole."""
     protocol = PROTOCOLS[args.protocol]
     n_open = len(protocol["openings"])
-    levels = [1320, 1600, 1900, 2200, 2500, 2300, 2400, 2500]
-    tasks = [{"level": levels[i % len(levels)], "round": 0, "opening": (i * 7) % n_open, "ai_white": i % 2 == 0,
-              "phase": "bench"} for i in range(args.bench_games or args.workers)]
+    tasks = bench_tasks(protocol, args.bench_games or args.workers)
     power = power_status()
     print(f"Alimentation : {'secteur' if power.get('on_ac') else 'batterie' if power.get('on_ac') is False else '?'}, "
           f"mode « {power.get('power_mode')} »", flush=True)
@@ -528,6 +588,8 @@ def main() -> None:
     ap.add_argument("--torch-threads", type=int, default=2)
     ap.add_argument("--bench-games", type=int, default=0, help="bench : nombre de parties (défaut = --workers)")
     ap.add_argument("--force", action="store_true", help="compare / --like : ignorer les différences de protocole")
+    ap.add_argument("--no-speed-watch", action="store_true",
+                    help="run : pas de bench de départ ni de suivi de la vitesse de l'IA")
     args = ap.parse_args()
 
     if args.command == "report":
@@ -564,6 +626,9 @@ def main() -> None:
         print(f"{results.label} : {results.protocol['name']}, IA {results.ai}", flush=True)
         start = time.perf_counter()
         with make_pool(args, results.protocol, ai) as pool:
+            if not args.no_speed_watch:
+                start_speed_watch(pool, results, args.workers)
+                results.save()
             if like is not None:
                 replay_protocol(pool, results, like)
             else:

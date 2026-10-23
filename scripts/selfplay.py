@@ -75,6 +75,34 @@ def worker(task: dict) -> dict:
     return stats
 
 
+def agreement_indicator(own: list[dict], args) -> dict | None:
+    """Indicateur d'accord politique brute / cible MCTS sur les parties de cette tranche, avec le réseau qui a joué
+    et le réseau de référence (voir chesszero/agreement.py). Une erreur ne doit jamais faire échouer la session."""
+    if not args.agreement_positions or not own:
+        return None
+    try:
+        import hashlib
+
+        from chesszero.agreement import describe_agreement, session_agreement
+        from chesszero.checkpoint import load_for_inference
+        from chesszero.device import get_device
+
+        device = get_device(args.device)
+        start = time.time()
+        networks = {"played": load_for_inference(args.checkpoint, device)[0]}
+        same = args.reference and hashlib.sha256(Path(args.reference).read_bytes()).hexdigest() ==             hashlib.sha256(Path(args.checkpoint).read_bytes()).hexdigest()
+        if args.reference:
+            networks["reference"] = networks["played"] if same else load_for_inference(args.reference, device)[0]
+        result = session_agreement(own, networks, device, args.agreement_positions, seed=0)
+        result["seconds"] = round(time.time() - start, 1)
+        result["played_is_reference"] = bool(same)
+        print(describe_agreement(result), flush=True)
+        return result
+    except Exception as e:  # noqa: BLE001 : indicateur de suivi, jamais bloquant
+        print(f"Indicateur d'accord non calculé : {type(e).__name__}: {e}", flush=True)
+        return {"error": f"{type(e).__name__}: {e}"}
+
+
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
@@ -98,6 +126,10 @@ def main() -> None:
     ap.add_argument("--session", default=None, help="identifiant (défaut : date et heure UTC)")
     ap.add_argument("--generation", type=int, default=0, help="numéro de génération du réseau (étape 7)")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--reference", default=None,
+                    help="réseau de référence (kaggle_sup) pour l'indicateur d'accord ; défaut : aucun")
+    ap.add_argument("--agreement-positions", type=int, default=5000,
+                    help="positions de l'indicateur d'accord politique brute / cible MCTS (0 = pas d'indicateur)")
     args = ap.parse_args()
 
     from chesszero.selfplay import SelfPlayConfig, list_shards, sync_buffer
@@ -156,6 +188,7 @@ def main() -> None:
     false = sum(int(d["result_white"][g]) != (-1 if c == 0 else 1) for d, g, c in triggered)
     print(f"Parties de contrôle : {controls} ; abandons qui se seraient déclenchés : {len(triggered)} ; faux : {false}")
     work_seconds = max(r["seconds"] for r in results)  # temps de jeu des processus (hors chargement)
+    agreement = agreement_indicator(own, args)
     stats = {"session": session, "generation": args.generation, "checkpoint": Path(args.checkpoint).name,
              "workers": args.workers, "games_per_worker": cfg.games_per_worker, "simulations_per_move": cfg.simulations,
              "minutes": seconds / 60, "play_minutes": work_seconds / 60, "games": games, "positions": positions,
@@ -168,7 +201,8 @@ def main() -> None:
              "terminations": {t: int(n) for t, n in zip(TERMINATIONS, terms)},
              "unfinished_dropped": sum(r["unfinished_dropped"] for r in results),
              "repetitions": reps, "control_games": controls, "resign_triggered_in_control": len(triggered),
-             "false_resignations": false, "shards": [n for r in results for n in r["shards"]]}
+             "false_resignations": false, "agreement": agreement,
+             "shards": [n for r in results for n in r["shards"]]}
     out = Path(args.out) / "sessions"
     out.mkdir(parents=True, exist_ok=True)
     (out / f"{session}.json").write_text(json.dumps(stats, ensure_ascii=False, indent=1) + "\n",

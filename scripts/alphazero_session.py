@@ -41,6 +41,11 @@ def main() -> None:
     ap.add_argument("--device", default=None)
     ap.add_argument("--smoke", action="store_true",
                     help="essai local : --config smoke, réseau tiny_sup, Lichess lichess_2000, CPU, sans tables")
+    ap.add_argument("--expect-init-sha256", default=None,
+                    help="SHA-256 attendu du réseau de départ (kaggle_sup) : refus de démarrer s'il diffère")
+    ap.add_argument("--check-inputs", action="store_true",
+                    help="vérifie l'entrée (type de sortie, session attendue, tampon, ancre, Lichess, tables) puis "
+                         "s'arrête SANS RIEN ÉCRIRE ; code 0 = la session démarrerait, 4 = refus")
     ap.add_argument("--crash-at", default=None, help=argparse.SUPPRESS)  # tests : coupure simulée
     args = ap.parse_args()
 
@@ -57,10 +62,25 @@ def main() -> None:
 
     from chesszero.loop import LoopStop, Orchestrator, SubprocessExecutor
 
+    if args.expect_init_sha256:
+        from chesszero.kaggle_inputs import sha256_of
+
+        if not Path(args.init).exists() or sha256_of(args.init) != args.expect_init_sha256:
+            print(f"\nREFUS DE DÉMARRER : le réseau de départ {args.init} n'a pas le SHA-256 attendu "
+                  f"({args.expect_init_sha256[:12]}…)", flush=True)
+            sys.exit(4)
     executor = SubprocessExecutor(Path(args.work), args.config, args.init, args.human, args.workers, args.threads,
                                   args.device, args.syzygy or None, args.book, args.games_per_worker)
     orch = Orchestrator(args.work, args.config, args.init, executor, args.minutes, args.expect_session,
                         resume_from=args.resume_from, crash_at=args.crash_at)
+    if args.check_inputs:
+        try:
+            lines = orch.check_inputs(args.human, args.syzygy if args.syzygy is not None else None)
+        except LoopStop as e:
+            print(f"\nREFUS DE DÉMARRER : {e}", flush=True)
+            sys.exit(4)
+        print("\nVÉRIFICATION DES ENTRÉES : la session démarrerait.\n" + "\n".join(f"- {x}" for x in lines), flush=True)
+        sys.exit(0)
     try:
         result = orch.run()
     except LoopStop as e:

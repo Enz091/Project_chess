@@ -1,0 +1,180 @@
+"""Surveillance de la vitesse de l'IA pendant les mesures contre Stockfish (chesszero/speedwatch.py + match_stockfish.py)."""
+
+import json
+import sys
+from pathlib import Path
+
+import pytest
+
+from chesszero.speedwatch import NOMINAL_SECONDS_PER_MOVE, SpeedWatch, verdict
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+import match_stockfish as ms  # noqa: E402
+
+
+def feed(watch, values):
+    return [watch.add(v) for v in values]
+
+
+def noisy(n, centre=0.8, spread=0.06):
+    return [centre * (1 + spread * (((i * 37) % 11) - 5) / 5) for i in range(n)]
+
+
+def test_stable_measurement():
+    w = SpeedWatch(0.8)
+    infos = feed(w, noisy(100))
+    assert not any(i["alert"] for i in infos) and w.state["episodes"] == []
+    assert w.state["series"][0][0] == 20 and len(w.state["series"]) == 5  # une valeur toutes les 20 parties
+    state, text = verdict(w.state)
+    assert state == "stable" and "STABLE" in text
+
+
+def test_no_alert_before_the_window_is_full():
+    w = SpeedWatch(0.8)
+    infos = feed(w, [3.0] * 19)  # 3 fois trop lent, mais seulement 19 parties
+    assert not any(i["alert"] for i in infos)
+    assert feed(w, [3.0])[0]["alert"]  # la 20e remplit la fenêtre
+
+
+def test_throttling_that_starts_midway_is_detected_at_the_right_game():
+    """Vitesse normale pendant 50 parties, puis 3 fois plus lent : moyenne glissante > 1,0 s (+25 %) dès la 3e partie lente
+    ((20 - k) x 0,8 + k x 2,4) / 20 > 1,0  <=>  k >= 3."""
+    w = SpeedWatch(0.8)
+    infos = feed(w, [0.8] * 50 + [2.4] * 30)
+    first = next(i for i, x in enumerate(infos) if x["alert"])
+    assert first == 52 and infos[first]["event"] == "start"  # 53e partie
+    assert infos[first]["deviation"] == pytest.approx(0.30, abs=1e-9)
+    assert all(x["alert"] for x in infos[first:]) and sum(x["event"] == "start" for x in infos) == 1
+    state, text = verdict(w.state)
+    assert state == "NON STABLE" and "NON STABLE" in text and "encore en cours" in text
+    assert w.state["worst"]["deviation"] == pytest.approx(2.0, abs=1e-9)  # +200 % (2,4 contre 0,8)
+
+
+def test_brief_episode_is_reported_but_not_invalidating():
+    """Quatre parties à 2 s parmi 400 : la moyenne glissante sort de la tolérance sur 17 fenêtres seulement."""
+    w = SpeedWatch(0.8)
+    values = [0.8] * 200 + [2.0] * 4 + [0.8] * 196
+    infos = feed(w, values)
+    assert sum(x["event"] == "start" for x in infos) == 1 and sum(x["event"] == "end" for x in infos) == 1
+    assert 0 < w.state["alert_games"] <= 0.05 * len(values)
+    state, text = verdict(w.state)
+    assert state == "perturbée brièvement" and "bref" in text
+    assert w.state["episodes"][0]["end"] is not None
+
+
+def test_faster_than_reference_is_also_flagged():
+    w = SpeedWatch(1.6)
+    feed(w, [1.0] * 25)
+    assert w.state["alert_games"] > 0 and w.state["max_deviation"] < 0
+
+
+def test_start_bench_checks_nominal_and_reference_speed():
+    w = SpeedWatch(0.82)
+    assert w.bench(0.82, 4) is None
+    slow = SpeedWatch(2.5)  # la nuit du 2026-10-22
+    msg = slow.bench(2.5, 4)
+    assert msg and "2.50 s par coup contre 0.80" in msg
+    resumed = SpeedWatch(0.8)
+    assert "bench de départ de cette mesure" in resumed.bench(1.6, 4)  # reprise plus lente que la référence
+
+
+def test_stable_but_slow_from_the_start_is_not_comparable():
+    """Cas de la nuit : 2,5 s par coup du début à la fin = stable dans le temps, mais pas comparable à la référence."""
+    w = SpeedWatch(2.55)
+    feed(w, noisy(80, centre=2.5, spread=0.05))
+    state, text = verdict(w.state)
+    assert state == "NON COMPARABLE" and "NON COMPARABLE avec la référence" in text and "+2" in text
+    assert NOMINAL_SECONDS_PER_MOVE == 0.80
+
+
+def test_resume_continues_the_same_state():
+    w = SpeedWatch(0.8)
+    feed(w, [0.8] * 30)
+    saved = json.loads(json.dumps(w.state))  # aller-retour par le fichier JSON de résultats
+    again = SpeedWatch(1.7, state=saved)  # le nouveau bench (1,7) ne change pas la référence du premier lancement
+    assert again.reference == 0.8 and again.state["games"] == 30
+    feed(again, [0.8] * 10)
+    assert again.state["games"] == 40 and len(again.recent) == 20
+
+
+def test_unfollowed_measurement():
+    assert verdict(None)[0] == "non suivie" and verdict({"games": 0})[0] == "non suivie"
+
+
+# --------------------------------------------------------------------------- dans match_stockfish.py
+
+
+class FakePool:
+    """Remplace multiprocessing.Pool : rend les parties préparées, dans l'ordre."""
+
+    def __init__(self, speeds):
+        self.speeds = list(speeds)
+
+    def imap_unordered(self, fn, tasks):
+        for task, v in zip(tasks, self.speeds):
+            yield {**task, "opening_name": "Essai", "score": 1.0, "plies": 60, "termination": "mat", "moves": "e2e4 e7e5",
+                   "ai_sec_per_move": v, "ai_tb_moves": 0, "seconds": 10.0, "checkpoint_step": 1, "stockfish": "SF"}
+
+
+@pytest.fixture
+def results(tmp_path, monkeypatch):
+    monkeypatch.setattr(ms, "OUT_DIR", tmp_path)
+    return ms.Results("v2/essai_vitesse")
+
+
+def test_play_tasks_records_rolling_speed_and_prints_banner(results, capsys):
+    results.watch = SpeedWatch(0.8)
+    tasks = [{"level": 1320 + i, "round": 0, "opening": 0, "ai_white": True, "phase": 1} for i in range(40)]
+    pool = FakePool([0.8] * 25 + [2.4] * 15)
+    ms.play_tasks(pool, results, tasks, "essai")
+    out = capsys.readouterr().out
+    assert out.count("ATTENTION VITESSE") == 1 and "moy.20" in out
+    assert "!" * 100 in out
+    saved = json.loads(results.path.read_text(encoding="utf-8"))
+    assert saved["speed"]["games"] == 40 and saved["speed"]["alert_games"] > 0
+    assert all("ai_rolling_s_per_move" in g for g in saved["games"])
+    assert saved["games"][0]["ai_rolling_s_per_move"] == 0.8
+    assert saved["games"][-1]["ai_rolling_s_per_move"] > 1.0
+    assert saved["speed"]["series"] == [[20, 0.8], [40, saved["speed"]["series"][1][1]]]
+
+
+def test_play_tasks_without_watch_is_unchanged(results, capsys):
+    tasks = [{"level": 1320, "round": 0, "opening": i, "ai_white": True, "phase": 1} for i in range(3)]
+    ms.play_tasks(FakePool([0.8] * 3), results, tasks, "essai")
+    assert "moy." not in capsys.readouterr().out
+    assert "speed" not in results.data and all("ai_rolling_s_per_move" not in g for g in results.games)
+
+
+def test_start_speed_watch_uses_unrecorded_bench_games(results, capsys):
+    watch = ms.start_speed_watch(FakePool([0.8, 0.82, 0.78, 0.8]), results, 4)
+    assert watch.reference == pytest.approx(0.8) and results.watch is watch and not results.games
+    assert "ATTENTION VITESSE AU DÉPART" not in capsys.readouterr().out
+    slow = ms.Results("v2/essai_vitesse_lent")
+    ms.start_speed_watch(FakePool([2.5] * 4), slow, 4)
+    out = capsys.readouterr().out
+    assert "ATTENTION VITESSE AU DÉPART" in out and "2.50 s par coup contre 0.80" in out
+
+
+def test_final_report_states_whether_the_measurement_was_stable(results, capsys):
+    ms.PROTOCOLS  # le rapport a besoin du protocole du tag
+    results.watch = SpeedWatch(0.8)
+    levels = [1320, 1600, 1900, 2200]
+    tasks = [{"level": levels[i % 4], "round": 0, "opening": i, "ai_white": i % 2 == 0, "phase": 1} for i in range(60)]
+    ms.play_tasks(FakePool([0.8] * 30 + [2.5] * 30), results, tasks, "essai")
+    capsys.readouterr()
+    ms.report(results)
+    out = capsys.readouterr().out
+    assert "MESURE NON STABLE" in out and "ATTENTION : " in out
+    stable = ms.Results("v2/essai_stable")
+    stable.watch = SpeedWatch(0.8)
+    ms.play_tasks(FakePool([0.8] * 60), stable, tasks, "essai")
+    capsys.readouterr()
+    ms.report(stable)
+    assert "STABLE du début à la fin" in capsys.readouterr().out
+
+
+def test_old_results_without_speed_still_report(capsys):
+    ms.report(ms.Results("v2/kaggle_sup"))
+    assert "vitesse non suivie" in capsys.readouterr().out

@@ -32,3 +32,4 @@ access_token
 
 # Logiciels externes téléchargés (Stockfish, Cute Chess) : gros binaires, hors git
 tools/
+!docs/analyse_gen*/*.pgn

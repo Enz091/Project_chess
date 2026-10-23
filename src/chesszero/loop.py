@@ -74,6 +74,8 @@ class LoopConfig:
     repetition_material_alert_points: float = 5.0  # alerte au-delà de la référence + 5 points
     throughput_drop_alert: float = 0.15
     reading_alert: float = 0.30  # « Actions » : lecture des données > 30 % du temps d'un tour d'entraînement
+    ram_interval_seconds: float = 30.0  # relevé de la mémoire disponible du système (voir memwatch.py)
+    ram_alert_gb: float = 4.0  # « Actions » : mémoire disponible tombée sous ce seuil
 
     @classmethod
     def from_toml(cls, path: str | Path) -> LoopConfig:
@@ -294,7 +296,8 @@ class SubprocessExecutor:
     def selfplay(self, minutes: float, checkpoint: str, generation: int, session: str, soft: float, hard: float) -> int:
         args = ["--out", self.work / "selfplay", "--checkpoint", checkpoint, "--max-minutes", f"{minutes:.3f}",
                 "--generation", generation, "--session", session, "--stop-new-games-minutes", f"{soft:.3f}",
-                "--hard-stop-minutes", f"{hard:.3f}", "--syzygy", self.syzygy or "", *self._common()]
+                "--hard-stop-minutes", f"{hard:.3f}", "--syzygy", self.syzygy or "",
+                "--reference", self.init, *self._common()]  # --reference : indicateur d'accord (kaggle_sup)
         if self.book is not None:
             args += ["--book", self.book]
         if self.games_per_worker:
@@ -342,7 +345,7 @@ class Orchestrator:
 
     def __init__(self, work: str | Path, config: str, init: str, executor, minutes: float,
                  expect_session: int | None, resume_from: str | Path | None = None, crash_at: str | None = None,
-                 clock=time.time, log=print, root: Path = ROOT, configs: dict | None = None):
+                 clock=time.time, log=print, root: Path = ROOT, configs: dict | None = None, memwatch=None):
         from chesszero.arena import ArenaConfig
         from chesszero.selfplay import SelfPlayConfig
         from chesszero.selfplay_train import SelfPlayTrainConfig
@@ -363,6 +366,10 @@ class Orchestrator:
         self.train_waiting = False
         self.end_reason = None
         self.notes: list[str] = []  # informations de démarrage, avertissements (rapport)
+        from chesszero.memwatch import MemoryWatch
+
+        self.mem = memwatch or MemoryWatch(self.loop_cfg.ram_interval_seconds, self.loop_cfg.ram_alert_gb,
+                                           phase=lambda: self.state.get("phase"))
 
     # ---------------------------------------------------------------- outils
 
@@ -374,6 +381,8 @@ class Orchestrator:
             raise CrashForTest(name)
 
     def save(self) -> None:
+        if self.state.get("sessions") and self.mem.samples:
+            self.state["sessions"][-1]["ram"] = self.mem.summary()  # relevés de la session en cours
         write_loop_state(self.state_path, self.state)
 
     def event(self, phase: str, start: float, code: int | None, **detail) -> None:
@@ -390,11 +399,12 @@ class Orchestrator:
 
     # ---------------------------------------------------------------- démarrage
 
-    def prepare(self) -> None:
-        """Entrée, vérification de la session attendue, démarrage éventuel, enregistrement de la session."""
-        from chesszero.arena import git_info, sha256_file
-        from chesszero.selfplay import sync_buffer
-        from chesszero.selfplay_train import SelfPlayTrainer
+    def validate_input(self) -> tuple[Path, dict, dict | None]:
+        """Vérifie l'entrée SANS RIEN ÉCRIRE (mode `--check-inputs` et début de `prepare`) : type de sortie, session
+        attendue, dossier de travail vide, taille du tampon (démarrage), cohérence de l'état d'entraînement et ancre
+        (reprise). Renvoie (dossier source, infos, état de boucle) ; lève `LoopStop` avec le motif du refus."""
+        from chesszero.arena import sha256_file
+        from chesszero.selfplay_train import read_train_state
 
         src = Path(self.resume_from) if self.resume_from else self.work
         info = classify_output(src)
@@ -409,6 +419,67 @@ class Orchestrator:
             raise LoopStop(f"Aucun tampon de self-play dans {src} : lancer d'abord une session de self-play seul")
         loop_state = read_loop_state(src / "loop" / "loop_state.json") if info["kind"] == "loop" else None
         check_expected_session(last_session(loop_state), self.expect, info["kind"])
+        if info["kind"] == "selfplay_only":
+            n = buffer_train_positions(src / "selfplay", self.train_cfg)
+            info["train_positions"] = n
+            if n < self.train_cfg.min_buffer_positions:
+                raise LoopStop(f"Tampon trop petit pour démarrer la boucle : {n:,} positions d'entraînement "
+                               f"(hors parties mises de côté), minimum {self.train_cfg.min_buffer_positions:,}")
+        else:
+            view = read_train_state(src / "sp_train")
+            if view.get("needs_migration") or view.get("format", 0) < 2:
+                raise LoopStop("État d'entraînement d'un ancien format dans une sortie de boucle : incohérent")
+            sha = sha256_file(self.init)
+            if view.get("init_sha256") and view["init_sha256"] != sha:
+                raise LoopStop(f"Le réseau de départ fourni ({sha[:12]}…) n'est pas celui de l'état "
+                               f"({view['init_sha256'][:12]}…) : l'ancre doit rester la même")
+            info["generation"], info["last_session"] = view.get("generation"), last_session(loop_state)
+        return src, info, loop_state
+
+    def check_inputs(self, human: str | None = None, syzygy: str | None = None) -> list[str]:
+        """Mode `--check-inputs` (notebook : MODE = "check") : toutes les vérifications du démarrage, rien d'écrit.
+        Renvoie les lignes à afficher ; lève `LoopStop` si la session serait refusée."""
+        from chesszero.arena import sha256_file
+        from chesszero.checkpoint import load_for_inference
+        from chesszero.kaggle_inputs import describe_human
+        from chesszero.memwatch import read_memory_gb
+
+        src, info, _ = self.validate_input()
+        what = ("sortie de SELF-PLAY SEUL : la boucle démarrera (génération 0, " f"{info['train_positions']:,} positions "
+                "d'entraînement)" if info["kind"] == "selfplay_only" else
+                f"sortie de la session de boucle n°{info['last_session']} (génération acceptée {info['generation']})")
+        lines = [f"Entrée : {src} — {what}",
+                 f"Tampon : {info['shards']} shards, {info['positions']:,} positions ; session attendue "
+                 f"EXPECTED_SESSION = {self.expect} : conforme"]
+        init = Path(self.init)
+        if not init.exists():
+            raise LoopStop(f"Réseau de départ absent : {init}")
+        _, meta = load_for_inference(init, "cpu")
+        lines.append(f"Réseau de départ : {init} (SHA-256 {sha256_file(init)[:12]}…, pas {meta.get('step')})")
+        lines.append(f"Réglages : budget {self.minutes:g} min, {self.loop_cfg.new_positions_per_generation:,} positions "
+                     f"par génération, arène {2 * self.arena_cfg.pairs} parties à {self.arena_cfg.simulations} "
+                     "simulations")
+        if human:
+            if not Path(human).is_dir() or not any(Path(human).glob("train_*.npz")):
+                raise LoopStop(f"Données Lichess introuvables dans {human}")
+            h = describe_human(Path(human))
+            lines.append(f"Lichess : {h['path']} ({h['train_shards']} shards d'entraînement, {h['val_shards']} de validation)")
+        if syzygy is not None:
+            n = len(list(Path(syzygy).glob("*.rtbw"))) if syzygy and Path(syzygy).is_dir() else 0
+            lines.append(f"Tables Syzygy : {n} fichiers WDL dans {syzygy}" if n else
+                         "Tables Syzygy : pas encore téléchargées (la cellule suivante le fait)")
+        mem = read_memory_gb()
+        if mem:
+            lines.append(f"RAM : {mem[0]:.1f} Go disponibles sur {mem[1]:.1f} Go")
+        return lines
+
+    def prepare(self) -> None:
+        """Entrée, vérification de la session attendue, démarrage éventuel, enregistrement de la session."""
+        from chesszero.arena import git_info
+        from chesszero.selfplay import sync_buffer
+        from chesszero.selfplay_train import SelfPlayTrainer
+
+        src, info, loop_state = self.validate_input()
         if src != self.work:  # Kaggle : l'entrée (lecture seule) est recopiée dans le dossier de travail
             sync_buffer([src / "selfplay"], self.work / "selfplay", self.sp_cfg.buffer_positions)
             if info["kind"] == "loop":
@@ -418,10 +489,7 @@ class Orchestrator:
                 if sessions.is_dir():
                     shutil.copytree(sessions, self.work / "selfplay" / "sessions", dirs_exist_ok=True)
         if info["kind"] == "selfplay_only":
-            n = buffer_train_positions(self.work / "selfplay", self.train_cfg)
-            if n < self.train_cfg.min_buffer_positions:
-                raise LoopStop(f"Tampon trop petit pour démarrer la boucle : {n:,} positions d'entraînement "
-                               f"(hors parties mises de côté), minimum {self.train_cfg.min_buffer_positions:,}")
+            n = info["train_positions"]  # vérifié par validate_input (même fenêtre du tampon qu'après la copie)
             msg = (f"Démarrage de la boucle à partir d'une sortie de self-play seul : {info['positions']:,} positions "
                    f"dans le tampon ({n:,} d'entraînement)")
             self.log(msg)
@@ -430,13 +498,6 @@ class Orchestrator:
             self.state = new_loop_state()
         else:
             self.state = read_loop_state(self.state_path)
-            view = self.view()
-            if view.get("needs_migration") or view.get("format", 0) < 2:
-                raise LoopStop("État d'entraînement d'un ancien format dans une sortie de boucle : incohérent")
-            sha = sha256_file(self.init)
-            if view.get("init_sha256") and view["init_sha256"] != sha:
-                raise LoopStop(f"Le réseau de départ fourni ({sha[:12]}…) n'est pas celui de l'état "
-                               f"({view['init_sha256'][:12]}…) : l'ancre doit rester la même")
         self.session = last_session(self.state) + 1
         self.state["sessions"].append({"n": self.session, "started": self.start, "finished": None,
                                        "budget_minutes": self.minutes, "git": git_info(), "input": info["kind"],
@@ -526,6 +587,7 @@ class Orchestrator:
             self.log(f"REFUS : {e}")
             raise
         self.crash_point("after_prepare")
+        self.mem.start()  # relevés de la RAM du système pendant toute la session (rapport, alerte sous 4 Go)
         if not self.state["controls"]["done"] and not self.controls():
             return self.finish()
         while self.end_reason is None:
@@ -709,6 +771,7 @@ class Orchestrator:
         self.crash_point("before_report")
         reason = self.end_reason or "fin"
         sess = self.state["sessions"][-1]
+        self.mem.stop()
         sess["finished"], sess["end_reason"] = self.clock(), reason
         self.save()
         report = write_report(self.work, self.state, self.session, self.notes, self.loop_cfg, self.train_cfg,
@@ -878,6 +941,12 @@ def actions(ctx: dict, cfg: LoopConfig) -> list[str]:
                        f"({sh['wall_minutes']:.1f} min : chargement {sh['load']:.0%}, lots Lichess {sh['human_read']:.0%}, "
                        f"tampon {sh['buffer_read']:.0%}) > {cfg.reading_alert:.0%} : copier les données Lichess sur le "
                        "disque local de la session (/kaggle/tmp) ou en réduire la taille")
+    ram = ctx.get("ram")
+    if ram and ram.get("min_available_gb") is not None and ram["min_available_gb"] < cfg.ram_alert_gb:
+        out.append(f"MÉMOIRE BASSE : {ram['min_available_gb']:.1f} Go disponibles au plus bas (< {cfg.ram_alert_gb:g} Go), "
+                   f"pendant la phase « {ram['min_phase']} » ({ram['alert_samples']} relevé(s) sous le seuil) : risque "
+                   "d'arrêt par manque de mémoire ; regarder les minimums par phase dans le rapport (chargement "
+                   "complet des données Lichess en RAM : sous-ensemble ou projection en mémoire)")
     for a in ctx["alerts"]:
         out.append(f"ALERTE (tour {a[0]}) : {a[1]}")
     if ctx["gen2_bias"]:
@@ -895,7 +964,9 @@ def actions(ctx: dict, cfg: LoopConfig) -> list[str]:
 def write_report(work: Path, state: dict, session: int, notes: list[str], cfg: LoopConfig, train_cfg, arena_cfg,
                  root: Path = ROOT) -> dict:
     """loop/reports/session_XXXX.md + .json ; loop/history.csv ; loop/progress.png."""
+    from chesszero.agreement import describe_agreement, merge_agreement
     from chesszero.arena import atomic_write_text, read_jsonl, write_json_atomic
+    from chesszero.memwatch import describe_memory
     from chesszero.selfplay import describe_repetitions
     from chesszero.selfplay_train import read_train_state
 
@@ -918,7 +989,7 @@ def write_report(work: Path, state: dict, session: int, notes: list[str], cfg: L
     v2 = measured_v2_generations(root)
     ctx = {"view": view, "end_reason": sess["end_reason"], "notes": notes, "v2": v2, "selfplay": selfplay,
            "alerts": alerts, "gen2_bias": gen2_bias, "prev_sps": prev_sps, "sps": sps, "session": session,
-           "timings": timings}
+           "timings": timings, "ram": sess.get("ram")}
     acts = actions(ctx, cfg)
 
     hist = history_rows(sp_train) if view.get("exists") else []
@@ -980,6 +1051,10 @@ def write_report(work: Path, state: dict, session: int, notes: list[str], cfg: L
                  f"({s['control_games']} parties de contrôle)")
     if not selfplay:
         L.append("- (aucune tranche)")
+    else:
+        L.append("- " + describe_agreement(merge_agreement([s.get("agreement") for s in selfplay])).replace(
+            "\n", "\n  "))
+    L += ["", "## Mémoire", "", "- " + describe_memory(sess.get("ram"))]
     L += ["", "## Chronologie", ""]
     for e in (e for e in state["events"] if e["session"] == session):
         extra = f" — ÉCHEC n°{e['failure']} :\n```\n{e['tail'][-1500:]}\n```" if e.get("failure") else ""
