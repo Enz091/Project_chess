@@ -48,6 +48,7 @@ num_workers = 0
 save_every = 10
 log_every = 10
 amp = "off"
+policy_target = "pruned"   # comme la boucle sur Kaggle
 
 [loop]
 new_positions_per_generation = 1500

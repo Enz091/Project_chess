@@ -45,10 +45,11 @@ class LoopConfig:
     """Section [loop] de configs/<nom>.toml."""
 
     new_positions_per_generation: int = 100_000
+    train_start_fraction: float = 0.9  # un tour démarre dès 90 % de l'objectif de positions nouvelles
     start_margin_minutes: float = 15.0  # marge avant un tour ou une arène
     end_margin_minutes: float = 10.0  # fin de session : rapport, sauvegarde de la sortie
-    min_chunk_minutes: float = 10.0  # tranche de self-play minimale
-    chunk_stop_new_games_minutes: float = 12.0  # tranche : plus de nouvelles parties avant sa fin
+    min_chunk_minutes: float = 25.0  # tranche de self-play minimale (même si l'objectif de positions est atteint)
+    chunk_stop_new_games_minutes: float = 12.0  # tranche : plus de nouvelles parties avant sa durée maximale
     control_a_pairs: int = 10  # contrôle (a) : réseau de départ contre lui-même (avertissement seulement)
     control_a_low: float = 0.40
     control_a_high: float = 0.60
@@ -73,7 +74,8 @@ class LoopConfig:
     repetition_material_reference: float = 0.145  # parties finies par répétition avec >= 20 points de matériel
     repetition_material_alert_points: float = 5.0  # alerte au-delà de la référence + 5 points
     throughput_drop_alert: float = 0.15
-    reading_alert: float = 0.30  # « Actions » : lecture des données > 30 % du temps d'un tour d'entraînement
+    reading_alert: float = 0.30  # « Actions » : lecture des lots (Lichess + tampon) > 30 % du temps d'un tour
+    load_alert_minutes: float = 8.0  # « Actions » : chargement initial des données Lichess plus long que ça
     ram_interval_seconds: float = 30.0  # relevé de la mémoire disponible du système (voir memwatch.py)
     ram_alert_gb: float = 4.0  # « Actions » : mémoire disponible tombée sous ce seuil
 
@@ -207,9 +209,15 @@ def next_phase(view: dict, gate: dict | None, anchor: dict | None, new: int, cfg
         return "verdict"
     if view["round_in_progress"] is not None:
         return "train"
-    if new >= cfg.new_positions_per_generation and not train_waiting:
+    if new >= train_threshold(cfg) and not train_waiting:
         return "train"
     return "selfplay"
+
+
+def train_threshold(cfg: LoopConfig) -> int:
+    """Positions nouvelles à partir desquelles un tour démarre : 90 % de l'objectif (une tranche qui s'arrête un peu
+    avant l'objectif ne coûte pas une tranche de plus)."""
+    return math.ceil(cfg.train_start_fraction * cfg.new_positions_per_generation)
 
 
 def planned_steps(new: int, train_cfg, human_fraction: float) -> int:
@@ -243,15 +251,21 @@ def round_minutes(est: dict, steps: int, gate_games: int, anchor_games: int) -> 
 
 
 def selfplay_chunk(remaining: float, missing_positions: int, est: dict, after_minutes: float,
-                   cfg: LoopConfig) -> tuple[float, bool]:
-    """(minutes de self-play, dernière tranche ?). Assez de temps pour produire les positions manquantes ET faire
-    ensuite le tour et ses arènes (`after_minutes` + marge) : tranche juste suffisante. Sinon : self-play jusqu'à la
-    fin de la session (dernière tranche). Minutes <= 0 : plus rien à faire."""
-    need = max(missing_positions, 0) / max(est["positions_per_minute"], 1e-9)
+                   cfg: LoopConfig) -> tuple[float, bool, int | None]:
+    """(durée maximale de la tranche en minutes, dernière tranche ?, objectif de positions).
+
+    Assez de temps pour produire les positions manquantes (au débit estimé) ET faire ensuite le tour et ses arènes
+    (`after_minutes` + marge) : la tranche s'arrête sur l'OBJECTIF DE POSITIONS (le manque) : plus de nouvelles
+    parties une fois le manque couvert et au moins `min_chunk_minutes` écoulées, les parties en cours se terminent ;
+    sa durée maximale est le temps qui laisse encore la place au tour. Sinon : self-play jusqu'à la fin de la session
+    (dernière tranche, sans objectif). Minutes <= 0 : plus rien à faire."""
+    missing = max(int(missing_positions), 0)
+    need = missing / max(est["positions_per_minute"], 1e-9)
     usable = remaining - cfg.end_margin_minutes
     if need + after_minutes + cfg.start_margin_minutes <= usable:
-        return max(need, cfg.min_chunk_minutes), False
-    return (usable if usable >= cfg.min_chunk_minutes else 0.0), True
+        cap = usable - after_minutes - cfg.start_margin_minutes
+        return max(cap, cfg.min_chunk_minutes), False, missing
+    return (usable if usable >= cfg.min_chunk_minutes else 0.0), True, None
 
 
 # --------------------------------------------------------------------------- exécution des phases
@@ -293,11 +307,14 @@ class SubprocessExecutor:
             out += ["--device", self.device]
         return out
 
-    def selfplay(self, minutes: float, checkpoint: str, generation: int, session: str, soft: float, hard: float) -> int:
+    def selfplay(self, minutes: float, checkpoint: str, generation: int, session: str, soft: float, hard: float,
+                 target_positions: int | None = None, min_minutes: float | None = None) -> int:
         args = ["--out", self.work / "selfplay", "--checkpoint", checkpoint, "--max-minutes", f"{minutes:.3f}",
                 "--generation", generation, "--session", session, "--stop-new-games-minutes", f"{soft:.3f}",
                 "--hard-stop-minutes", f"{hard:.3f}", "--syzygy", self.syzygy or "",
                 "--reference", self.init, *self._common()]  # --reference : indicateur d'accord (kaggle_sup)
+        if target_positions is not None:  # tranche sur objectif de positions (voir selfplay_chunk)
+            args += ["--target-positions", target_positions, "--min-minutes", f"{min_minutes or 0:.3f}"]
         if self.book is not None:
             args += ["--book", self.book]
         if self.games_per_worker:
@@ -345,7 +362,8 @@ class Orchestrator:
 
     def __init__(self, work: str | Path, config: str, init: str, executor, minutes: float,
                  expect_session: int | None, resume_from: str | Path | None = None, crash_at: str | None = None,
-                 clock=time.time, log=print, root: Path = ROOT, configs: dict | None = None, memwatch=None):
+                 clock=time.time, log=print, root: Path = ROOT, configs: dict | None = None, memwatch=None,
+                 reset_line: str | None = None):
         from chesszero.arena import ArenaConfig
         from chesszero.selfplay import SelfPlayConfig
         from chesszero.selfplay_train import SelfPlayTrainConfig
@@ -358,6 +376,7 @@ class Orchestrator:
         self.sp_cfg = configs.get("selfplay") or SelfPlayConfig.named(config)
         self.executor, self.minutes, self.expect, self.resume_from = executor, minutes, expect_session, resume_from
         self.crash_at, self.clock, self.log, self.root = crash_at, clock, log, root
+        self.reset_line = reset_line  # décision humaine : ligne d'entraînement remise sur le réseau accepté (note)
         self.start = clock()
         self.deadline = self.start + 60 * minutes
         self.state_path = self.work / "loop" / "loop_state.json"
@@ -468,10 +487,26 @@ class Orchestrator:
             n = len(list(Path(syzygy).glob("*.rtbw"))) if syzygy and Path(syzygy).is_dir() else 0
             lines.append(f"Tables Syzygy : {n} fichiers WDL dans {syzygy}" if n else
                          "Tables Syzygy : pas encore téléchargées (la cellule suivante le fait)")
+        if self.reset_line is not None:
+            lines.append(self._reset_line_check(src, info))
         mem = read_memory_gb()
         if mem:
             lines.append(f"RAM : {mem[0]:.1f} Go disponibles sur {mem[1]:.1f} Go")
         return lines
+
+    def _reset_line_check(self, src: Path, info: dict) -> str:
+        """Remise de la ligne demandée : refus si un candidat attend son verdict (l'arène doit décider d'abord)."""
+        from chesszero.selfplay_train import read_train_state
+
+        if info["kind"] == "selfplay_only":
+            return "Remise de la ligne demandée : sans objet (la ligne démarre sur le réseau de départ)"
+        view = read_train_state(src / "sp_train")
+        if view["candidate"] is not None:
+            raise LoopStop(f"Remise de la ligne demandée, mais le candidat {view['candidate']['id']} attend le verdict "
+                           "de l'arène : lancer d'abord une session sans RESET_LINE")
+        return (f"Remise de la ligne demandée (« {self.reset_line} ») : poids du réseau accepté (génération "
+                f"{view['generation']}), AdamW neuf, compteurs de rejets à 0 ; tampon gardé "
+                f"({view['arena_rejections']} rejet(s) en arène d'affilée avant la remise)")
 
     def prepare(self) -> None:
         """Entrée, vérification de la session attendue, démarrage éventuel, enregistrement de la session."""
@@ -502,6 +537,19 @@ class Orchestrator:
         self.state["sessions"].append({"n": self.session, "started": self.start, "finished": None,
                                        "budget_minutes": self.minutes, "git": git_info(), "input": info["kind"],
                                        "resumed_from_session": self.session - 1, "end_reason": None})
+        if self.reset_line is not None:
+            msg = self._reset_line_check(self.work, info)
+            if info["kind"] != "selfplay_only":
+                row = SelfPlayTrainer(self.work / "sp_train", self.train_cfg, "cpu", self.init,
+                                      log=self.log).reset_line(self.reset_line)
+                msg = (f"Ligne d'entraînement REMISE sur le réseau accepté (génération {row['network']['generation']}, "
+                       f"SHA-256 {row['network']['sha256'][:12]}…) : « {self.reset_line} » ; AdamW neuf, compteurs de "
+                       f"rejets à 0 (avant : {row['before']['arena_rejections']} en arène), les "
+                       f"{row['before']['trained_shards']} shards déjà vus redeviennent nouveaux"
+                       + (f", tour {row['discarded_round']} abandonné" if row["discarded_round"] is not None else ""))
+                self.state["sessions"][-1]["reset_line"] = {"note": self.reset_line, "row": row["round"]}
+            self.log(msg)
+            self.notes.append(msg)
         self.save()
 
     # ---------------------------------------------------------------- phases
@@ -692,14 +740,14 @@ class Orchestrator:
 
         # self-play
         steps = planned_steps(cfg.new_positions_per_generation, self.train_cfg, self.train_cfg.human_fraction)
-        minutes, final = selfplay_chunk(self.remaining(), cfg.new_positions_per_generation - new, est,
-                                        round_minutes(est, steps, gate_games, anchor_games), cfg)
+        minutes, final, target = selfplay_chunk(self.remaining(), cfg.new_positions_per_generation - new, est,
+                                                round_minutes(est, steps, gate_games, anchor_games), cfg)
         if minutes <= 0:
             self.end_reason = "budget : fin de session"
             return False
-        return self.selfplay(view, minutes, final, est)
+        return self.selfplay(view, minutes, final, est, target)
 
-    def selfplay(self, view: dict, minutes: float, final: bool, est: dict) -> bool:
+    def selfplay(self, view: dict, minutes: float, final: bool, est: dict, target: int | None = None) -> bool:
         from chesszero.selfplay import list_shards
 
         cfg = self.loop_cfg
@@ -710,13 +758,14 @@ class Orchestrator:
         soft = self.sp_cfg.stop_new_games_minutes if final else min(cfg.chunk_stop_new_games_minutes, minutes / 2)
         hard = self.sp_cfg.hard_stop_minutes if final else 0.0
         checkpoint = view["accepted"]["path"] or self.init
+        min_minutes = None if target is None else cfg.min_chunk_minutes
         code = self.run_phase("selfplay", "selfplay", lambda: self.executor.selfplay(
-            minutes, checkpoint, view["generation"], name, soft, hard))
+            minutes, checkpoint, view["generation"], name, soft, hard, target, min_minutes))
         if code is not None:
             produced = sum(s["positions"] for s in list_shards([self.work / "selfplay"]) if s["name"] not in before)
             elapsed = (self.clock() - start) / 60
             self.event("selfplay", start, code, session_name=name, positions=produced, final=final,
-                       planned_minutes=minutes)
+                       planned_minutes=minutes, target_positions=target)
             if not final and elapsed > 0 and produced > 0:
                 record_estimate(self.state, "positions_per_minute", produced / elapsed)
             self.train_waiting = False
@@ -938,9 +987,13 @@ def actions(ctx: dict, cfg: LoopConfig) -> list[str]:
     for rid, sh in ctx.get("timings", []):
         if sh["reading"] > cfg.reading_alert:
             out.append(f"LECTURE DES DONNÉES LENTE (tour {rid}) : {sh['reading']:.0%} du temps du tour "
-                       f"({sh['wall_minutes']:.1f} min : chargement {sh['load']:.0%}, lots Lichess {sh['human_read']:.0%}, "
-                       f"tampon {sh['buffer_read']:.0%}) > {cfg.reading_alert:.0%} : copier les données Lichess sur le "
-                       "disque local de la session (/kaggle/tmp) ou en réduire la taille")
+                       f"({sh['wall_minutes']:.1f} min : lots Lichess {sh['human_read']:.0%}, tampon "
+                       f"{sh['buffer_read']:.0%}) > {cfg.reading_alert:.0%} : regarder la lecture des lots (disque, "
+                       "taille du tampon)")
+        if sh["load_minutes"] > cfg.load_alert_minutes:
+            out.append(f"CHARGEMENT INITIAL DES DONNÉES LICHESS LENT (tour {rid}) : {sh['load_minutes']:.1f} min > "
+                       f"{cfg.load_alert_minutes:g} min : copier les données Lichess sur le disque local de la session "
+                       "(/kaggle/tmp) ou en réduire la taille")
     ram = ctx.get("ram")
     if ram and ram.get("min_available_gb") is not None and ram["min_available_gb"] < cfg.ram_alert_gb:
         out.append(f"MÉMOIRE BASSE : {ram['min_available_gb']:.1f} Go disponibles au plus bas (< {cfg.ram_alert_gb:g} Go), "
@@ -1027,10 +1080,21 @@ def write_report(work: Path, state: dict, session: int, notes: list[str], cfg: L
     if timings:
         L += ["", "Temps des tours d'entraînement (part du temps total du tour) :", ""]
         for rid, sh in timings:
-            L.append(f"- tour {rid} : {sh['wall_minutes']:.1f} min ; lecture {sh['reading']:.0%} (chargement "
-                     f"{sh['load']:.0%}, lots Lichess {sh['human_read']:.0%}, tampon {sh['buffer_read']:.0%}) ; masques "
-                     f"Lichess {sh['human_masks']:.0%} ; préparation {sh['prepare']:.0%} ; calcul {sh['compute']:.0%} ; "
-                     f"évaluation {sh['eval']:.0%} ; autre {sh['other']:.0%}")
+            L.append(f"- tour {rid} : {sh['wall_minutes']:.1f} min ; lecture des lots {sh['reading']:.0%} (lots "
+                     f"Lichess {sh['human_read']:.0%}, tampon {sh['buffer_read']:.0%}) ; masques Lichess "
+                     f"{sh['human_masks']:.0%} ; préparation {sh['prepare']:.0%} ; calcul {sh['compute']:.0%} ; "
+                     f"évaluation {sh['eval']:.0%} ; priors des anciens shards {sh['priors']:.0%} ; autre "
+                     f"{sh['other']:.0%}")
+            L.append(f"  - chargement initial des données Lichess : {sh['load_minutes']:.1f} min ({sh['load']:.0%} du "
+                     f"tour ; alerte au-delà de {cfg.load_alert_minutes:g} min)")
+    pruned = [(r["round"], r["policy_target_stats"]) for r in rounds if r.get("policy_target_stats")]
+    if pruned:
+        L += ["", "Cibles de politique débruitées (bruit de Dirichlet retiré, chesszero/policy_target.py) :", ""]
+        for rid, ps in pruned:
+            L.append(f"- tour {rid} : {ps['removed_visit_share']:.1%} des visites retirées ; entropie des cibles "
+                     f"{ps['entropy_raw']:.3f} -> {ps['entropy_pruned']:.3f} ; part du coup le plus visité "
+                     f"{ps['top_share_raw']:.3f} -> {ps['top_share_pruned']:.3f} ; Q exact pour "
+                     f"{ps['exact_q_share']:.0%} des positions")
     acc = view.get("accepted") or {}
     L += ["", "## État en fin de session", "",
           f"- génération acceptée : {view.get('generation')} ({acc.get('path') or 'réseau de départ'}) ; "

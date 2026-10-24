@@ -18,6 +18,7 @@ Déroulement :
 
 import argparse
 import json
+import math
 import multiprocessing as mp
 import sys
 import time
@@ -71,7 +72,8 @@ def worker(task: dict) -> dict:
         f"{cfg.games_per_worker} parties en parallèle, {cfg.simulations} simulations par coup")
     stats = run_selfplay(evaluator, cfg, mcts_cfg, writer, rng, prefix, book=book, tablebase=tb,
                          max_games=task["max_games"], soft_deadline=task["soft_deadline"],
-                         hard_deadline=task["hard_deadline"], log=log)
+                         hard_deadline=task["hard_deadline"], log=log, target_positions=task["target_positions"],
+                         min_seconds=60 * task["min_minutes"])
     stats["shards"] = [p.name for p in writer.written]
     stats["eval_positions"], stats["eval_calls"], stats["eval_seconds"] = (
         evaluator.positions, evaluator.calls, evaluator.seconds)
@@ -128,6 +130,11 @@ def main() -> None:
                     help="marge avant la fin : plus de nouvelles parties (défaut : [selfplay], 20)")
     ap.add_argument("--hard-stop-minutes", type=float, default=None,
                     help="marge avant la fin : arrêt, parties inachevées perdues (défaut : [selfplay], 5)")
+    ap.add_argument("--target-positions", type=int, default=None,
+                    help="boucle : objectif de positions de la tranche (réparti entre les processus) ; plus de nouvelles "
+                         "parties une fois couvert, les parties en cours se terminent")
+    ap.add_argument("--min-minutes", type=float, default=0.0,
+                    help="avec --target-positions : durée minimale avant de s'arrêter sur l'objectif")
     ap.add_argument("--device", default=None)
     ap.add_argument("--session", default=None, help="identifiant (défaut : date et heure UTC)")
     ap.add_argument("--generation", type=int, default=0, help="numéro de génération du réseau (étape 7)")
@@ -159,9 +166,13 @@ def main() -> None:
     tasks = [{"worker": w, "threads": args.threads, "config": args.config, "overrides": overrides,
               "checkpoint": args.checkpoint, "book": args.book or None, "syzygy": args.syzygy or None,
               "out": args.out, "device": args.device, "session": session, "generation": args.generation,
-              "seed": args.seed, "max_games": args.max_games, "soft_deadline": soft, "hard_deadline": hard}
+              "seed": args.seed, "max_games": args.max_games, "soft_deadline": soft, "hard_deadline": hard,
+              "target_positions": (None if args.target_positions is None else
+                                   math.ceil(args.target_positions / args.workers)), "min_minutes": args.min_minutes}
              for w in range(args.workers)]
-    print(f"Session {session} : {args.workers} processus x {args.threads} thread(s) -> {args.out}", flush=True)
+    print(f"Session {session} : {args.workers} processus x {args.threads} thread(s) -> {args.out}"
+          + (f" ; objectif {args.target_positions} positions, au moins {args.min_minutes:g} min"
+             if args.target_positions is not None else ""), flush=True)
     with mp.get_context("spawn").Pool(args.workers) as pool:
         results = pool.map(worker, tasks)
     s = sync_buffer([], args.out, cfg.buffer_positions)
@@ -207,7 +218,9 @@ def main() -> None:
              "terminations": {t: int(n) for t, n in zip(TERMINATIONS, terms)},
              "unfinished_dropped": sum(r["unfinished_dropped"] for r in results),
              "repetitions": reps, "control_games": controls, "resign_triggered_in_control": len(triggered),
-             "false_resignations": false, "agreement": agreement,
+             "false_resignations": false, "agreement": agreement, "target_positions": args.target_positions,
+             "target_reached_after_minutes": [None if r["target_reached_after"] is None else r["target_reached_after"] / 60
+                                              for r in results],
              "shards": [n for r in results for n in r["shards"]]}
     out = Path(args.out) / "sessions"
     out.mkdir(parents=True, exist_ok=True)

@@ -229,6 +229,27 @@ def test_deadlines_stop_new_games_and_drop_unfinished(tmp_path):
     assert stats["games"] == 0 and writer.written == []
 
 
+def test_positions_target_stops_new_games_and_lets_running_games_finish(tmp_path):
+    """Tranche de la boucle (2026-10-24) : plus de nouvelles parties une fois l'objectif de positions couvert (parties
+    finies + parties en cours estimées à la longueur moyenne), les parties en cours se terminent ; pas avant la durée
+    minimale."""
+    cfg = replace(CFG, games_per_worker=3)
+    writer = ShardWriter(tmp_path / "a", "t", {}, 100, 10)
+    stats = run_selfplay(Stub(), cfg, cfg.mcts_config(MCTSConfig()), writer, np.random.default_rng(0), "t",
+                         max_games=50, target_positions=60)
+    assert stats["unfinished_dropped"] == 0 and stats["target_reached_after"] is not None
+    assert 60 <= stats["positions"] < 60 + 3 * cfg.max_plies  # au plus les parties en cours au moment de l'arrêt
+    assert stats["games"] < 50
+    # durée minimale pas encore écoulée : l'objectif ne coupe rien (ici : les 6 parties demandées sont jouées)
+    writer = ShardWriter(tmp_path / "b", "t", {}, 100, 10)
+    stats = run_selfplay(Stub(), cfg, cfg.mcts_config(MCTSConfig()), writer, np.random.default_rng(0), "t",
+                         max_games=6, target_positions=1, min_seconds=3600)
+    assert stats["games"] == 6 and stats["target_reached_after"] is None
+    shards = [load_shard(p) for p in writer.written]
+    assert all(verify_shard(s, cfg) == [] for s in shards)
+    assert all("policy_prior" in s and len(s["policy_prior"]) == len(s["policy_index"]) for s in shards)
+
+
 # --------------------------------------------------------------------------- indicateur des répétitions précoces
 
 

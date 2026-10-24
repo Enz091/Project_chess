@@ -75,7 +75,7 @@ anchor_veto_se = 2.0           # veto : Elo contre l'ancre < celui de l'accepté
 # Entraînement sur le self-play (étape 6d), choix validés le 2026-10-22 (voir CLAUDE.md et docs/journal.md).
 [selfplay_train]
 batch_size = 1024
-lr = 2e-4                      # constant après la montée...
+lr = 5e-5                      # constant après la montée (2e-4 jusqu'au 2026-10-24 : politique aplatie, journal)...
 lr_start = 2e-5                # ... depuis 2e-5 (fin du pré-entraînement) sur 300 pas ; AdamW neuf
 warmup_steps = 300
 lr_min = 2.5e-5                # plancher après des divisions par 2 (G1)
@@ -90,6 +90,7 @@ human_fraction = 0.25          # positions Lichess par lot (composition exacte).
 human_fraction_late = 0.10     # ... puis 10 %...
 human_switch_generation = 5    # ... à partir de la 6e génération acceptée
 value_target = "result"        # "blend" = (résultat + Q racine) / 2, à évaluer (scripts/eval_value_target.py)
+policy_target = "pruned"       # visites débruitées (bruit de Dirichlet retiré, chesszero/policy_target.py) ; "visits" = brutes
 heldout_fraction = 0.10        # parties de self-play mises de côté (surapprentissage, évaluation)
 lichess_val_positions = 50000  # sous-ensemble fixe de la validation Lichess
 early_generations = 5          # G1 / G2 stricts pendant ces générations
@@ -115,8 +116,9 @@ seed = 0
 new_positions_per_generation = 100000  # self-play entre deux tours (~85 min) ; à ajuster selon le taux d'acceptation
 start_margin_minutes = 15.0     # marge avant un tour (entraînement + arènes estimés) ou une arène
 end_margin_minutes = 10.0       # fin de session : rapport, sauvegarde de la sortie
-min_chunk_minutes = 10.0        # tranche de self-play minimale
-chunk_stop_new_games_minutes = 12.0  # tranche : plus de nouvelles parties 12 min avant sa fin
+train_start_fraction = 0.9      # un tour démarre dès 90 % de l'objectif de positions nouvelles
+min_chunk_minutes = 25.0        # tranche : s'arrête sur l'objectif de positions (parties en cours terminées), après 25 min au moins
+chunk_stop_new_games_minutes = 12.0  # tranche : plus de nouvelles parties 12 min avant sa durée maximale (sécurité)
 control_a_pairs = 10            # contrôle (a) : kaggle_sup contre lui-même (avertissement seulement)
 control_a_low = 0.40
 control_a_high = 0.60
@@ -141,4 +143,5 @@ early_repetition_alert = 0.05
 repetition_material_reference = 0.145   # session de référence : 552 sur 3 803 parties finies par répétition avec >= 20 points
 repetition_material_alert_points = 5.0  # « Actions » : alerte au-delà de 19,5 %
 throughput_drop_alert = 0.15
-reading_alert = 0.30            # « Actions » : lecture des données > 30 % du temps d'un tour
+reading_alert = 0.30            # « Actions » : lecture des lots (Lichess + tampon) > 30 % du temps d'un tour
+load_alert_minutes = 8.0        # « Actions » : chargement initial des données Lichess > 8 min (ligne à part dans le rapport)

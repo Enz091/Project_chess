@@ -1,0 +1,117 @@
+{
+ "buffer": "data\\kaggle_out\\selfplay_session1\\selfplay",
+ "checkpoint": "checkpoints/kaggle_sup/best.pt",
+ "positions": 500,
+ "seed": 0,
+ "simulations": 200,
+ "epsilon": 0.25,
+ "barely_threshold": 0.02,
+ "visited_moves": {
+  "sans bruit": 6.388,
+  "avec bruit": 10.346,
+  "enregistrées": 13.116,
+  "coups légaux": 27.286
+ },
+ "boosted_moves_per_position": 2.438,
+ "visit_share_gained_by_boosted_moves": 0.045470000000000003,
+ "seconds": 320.13104701042175,
+ "tail_threshold": 0.02,
+ "variants": {
+  "politique de kaggle_sup/best.pt": {
+   "entropy": 1.4039867081279256,
+   "top_share": 0.5351805979956532,
+   "barely_share": 0.08958583031347413,
+   "tail_share": 0.04943642401217962,
+   "tv_to_clean": 0.24271846434308106,
+   "same_best_as_clean": 0.716
+  },
+  "politique de ab_value/result_trained.pt": {
+   "entropy": 1.5760680243307292,
+   "top_share": 0.4893129696164351,
+   "barely_share": 0.12483477062700869,
+   "tail_share": 0.0789570319231214,
+   "tv_to_clean": 0.2648735817176934,
+   "same_best_as_clean": 0.71
+  },
+  "recherche sans bruit (référence)": {
+   "entropy": 1.0197695812258332,
+   "top_share": 0.6262000000000001,
+   "barely_share": 0.01635,
+   "tail_share": 0.011280000000000002,
+   "tv_to_clean": 0.0,
+   "same_best_as_clean": 1.0
+  },
+  "recherche avec bruit (arbre neuf)": {
+   "entropy": 1.2244371147502568,
+   "top_share": 0.58674,
+   "barely_share": 0.07942000000000002,
+   "tail_share": 0.07211000000000001,
+   "tv_to_clean": 0.09973,
+   "same_best_as_clean": 0.918
+  },
+  "visites enregistrées (arbre réutilisé, bruit)": {
+   "entropy": 1.1411231790000693,
+   "top_share": 0.6271021612795696,
+   "barely_share": 0.08007654974029191,
+   "tail_share": 0.0772052260248709,
+   "tv_to_clean": 0.17000145674561157,
+   "same_best_as_clean": 0.818
+  },
+  "avec bruit, débruitée : Q exact": {
+   "entropy": 0.9467205457354955,
+   "top_share": 0.6597079401339625,
+   "barely_share": 0.018915444275691088,
+   "tail_share": 0.013676293528339987,
+   "tv_to_clean": 0.06271148946176935,
+   "same_best_as_clean": 0.916
+  },
+  "avec bruit, débruitée : Q exact + 1 visite -> 0": {
+   "entropy": 0.9327564798861074,
+   "top_share": 0.6613634066756856,
+   "barely_share": 0.016211717777101207,
+   "tail_share": 0.01199126657170342,
+   "tv_to_clean": 0.06345702605108337,
+   "same_best_as_clean": 0.916
+  },
+  "avec bruit, débruitée : Q = valeur réseau du fils": {
+   "entropy": 0.9244291819843593,
+   "top_share": 0.680512695346597,
+   "barely_share": 0.025792656327310454,
+   "tail_share": 0.019888547451512056,
+   "tv_to_clean": 0.10489154400977051,
+   "same_best_as_clean": 0.918
+  },
+  "avec bruit, débruitée : sans Q (Q = Q du meilleur)": {
+   "entropy": 1.0150642009996764,
+   "top_share": 0.6539160515027748,
+   "barely_share": 0.03200257504636343,
+   "tail_share": 0.022910824970247035,
+   "tv_to_clean": 0.07762825718821045,
+   "same_best_as_clean": 0.916
+  },
+  "enregistrées, débruitées : Q = valeur réseau du fils": {
+   "entropy": 0.8610793223971046,
+   "top_share": 0.7175304539067302,
+   "barely_share": 0.0325847198955901,
+   "tail_share": 0.029631365665195416,
+   "tv_to_clean": 0.16469687775958813,
+   "same_best_as_clean": 0.818
+  },
+  "enregistrées, débruitées : sans Q (Q = Q du meilleur)": {
+   "entropy": 0.9676465948828415,
+   "top_share": 0.6842857485155212,
+   "barely_share": 0.03873004984934635,
+   "tail_share": 0.033332125066900586,
+   "tv_to_clean": 0.13811264683951652,
+   "same_best_as_clean": 0.818
+  },
+  "sans bruit, « débruitée » : Q exact (doit peu changer)": {
+   "entropy": 0.9562671707314733,
+   "top_share": 0.6545822162030979,
+   "barely_share": 0.01256804718025564,
+   "tail_share": 0.007813935101586632,
+   "tv_to_clean": 0.03348758820357168,
+   "same_best_as_clean": 1.0
+  }
+ }
+}

@@ -9,7 +9,8 @@ Un TOUR = un réseau candidat :
      de côté) a moins de `min_buffer_positions` (250 000) positions ;
   3. chaque lot : composition EXACTE, `round(B × part humaine)` positions Lichess (25 %, puis 10 % après
      `human_switch_generation` générations acceptées) et le reste tiré uniformément dans le tampon ; cible de
-     politique = visites normalisées (self-play) ou coup joué (Lichess) ; cible de valeur = résultat de la partie
+     politique = visites normalisées (self-play ; débruitées si `policy_target = "pruned"`, voir
+     chesszero/policy_target.py) ou coup joué (Lichess) ; cible de valeur = résultat de la partie
      (ou (résultat + Q racine) / 2 si `value_target = "blend"`) pour le self-play, résultat Lichess si
      `value_valid` ; perte moyenne par position (chaque part pèse selon sa place dans le lot) ;
   4. taux : AdamW neuf au départ, montée linéaire de `lr_start` (2e-5) à `lr` (2e-4) sur `warmup_steps` (300) pas,
@@ -68,6 +69,7 @@ class SelfPlayTrainConfig:
     human_fraction_late: float = 0.10
     human_switch_generation: int = 5  # 10 % à partir de la 6e génération acceptée
     value_target: str = "result"  # "result" ou "blend" = (résultat + Q racine) / 2
+    policy_target: str = "visits"  # "visits" = visites brutes ; "pruned" = visites débruitées (policy_target.py)
     heldout_fraction: float = 0.10  # parties de self-play mises de côté
     lichess_val_positions: int = 50_000
     early_generations: int = 5  # G1 / G2 stricts pendant ces générations
@@ -91,6 +93,8 @@ class SelfPlayTrainConfig:
     def __post_init__(self):
         if self.value_target not in ("result", "blend"):
             raise ValueError("value_target doit valoir 'result' ou 'blend'")
+        if self.policy_target not in ("visits", "pruned"):
+            raise ValueError("policy_target doit valoir 'visits' ou 'pruned'")
 
     @classmethod
     def from_toml(cls, path: str | Path) -> SelfPlayTrainConfig:
@@ -115,13 +119,21 @@ def is_heldout(game_uid: str, fraction: float) -> bool:
 
 
 class SelfPlayData:
-    """Positions des shards d'une fenêtre du tampon, en mémoire."""
+    """Positions des shards d'une fenêtre du tampon, en mémoire.
 
-    def __init__(self, shards: list[dict], heldout_fraction: float):
+    `policy_target = "pruned"` : les visites sont débruitées dès le chargement (`policy_target.prune_visits`), avec
+    le prior sans bruit et le Q de chaque coup enregistrés dans le shard ; pour un shard plus ancien (sans ces champs),
+    le prior vient de `prior_source(shard, données)` (recalculé avec le réseau qui a joué) et, faute de Q, chaque coup
+    visité reçoit le Q du meilleur (approximation « sans Q », la plus proche d'une recherche sans bruit parmi celles
+    mesurées : journal, 2026-10-24). `prune_stats` résume l'effet (part des visites retirées, entropie moyenne)."""
+
+    def __init__(self, shards: list[dict], heldout_fraction: float, policy_target: str = "visits",
+                 prior_source=None):
+        from chesszero.policy_target import prune_visits, target_stats
+
         self.names = [s["name"] for s in shards]
         parts = [load_shard(s["npz"]) for s in shards]
-        self.shard_of = np.concatenate([np.full(len(p["played"]), i, np.int32) for i, p in enumerate(parts)]) \
-            if parts else np.zeros(0, np.int32)
+        self.shard_of = np.concatenate([np.full(len(p["played"]), i, np.int32) for i, p in enumerate(parts)])             if parts else np.zeros(0, np.int32)
         cat = (lambda k: np.concatenate([p[k] for p in parts])) if parts else (lambda k: np.zeros(0))
         self.boards = cat("boards") if parts else np.zeros((0, 67), np.uint8)
         self.result = cat("result").astype(np.float32) if parts else np.zeros(0, np.float32)
@@ -129,11 +141,27 @@ class SelfPlayData:
         # coups légaux et visites : décalages remis bout à bout
         offsets, index, visits, base = [np.zeros(1, np.int64)], [], [], 0
         uids = []
-        for p in parts:
+        raw_total = pruned_total = exact = 0
+        raw_parts, pruned_parts = [], []
+        for s, p in zip(shards, parts):
             offsets.append(p["policy_offsets"][1:].astype(np.int64) + base)
             base += len(p["policy_index"])
             index.append(p["policy_index"])
-            visits.append(p["policy_visits"])
+            v = p["policy_visits"].astype(np.float64)
+            if policy_target == "pruned" and len(p["played"]):
+                if "policy_prior" in p:
+                    prior, q = p["policy_prior"], p["policy_q"]
+                    exact += len(p["played"])
+                else:
+                    if prior_source is None:
+                        raise ValueError(f"shard {s['name']} sans prior enregistré : il faut un prior_source")
+                    prior = prior_source(s, p)
+                    q = np.where(v > 0, 0.0, np.nan)  # approximation sans Q (voir la docstring)
+                pruned = prune_visits(p["policy_offsets"], v, prior, q, _shard_c_puct(s))
+                raw_parts.append((p["policy_offsets"], v))
+                pruned_parts.append((p["policy_offsets"], pruned))
+                v = pruned
+            visits.append(v.astype(np.float32))
             uids.append(p["game_uid"][p["game"]])
         self.offsets = np.concatenate(offsets)
         self.index = np.concatenate(index).astype(np.int64) if index else np.zeros(0, np.int64)
@@ -143,6 +171,14 @@ class SelfPlayData:
         self.heldout = np.array([held[u] for u in self.game_uid.tolist()], dtype=bool)
         self.train_rows = np.nonzero(~self.heldout)[0]
         self.heldout_rows = np.nonzero(self.heldout)[0]
+        self.policy_target = policy_target
+        self.prune_stats = None
+        if pruned_parts:
+            raw, pruned = target_stats(raw_parts), target_stats(pruned_parts)
+            self.prune_stats = {"positions": int(len(self.boards)), "exact_q_share": exact / max(len(self.boards), 1),
+                                "removed_visit_share": 1 - pruned["visits"] / max(raw["visits"], 1e-9),
+                                "entropy_raw": raw["entropy"], "entropy_pruned": pruned["entropy"],
+                                "top_share_raw": raw["top_share"], "top_share_pruned": pruned["top_share"]}
 
     def __len__(self) -> int:
         return len(self.boards)
@@ -165,6 +201,12 @@ class SelfPlayData:
         z = self.result[rows]
         value = (z + self.root_q[rows]) / 2 if value_target == "blend" else z
         return legal, policy, value.astype(np.float32)
+
+
+def _shard_c_puct(shard: dict) -> float:
+    """c_puct de la recherche qui a produit le shard (réglages enregistrés dans son .json)."""
+    meta = json.loads(Path(shard["json"]).read_text(encoding="utf-8"))
+    return float(meta.get("config", {}).get("mcts", {}).get("c_puct", 1.5))
 
 
 def human_val_set(human_val: dict, size: int, seed: int, pool) -> dict:
@@ -396,19 +438,21 @@ def _atomic_torch_save(obj, path: Path) -> None:
 
 
 def timing_load_once(timing: dict) -> float:
-    """Chargement des données de ce lancement, ajouté UNE fois au temps total du tour (il a lieu avant le tour)."""
-    pending = timing.pop("_load_pending", 0.0)
-    return pending
+    """Chargement des données de ce lancement (et priors des anciens shards calculés en préparant le tour), ajouté
+    UNE fois au temps total du tour (il a lieu avant le tour)."""
+    return timing.pop("_load_pending", 0.0) + timing.pop("_priors_pending", 0.0)
 
 
 def timing_shares(timing: dict) -> dict:
-    """Part de chaque poste dans le temps total du tour ; « lecture » = chargement + lecture Lichess + tampon."""
+    """Part de chaque poste dans le temps total du tour ; « lecture » = lecture des lots Lichess + tampon (le
+    chargement initial des données Lichess, une fois par lancement, est à part : `load`, `load_minutes`)."""
     wall = timing.get("wall") or sum(v for k, v in timing.items() if not k.startswith("_"))
-    keys = ("load", "human_read", "buffer_read", "human_masks", "prepare", "compute", "eval")
+    keys = ("load", "human_read", "buffer_read", "priors", "human_masks", "prepare", "compute", "eval")
     shares = {k: timing.get(k, 0.0) / wall if wall > 0 else 0.0 for k in keys}
     shares["other"] = max(0.0, 1 - sum(shares.values()))
-    shares["reading"] = shares["load"] + shares["human_read"] + shares["buffer_read"]
+    shares["reading"] = shares["human_read"] + shares["buffer_read"]
     shares["wall_minutes"] = wall / 60
+    shares["load_minutes"] = timing.get("load", 0.0) / 60
     return shares
 
 
@@ -426,7 +470,7 @@ def _new_state_fields(init_sha: str | None) -> dict:
         "anchor_history": [],  # mesure contre l'ancre de chaque génération acceptée
         "anchor_stop_ack": 0,  # générations <= cette valeur ignorées par l'arrêt sur l'ancre (après --clear-stop)
         "commits": [],  # verdicts d'arène déjà appliqués (un verdict rejoué ne fait rien)
-        "line_ok_round": None,  # tour du point de retour `line_ok.pt` (None = réseau de départ)
+        "line_ok_round": None,  # tour du point de retour `line_ok.pt` (None = début de la ligne : départ ou remise)
         "stop_reason": None,
     }
 
@@ -455,7 +499,9 @@ class SelfPlayTrainer:
     def __init__(self, out_dir: str | Path, cfg: SelfPlayTrainConfig, device: torch.device | str,
                  init_checkpoint: str | Path | None = None, log=print, export_trained: str | Path | None = None):
         self.export_trained = Path(export_trained) if export_trained else None  # A/B : réseau du tour, avant décision
+        self.init_checkpoint = Path(init_checkpoint) if init_checkpoint else None  # priors des anciens shards (gén. 0)
         self.load_seconds = 0.0  # chargement des données de ce lancement (mis par l'appelant), compté dans le tour
+        self.prior_seconds = 0.0  # priors recalculés pour les anciens shards (une fois par shard, voir _prior_source)
         self.out = Path(out_dir)
         self.out.mkdir(parents=True, exist_ok=True)
         self.cfg, self.device, self.log = cfg, torch.device(device), log
@@ -579,6 +625,63 @@ class SelfPlayTrainer:
                 "config": {"model": self.state["model_config"], "selfplay_train": asdict(self.cfg)},
                 "metrics": metrics, **extra}
 
+    # ---------------------------------------------------------------- priors des anciens shards
+
+    def _generation_network(self, generation: int) -> tuple[Path, str]:
+        """Réseau qui a joué les parties d'une génération : le réseau de départ (génération 0, SHA-256 vérifié) ou
+        `generations/gen_XXXX.pt`."""
+        if generation == 0:
+            path = self.init_checkpoint
+            if path is None or not path.is_file():
+                raise FileNotFoundError("priors des shards de la génération 0 : réseau de départ (--init) introuvable")
+            sha = _sha256(path)
+            if self.state.get("init_sha256") and sha != self.state["init_sha256"]:
+                raise RuntimeError(f"{path} n'est pas le réseau de départ de cet entraînement (SHA-256 différent)")
+            return path, sha
+        path = self.out / "generations" / f"gen_{generation:04d}.pt"
+        if not path.is_file():
+            raise FileNotFoundError(f"priors des shards de la génération {generation} : {path} introuvable")
+        return path, _sha256(path)
+
+    def _prior_source(self):
+        """Prior sans bruit des shards qui ne l'enregistrent pas (avant le 2026-10-24) : recalculé avec le réseau de
+        leur génération, une fois, puis gardé dans `policy_priors/<shard>.npz` (avec le SHA-256 du réseau) ; ce
+        dossier fait partie de la sortie, donc d'une session à l'autre."""
+        from chesszero.checkpoint import load_for_inference
+        from chesszero.policy_target import network_priors
+
+        cache, models, nets = self.out / "policy_priors", {}, {}
+
+        def source(shard: dict, part: dict) -> np.ndarray:
+            meta = json.loads(Path(shard["json"]).read_text(encoding="utf-8"))
+            gen = int(meta.get("generation", 0))
+            if gen not in nets:
+                nets[gen] = self._generation_network(gen)
+            path, sha = nets[gen]
+            f = cache / f"{shard['name']}.npz"
+            if f.exists():
+                with np.load(f, allow_pickle=False) as z:
+                    if str(z["sha256"]) == sha and len(z["prior"]) == len(part["policy_index"]):
+                        return z["prior"]
+            if gen not in models:
+                model, info = load_for_inference(path, self.device)
+                step = meta.get("checkpoint_step")
+                if step is not None and info.get("step") is not None and int(step) != int(info["step"]):
+                    raise RuntimeError(f"shard {shard['name']} : joué par le pas {step}, {path} est au pas "
+                                       f"{info['step']}")
+                models[gen] = model
+            t0 = time.perf_counter()
+            prior = network_priors(models[gen], part["boards"], part["policy_offsets"], part["policy_index"],
+                                   self.device)
+            cache.mkdir(parents=True, exist_ok=True)
+            tmp = cache / f"{shard['name']}.tmp.npz"
+            np.savez(tmp, prior=prior, sha256=np.array(sha))
+            os.replace(tmp, f)
+            self.prior_seconds += time.perf_counter() - t0
+            return prior
+
+        return source
+
     # ---------------------------------------------------------------- un tour
 
     def run_round(self, buffer_dirs, human_train: dict, human_val: dict, pool: ProcessPoolExecutor | None = None,
@@ -598,7 +701,8 @@ class SelfPlayTrainer:
         if st["round"] is None:  # nouveau tour : on fige la fenêtre du tampon
             shards = buffer_window(list_shards(buffer_dirs), cfg.buffer_positions)
             names = sorted(s["name"] for s in shards)
-            data = SelfPlayData([s for s in shards if s["name"] in set(names)], cfg.heldout_fraction)
+            data = SelfPlayData([s for s in shards if s["name"] in set(names)], cfg.heldout_fraction,
+                                cfg.policy_target, self._prior_source())
             new = data.train_positions_in(set(names) - set(st["trained_shards"]))
             hf = self.human_fraction()
             if steps_override is not None:
@@ -610,10 +714,14 @@ class SelfPlayTrainer:
                 return {"status": "waiting", "buffer_train_positions": int(len(data.train_rows)),
                         "new_positions": new, "min_buffer_positions": cfg.min_buffer_positions}
             st["round"] = {"id": st["round_id"], "shards": names, "steps": steps, "done": 0, "human_fraction": hf,
-                           "new_positions": new, "value_target": cfg.value_target}
+                           "new_positions": new, "value_target": cfg.value_target,
+                           "policy_target": cfg.policy_target, "policy_target_stats": data.prune_stats}
             if st["baseline"] is None:
                 st["baseline"] = {"lichess": eval_human(self.model, human_val, self.device)}
                 self.log(f"Réseau de départ sur la validation Lichess : {st['baseline']['lichess']}")
+            rnd = st["round"]
+            rnd["timing"] = {"priors": self.prior_seconds, "_priors_pending": self.prior_seconds}  # avant le tour
+            self.prior_seconds = 0.0
             self._save_state()
         rnd = st["round"]
         t_launch = time.perf_counter()
@@ -621,13 +729,23 @@ class SelfPlayTrainer:
         missing = [n for n in rnd["shards"] if n not in by_name]
         if missing:
             raise FileNotFoundError(f"shards du tour en cours introuvables : {missing[:3]}...")
-        data = SelfPlayData([by_name[n] for n in rnd["shards"]], cfg.heldout_fraction)
+        data = SelfPlayData([by_name[n] for n in rnd["shards"]], cfg.heldout_fraction,
+                            rnd.get("policy_target", "visits"), self._prior_source())
         timing = rnd.setdefault("timing", {})
-        timing["buffer_read"] = timing.get("buffer_read", 0.0) + time.perf_counter() - t_launch  # chargement des shards
+        # chargement des shards ; le calcul des priors des anciens shards (s'il a lieu ici) est compté à part
+        timing["buffer_read"] = timing.get("buffer_read", 0.0) + time.perf_counter() - t_launch - self.prior_seconds
+        timing["priors"] = timing.get("priors", 0.0) + self.prior_seconds
+        self.prior_seconds = 0.0
         self.log(f"Tour {rnd['id']} : {rnd['steps']} pas ({rnd['done']} déjà faits), tampon {len(data)} positions "
                  f"({len(data.train_rows)} d'entraînement, {len(data.heldout_rows)} mises de côté), "
                  f"{rnd['new_positions']} nouvelles, part humaine {rnd['human_fraction']:.0%}, cible de valeur "
-                 f"{rnd['value_target']}")
+                 f"{rnd['value_target']}, cible de politique {rnd.get('policy_target', 'visits')}")
+        if data.prune_stats:
+            ps = data.prune_stats
+            self.log(f"  cibles débruitées : {ps['removed_visit_share']:.1%} des visites retirées ; entropie "
+                     f"{ps['entropy_raw']:.3f} -> {ps['entropy_pruned']:.3f} ; part du coup le plus visité "
+                     f"{ps['top_share_raw']:.3f} -> {ps['top_share_pruned']:.3f} ; Q exact pour "
+                     f"{ps['exact_q_share']:.0%} des positions (les autres : approximation sans Q)")
 
         n_human = len(human_train["boards"])
         rows = [batch_rows(cfg, rnd["human_fraction"], rnd["id"], s, len(data.train_rows), n_human)
@@ -658,7 +776,7 @@ class SelfPlayTrainer:
             tc = time.perf_counter()
             bt = to_device(batch, self.device)
             for g in self.optimizer.param_groups:
-                g["lr"] = lr_at(st["global_step"], cfg, st["lr_scale"])
+                g["lr"] = lr_at(st["global_step"] - st.get("warmup_from", 0), cfg, st["lr_scale"])
             with torch.autocast(device_type=self.device.type, dtype=torch.float16, enabled=self.use_amp):
                 logits, value = self.model(bt["x"])
             loss, parts = mixed_loss(logits, value, bt)
@@ -723,7 +841,8 @@ class SelfPlayTrainer:
         decision = decide(metrics, st["baseline"], st["previous"], st["history"], st["generation"], cfg)
         row = {"type": "round", "round": rnd["id"], "generation_before": st["generation"], "steps": rnd["steps"],
                "new_positions": rnd["new_positions"], "human_fraction": rnd["human_fraction"],
-               "value_target": rnd["value_target"], "lr_scale": st["lr_scale"], "reuse": st["reuse"],
+               "value_target": rnd["value_target"], "policy_target": rnd.get("policy_target", "visits"),
+               "policy_target_stats": rnd.get("policy_target_stats"), "lr_scale": st["lr_scale"], "reuse": st["reuse"],
                "metrics": metrics, "baseline": st["baseline"], **decision, "time": time.time(),
                "timing": dict(timing)}
         st["history"].append(metrics)
@@ -867,6 +986,48 @@ class SelfPlayTrainer:
         self._append_once(row, ("clear_stop", row["round"]))
         return row
 
+    def reset_line(self, note: str = "") -> dict:
+        """Remet la ligne d'entraînement sur le réseau ACCEPTÉ (au départ : le réseau de départ, kaggle_sup), sur
+        décision humaine : poids de ce réseau, AdamW neuf (nouvelle montée du taux), compteurs de rejets, taux,
+        réutilisation et part humaine remis à leurs valeurs de départ, historique des garde-fous vidé. Le tampon est
+        gardé et TOUTES ses positions redeviennent nouvelles pour la ligne (elle ne les a pas encore vues) ;
+        génération, réseau accepté et mesures contre l'ancre ne changent pas. Un tour en cours (de l'ancienne ligne)
+        est abandonné ; refusé si un candidat attend le verdict de l'arène."""
+        st = self.state
+        if st["candidate"] is not None:
+            raise ValueError(f"candidat {st['candidate']['id']} en attente du verdict de l'arène : le laisser décider "
+                             "d'abord (session de boucle), puis remettre la ligne")
+        gen = st["accepted"]["generation"]
+        path = self.init_checkpoint if gen == 0 else self.out / st["accepted"]["file"]
+        if path is None or not Path(path).is_file():
+            raise FileNotFoundError(f"réseau accepté (génération {gen}) introuvable : {path}")
+        sha = _sha256(Path(path))
+        if sha != st["accepted"]["sha256"]:
+            raise RuntimeError(f"{path} n'est pas le réseau accepté de cet entraînement (SHA-256 différent)")
+        payload = torch.load(path, map_location="cpu", weights_only=False)
+        self.model.load_state_dict(payload["model"])
+        decay = [p for p in self.model.parameters() if p.ndim >= 2]
+        no_decay = [p for p in self.model.parameters() if p.ndim < 2]
+        self.optimizer = torch.optim.AdamW([{"params": decay, "weight_decay": self.cfg.weight_decay},
+                                            {"params": no_decay, "weight_decay": 0.0}], lr=self.cfg.lr_start)
+        self.scaler = torch.amp.GradScaler("cuda", enabled=self.use_amp)
+        discarded = st["round"]["id"] if st["round"] is not None else None
+        row = {"type": "reset", "round": f"reset{len(st.get('resets', [])) + 1}", "note": note, "time": time.time(),
+               "network": {"generation": gen, "sha256": sha, "file": st["accepted"]["file"]},
+               "global_step": st["global_step"], "discarded_round": discarded,
+               "before": {k: st[k] for k in ("lr_scale", "reuse", "human_sticky_25", "consecutive_rejections",
+                                             "arena_rejections")} | {"trained_shards": len(st["trained_shards"])}}
+        if discarded is not None:
+            st["round_id"] += 1  # le tour abandonné garde son numéro (graines, dossiers d'arène) : on passe au suivant
+        st.update({"round": None, "lr_scale": 1.0, "reuse": self.cfg.reuse, "human_sticky_25": False,
+                   "consecutive_rejections": 0, "arena_rejections": 0, "previous": None, "history": [],
+                   "trained_shards": [], "line_ok_round": None, "warmup_from": st["global_step"]})
+        st.setdefault("resets", []).append(row)
+        self._save_state()  # point de validation, puis line_ok.pt (régénéré de toute façon s'il ne correspond pas)
+        self._save_line_ok()
+        self._append_once(row, ("reset", row["round"]))
+        return row
+
 
 def read_train_state(out_dir: str | Path) -> dict:
     """Lecture de l'état d'entraînement (SOURCE DE VÉRITÉ pour l'orchestrateur, étape 7d : ne pas recopier ces
@@ -894,5 +1055,5 @@ def read_train_state(out_dir: str | Path) -> dict:
         "anchor_history": st["anchor_history"], "commits": len(st["commits"]),
         "round_id": st["round_id"], "global_step": st["global_step"], "lr_scale": st["lr_scale"],
         "reuse": st["reuse"], "human_sticky_25": st["human_sticky_25"], "trained_shards": list(st["trained_shards"]),
-        "init_sha256": st.get("init_sha256"),
+        "init_sha256": st.get("init_sha256"), "resets": list(st.get("resets", [])),
     }

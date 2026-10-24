@@ -10,6 +10,9 @@
   train_selfplay.py --out ... --commit-arena 7 --gate loop/arena/cand_0007_gate/result.json                     [--anchor loop/arena/cand_0007_anchor/result.json]
   train_selfplay.py --out ... --status          # état (source de vérité : train_state.pt)
   train_selfplay.py --out ... --clear-stop "raison"   # reprise après un arrêt, sur décision humaine
+  train_selfplay.py --out ... --init <kaggle_sup> --reset-line "raison"   # ligne remise sur le réseau accepté
+                    (poids, AdamW neuf, compteurs de rejets ; le tampon est gardé) ; dans la boucle :
+                    alphazero_session.py --reset-line "raison" (notebook : RESET_LINE)
 
 Sorties dans --out : train_state.pt (reprise et SOURCE DE VÉRITÉ), line_ok.pt (dernier état qui a passé les
 garde-fous), candidate.pt (candidat en attente de l'arène), generations/gen_XXXX.pt (acceptés en arène),
@@ -49,6 +52,8 @@ def main() -> None:
                     help="budget : arrêt propre après ce temps (reprise au pas près au lancement suivant)")
     ap.add_argument("--batch-size", type=int, default=None)
     ap.add_argument("--value-target", choices=["result", "blend"], default=None)
+    ap.add_argument("--policy-target", choices=["visits", "pruned"], default=None,
+                    help="cible de politique (défaut : [selfplay_train]) ; visits = visites brutes, pruned = débruitées")
     ap.add_argument("--lichess-val", type=int, default=None, help="positions de validation Lichess")
     ap.add_argument("--workers", type=int, default=None, help="processus pour les masques Lichess (0 = aucun)")
     ap.add_argument("--commit-arena", type=int, default=None, metavar="CANDIDAT",
@@ -56,6 +61,8 @@ def main() -> None:
     ap.add_argument("--gate", default=None, help="result.json de l'arène contre le réseau accepté")
     ap.add_argument("--anchor", default=None, help="result.json de l'arène contre l'ancre kaggle_sup")
     ap.add_argument("--clear-stop", default=None, metavar="NOTE", help="reprise après un arrêt (décision humaine)")
+    ap.add_argument("--reset-line", default=None, metavar="NOTE",
+                    help="remet la ligne d'entraînement sur le réseau accepté (décision humaine ; tampon gardé)")
     ap.add_argument("--status", action="store_true", help="affiche l'état et s'arrête")
     ap.add_argument("--export-trained", default=None,
                     help="expériences : écrit le réseau entraîné du tour (format load_for_inference), même s'il est "
@@ -73,6 +80,7 @@ def main() -> None:
     start = time.time()
     cfg = SelfPlayTrainConfig.named(args.config)
     overrides = {k: v for k, v in (("batch_size", args.batch_size), ("value_target", args.value_target),
+                                   ("policy_target", args.policy_target),
                                    ("lichess_val_positions", args.lichess_val), ("num_workers", args.workers))
                  if v is not None}
     cfg = replace(cfg, **overrides)
@@ -81,12 +89,15 @@ def main() -> None:
 
         print(json.dumps(read_train_state(args.out), ensure_ascii=False, indent=1, default=str))
         return
-    if args.commit_arena is not None or args.clear_stop is not None:
+    if args.commit_arena is not None or args.clear_stop is not None or args.reset_line is not None:
         from chesszero.arena import ArenaConfig
 
         trainer = SelfPlayTrainer(args.out, cfg, "cpu", args.init)
         if args.clear_stop is not None:
             print(trainer.clear_stop(args.clear_stop))
+            return
+        if args.reset_line is not None:
+            print(json.dumps(trainer.reset_line(args.reset_line), ensure_ascii=False, indent=1))
             return
         load = lambda p: json.loads(Path(p).read_text(encoding="utf-8"))["summary"] if p else None
         if not args.gate:

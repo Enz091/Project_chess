@@ -1,6 +1,7 @@
 """Étape 7d : orchestrateur de la boucle (phases, reprise après coupure, budget, contrôles, nouvel essai, rapport)."""
 
 import json
+import math
 import shutil
 import subprocess
 import sys
@@ -108,13 +109,17 @@ class FakeExecutor:
             return True
         return False
 
-    def selfplay(self, minutes, checkpoint, generation, session, soft, hard):
+    def selfplay(self, minutes, checkpoint, generation, session, soft, hard, target_positions=None, min_minutes=None):
         self.calls.append(("selfplay", round(minutes, 3), Path(checkpoint).name, generation))
+        self.chunks = getattr(self, "chunks", []) + [(minutes, target_positions, min_minutes)]
         if self._fail("selfplay"):
             return 1
         out = self.work / "selfplay"
         writer = ShardWriter(out, f"{session}_w0", {"generation": generation}, 1000, 1e9)
         target, produced, stats = max(int(self.rate * minutes), 1), 0, None
+        if target_positions is not None:  # tranche sur objectif : le manque, au moins `min_minutes`, au plus `minutes`
+            target = min(target, max(target_positions, int(self.rate * (min_minutes or 0)), 1))
+            minutes = target / self.rate
         rng = np.random.default_rng(self.n)
         self.n += 1
         while produced < target:
@@ -211,18 +216,33 @@ def test_next_phase_follows_durable_state():
     assert np_({**cand, "accepted": {"is_init": True}}, g=WIN) == "verdict"  # génération 1 : pas d'arène ancre
     assert np_({"round_in_progress": {"id": 2}}) == "train"
     assert np_({}, new=LOOP.new_positions_per_generation) == "train"
+    ninety = math.ceil(0.9 * LOOP.new_positions_per_generation)  # un tour dès 90 % de l'objectif
+    assert np_({}, new=ninety) == "train" and np_({}, new=ninety - 1) == "selfplay"
     assert np_({}, new=LOOP.new_positions_per_generation, wait=True) == "selfplay"
     assert np_({}, new=10) == "selfplay"
 
 
-def test_selfplay_chunk_keeps_time_for_the_round_or_plays_to_the_end():
-    cfg = LoopConfig()  # marges 15 / 10 min, tranche minimale 10 min
+def test_selfplay_chunk_stops_on_a_positions_target_or_plays_to_the_end():
+    """Règle des tranches (2026-10-24) : une tranche s'arrête sur l'objectif de positions (le manque), sa durée
+    maximale est le temps qui laisse la place au tour ; sinon self-play jusqu'à la fin de la session."""
+    cfg = LoopConfig()  # marges 15 / 10 min, tranche minimale 25 min
     est = {"positions_per_minute": 1000.0}
-    assert selfplay_chunk(300, 60_000, est, 40, cfg) == (60, False)  # 60 + 40 + 15 <= 290
-    assert selfplay_chunk(300, 1_000, est, 40, cfg) == (10, False)  # tranche minimale
-    minutes, final = selfplay_chunk(100, 60_000, est, 40, cfg)  # pas le temps de tout faire : jusqu'à la fin
-    assert final and minutes == 90
-    assert selfplay_chunk(15, 60_000, est, 40, cfg) == (0.0, True)  # moins que la tranche minimale
+    # 60 min de self-play + 40 de tour + 15 de marge <= 290 : objectif = le manque, durée maximale 290 - 40 - 15
+    assert selfplay_chunk(300, 60_000, est, 40, cfg) == (235, False, 60_000)
+    assert selfplay_chunk(300, 1_000, est, 40, cfg) == (235, False, 1_000)  # la durée minimale est dans selfplay.py
+    assert selfplay_chunk(300, -5, est, 40, cfg)[2] == 0
+    minutes, final, target = selfplay_chunk(100, 60_000, est, 40, cfg)  # pas le temps de tout faire : jusqu'à la fin
+    assert final and minutes == 90 and target is None
+    assert selfplay_chunk(30, 60_000, est, 40, cfg) == (0.0, True, None)  # moins que la tranche minimale
+
+
+def test_selfplay_chunks_of_a_session_use_the_target_and_the_minimum_duration(world, tmp_path):
+    o, ex, work = boot(world, tmp_path, minutes=60)
+    o.run()
+    chunks = [c for c in ex.chunks if c[1] is not None]
+    assert chunks and all(c[2] == CONFIGS["loop"].min_chunk_minutes for c in chunks)
+    events = [e for e in read_loop_state(work / "loop" / "loop_state.json")["events"] if e["phase"] == "selfplay"]
+    assert any(e.get("target_positions") for e in events)
 
 
 def test_expected_session_messages():
@@ -473,8 +493,10 @@ def test_first_loop_session_consumes_the_starting_buffer_as_planned():
     # ensuite tout le tampon est marqué comme utilisé : self-play de 100 000 positions avec le réseau accepté
     assert next_phase(view, None, None, 0, lc, 0.52) == "selfplay"
     est = estimates(new_loop_state(), lc)
-    minutes, final = selfplay_chunk(200, 100_000, est, round_minutes(est, 469, 200, 200), lc)
-    assert not final and 77 < minutes < 78  # 100 000 / 1 290 positions/min
+    after = round_minutes(est, 469, 200, 200)
+    minutes, final, target = selfplay_chunk(200, 100_000, est, after, lc)
+    assert not final and target == 100_000 and 77 < 100_000 / est["positions_per_minute"] < 78  # ~77,5 min attendues
+    assert minutes == pytest.approx(200 - lc.end_margin_minutes - after - lc.start_margin_minutes)  # durée maximale
     # deuxième tour : 90 000 nouvelles positions d'entraînement sur ~424 000 : 4 passages, sans plafond
     assert plan_steps(90_000, 334_393 + 90_000, tc, tc.reuse, tc.human_fraction) == 469
     # premier tour estimé : 5 + 435 x 0,006 min + arène de la génération 1 (200 parties, 17,6 min)
@@ -490,5 +512,35 @@ def test_slow_data_reading_is_flagged_above_30_percent():
                 "session": 1, "timings": [(7, timing_shares(timing))]}
     flagged = lambda t: any("LECTURE DES DONNÉES LENTE (tour 7)" in a for a in actions(ctx(t), LoopConfig()))
     base = {"load": 10, "human_read": 5, "buffer_read": 5, "human_masks": 5, "prepare": 5, "compute": 60, "eval": 10}
-    assert not flagged({**base, "wall": 100})  # lecture 20 %
-    assert flagged({**base, "load": 25, "wall": 115})  # lecture 35/115 = 30,4 %
+    assert not flagged({**base, "wall": 100})  # lecture des lots 10 %
+    assert flagged({**base, "human_read": 20, "buffer_read": 16, "wall": 116})  # 36/116 = 31 %
+    # le chargement initial des données Lichess ne compte plus dans la lecture : alerte à part au-delà de 8 min
+    loaded = lambda t: [a for a in actions(ctx(t), LoopConfig()) if "CHARGEMENT INITIAL" in a]
+    assert not flagged({**base, "load": 260, "wall": 327}) and not loaded({**base, "load": 260, "wall": 327})
+    assert loaded({**base, "load": 8.5 * 60, "wall": 600}) and not flagged({**base, "load": 8.5 * 60, "wall": 600})
+
+
+def test_reset_line_at_the_start_of_a_session(world, tmp_path):
+    """Option 1 (décision du 2026-10-24) : `--reset-line` remet la ligne sur le réseau accepté au début de la session
+    suivante ; le tampon est gardé et redevient « nouveau » : la session commence par un tour."""
+    ex = FakeExecutor(world, tmp_path / "A")
+    ex.gate = LOSE  # deux candidats rejetés, comme la session Kaggle 1
+    o, ex, a = boot(world, tmp_path, minutes=40, name="A", ex=ex)
+    o.run()
+    before = read_train_state(a / "sp_train")
+    assert before["generation"] == 0 and before["arena_rejections"] >= 1 and before["trained_shards"]
+    b = tmp_path / "B"
+    ex.work, ex.calls = b, []
+    lines = Orchestrator(b, "smoke", world["init"], ex, 30, 1, resume_from=a, clock=lambda: ex.clock[0],
+                         log=lambda m: None, configs=CONFIGS, reset_line="politique aplatie").check_inputs()
+    assert any("Remise de la ligne demandée (« politique aplatie »)" in x for x in lines) and not b.exists()
+    o2 = Orchestrator(b, "smoke", world["init"], ex, 30, 1, resume_from=a, clock=lambda: ex.clock[0],
+                      log=lambda m: None, configs=CONFIGS, reset_line="politique aplatie")
+    res = o2.run()
+    after_reset = read_train_state(b / "sp_train")["resets"]
+    assert len(after_reset) == 1 and after_reset[0]["before"]["arena_rejections"] == before["arena_rejections"]
+    assert ex.calls[0] == ("train",)  # tout le tampon est redevenu nouveau pour la ligne remise à zéro
+    assert "Ligne d'entraînement REMISE" in res["text"]
+    loop = read_loop_state(b / "loop" / "loop_state.json")
+    assert loop["sessions"][-1]["reset_line"]["note"] == "politique aplatie"
+    assert read_train_state(a / "sp_train")["resets"] == []  # l'entrée (lecture seule sur Kaggle) n'est pas touchée

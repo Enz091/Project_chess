@@ -223,3 +223,100 @@ def test_round_time_breakdown_is_recorded(world):
     assert 0 <= sh["reading"] <= 1 and sh["other"] >= 0
     assert sum(sh[k] for k in ("load", "human_read", "buffer_read", "human_masks", "prepare", "compute", "eval",
                                "other")) == pytest.approx(1.0, abs=1e-6)
+
+
+def test_pruned_targets_on_old_shards_compute_priors_once(world):
+    """Cibles débruitées sur des shards d'avant le 2026-10-24 (sans prior ni Q) : priors recalculés avec le réseau de
+    départ (génération 0), gardés dans policy_priors/ et réutilisés ; le tour enregistre le résumé du débruitage."""
+    from chesszero.selfplay import load_shard
+
+    old = world["root"] / "old_buffer"
+    old.mkdir()
+    for p in sorted(world["buffer"].glob("*.npz")):
+        d = load_shard(p)
+        assert "policy_prior" in d and "policy_q" in d  # les shards d'aujourd'hui les ont
+        np.savez(old / p.name, **{k: v for k, v in d.items() if k not in ("policy_prior", "policy_q")})
+        (old / p.with_suffix(".json").name).write_text(p.with_suffix(".json").read_text(encoding="utf-8"),
+                                                       encoding="utf-8")
+    cfg = replace(CFG, policy_target="pruned", g1_policy_loss=10, g2_top1_points=100)
+    t = trainer(world, "pruned_old", cfg)
+    res = t.run_round([old], world["human"], world["val"], steps_override=4)
+    assert res["status"] == "candidate"
+    cache = sorted((world["root"] / "pruned_old" / "policy_priors").glob("*.npz"))
+    assert [p.name for p in cache] == sorted(p.name for p in old.glob("*.npz"))
+    row = json.loads((world["root"] / "pruned_old" / "rounds.jsonl").read_text(encoding="utf-8").splitlines()[0])
+    assert row["policy_target"] == "pruned" and row["policy_target_stats"]["exact_q_share"] == 0
+    assert row["timing"]["priors"] > 0
+    # même prior que celui que le réseau de départ donne réellement
+    from chesszero.policy_target import network_priors
+
+    model, _ = load_for_inference(world["init"], "cpu")
+    d = load_shard(sorted(old.glob("*.npz"))[0])
+    with np.load(cache[0]) as z:
+        assert np.allclose(z["prior"].astype(float), network_priors(model, d["boards"], d["policy_offsets"],
+                                                                    d["policy_index"], "cpu").astype(float))
+    mtimes = [p.stat().st_mtime_ns for p in cache]
+    t.commit_arena(0, {"games": 2, "score": 0.0, "points": 0.0, "elo": -100.0, "elo_low": -200.0, "elo_high": 0.0,
+                       "los": 0.0, "elo_se": 50.0}, None, __import__("chesszero.arena", fromlist=["ArenaConfig"]).ArenaConfig())
+    t2 = trainer(world, "pruned_old", cfg)
+    t2.run_round([old], world["human"], world["val"], steps_override=2)
+    assert [p.stat().st_mtime_ns for p in cache] == mtimes and t2.prior_seconds == 0  # cache réutilisé
+
+
+def test_pruned_targets_refuse_another_start_network(world, tmp_path):
+    from chesszero.selfplay import load_shard
+
+    old = tmp_path / "old"
+    old.mkdir()
+    p = sorted(world["buffer"].glob("*.npz"))[0]
+    np.savez(old / p.name, **{k: v for k, v in load_shard(p).items() if k not in ("policy_prior", "policy_q")})
+    (old / p.with_suffix(".json").name).write_text(p.with_suffix(".json").read_text(encoding="utf-8"), encoding="utf-8")
+    t = trainer(world, "pruned_other", replace(CFG, policy_target="pruned"))
+    torch.manual_seed(1)
+    other = tmp_path / "other.pt"
+    model_cfg = ModelConfig.named("tiny")
+    torch.save({"step": 0, "model": build_model(model_cfg).state_dict(), "config": {"model": asdict(model_cfg)}}, other)
+    t.init_checkpoint = other
+    with pytest.raises(RuntimeError, match="SHA-256"):
+        t.run_round([old], world["human"], world["val"], steps_override=2)
+
+
+def test_reset_line_returns_to_accepted_network_and_keeps_buffer(world):
+    """Remise de la ligne (décision humaine, 2026-10-24) : poids du réseau accepté (ici le réseau de départ), AdamW
+    neuf et nouvelle montée du taux, compteurs à zéro, tampon entièrement « nouveau » ; refusée si un candidat attend."""
+    from chesszero.arena import ArenaConfig
+    from chesszero.selfplay_train import lr_at, read_train_state
+
+    cfg = replace(CFG, g1_policy_loss=10, g2_top1_points=100)
+    t = trainer(world, "reset", cfg)
+    t.run_round([world["buffer"]], world["human"], world["val"], steps_override=12)
+    with pytest.raises(ValueError, match="candidat 0"):
+        t.reset_line("trop tôt")
+    lost = {"games": 2, "score": 0.0, "points": 0.0, "elo": -100.0, "elo_low": -200.0, "elo_high": 0.0, "los": 0.0,
+            "elo_se": 50.0}
+    t.commit_arena(0, lost, None, ArenaConfig())
+    t.state["lr_scale"], t.state["consecutive_rejections"] = 0.5, 2
+    t._save_state()
+    assert read_train_state(world["root"] / "reset")["trained_shards"]
+    row = t.reset_line("politique aplatie")
+    assert row["before"]["arena_rejections"] == 1 and row["before"]["lr_scale"] == 0.5
+    t2 = trainer(world, "reset", cfg)  # relu depuis train_state.pt
+    init = torch.load(world["init"], weights_only=False)["model"]
+    assert all(torch.equal(t2.model.state_dict()[k], init[k]) for k in init)
+    st = t2.state
+    assert (st["arena_rejections"], st["consecutive_rejections"], st["lr_scale"], st["trained_shards"]) == (0, 0, 1.0, [])
+    assert st["generation"] == 0 and st["global_step"] == 12 and st["warmup_from"] == 12
+    assert not t2.optimizer.state  # AdamW neuf
+    line_ok = torch.load(world["root"] / "reset" / "line_ok.pt", weights_only=False)
+    assert line_ok["round"] is None and all(torch.equal(line_ok["model"][k], init[k]) for k in init)
+    view = read_train_state(world["root"] / "reset")
+    assert len(view["resets"]) == 1 and view["resets"][0]["note"] == "politique aplatie"
+    rows = [json.loads(l) for l in (world["root"] / "reset" / "rounds.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert rows[-1]["type"] == "reset"
+    # le tour suivant : nouvelle montée du taux, tout le tampon compte comme nouveau
+    t2.run_round([world["buffer"]], world["human"], world["val"], steps_override=3)
+    log = [json.loads(l) for l in (world["root"] / "reset" / "train_log.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert log[-1]["lr"] == pytest.approx(lr_at(2, cfg, 1.0))
+    last = [json.loads(l) for l in (world["root"] / "reset" / "rounds.jsonl").read_text(encoding="utf-8").splitlines()][-1]
+    first = [json.loads(l) for l in (world["root"] / "reset" / "rounds.jsonl").read_text(encoding="utf-8").splitlines()][0]
+    assert last["new_positions"] == first["new_positions"] > 0

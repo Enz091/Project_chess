@@ -5,6 +5,7 @@ Voir chesszero/loop.py.
   alphazero_session.py --work /kaggle/working --resume-from /kaggle/input/<sortie> --expect-session 0 \\
       --minutes 220 --init <kaggle_sup best.pt> --human /kaggle/input/lichess-24m --syzygy /tmp/syzygy
   # sessions suivantes : --resume-from <sortie de la session k> --expect-session k
+  #   [--reset-line "raison"] : ligne d'entraînement remise sur le réseau accepté au début de la session
   # essai complet local (réseau tiny, CPU, tout réduit)
   alphazero_session.py --smoke --work data/loop_smoke/s1 --resume-from data/loop_smoke/s0 --expect-session 0 \\
       --minutes 8
@@ -49,6 +50,9 @@ def main() -> None:
     ap.add_argument("--check-inputs", action="store_true",
                     help="vérifie l'entrée (type de sortie, session attendue, tampon, ancre, Lichess, tables) puis "
                          "s'arrête SANS RIEN ÉCRIRE ; code 0 = la session démarrerait, 4 = refus")
+    ap.add_argument("--reset-line", default=None, metavar="NOTE",
+                    help="décision humaine : remet la ligne d'entraînement sur le réseau accepté au début de la session "
+                         "(poids, AdamW neuf, compteurs de rejets ; tampon gardé) ; notebook : RESET_LINE")
     ap.add_argument("--crash-at", default=None, help=argparse.SUPPRESS)  # tests : coupure simulée
     args = ap.parse_args()
 
@@ -75,7 +79,7 @@ def main() -> None:
     executor = SubprocessExecutor(Path(args.work), args.config, args.init, args.human, args.workers, args.threads,
                                   args.device, args.syzygy or None, args.book, args.games_per_worker)
     orch = Orchestrator(args.work, args.config, args.init, executor, args.minutes, args.expect_session,
-                        resume_from=args.resume_from, crash_at=args.crash_at)
+                        resume_from=args.resume_from, crash_at=args.crash_at, reset_line=args.reset_line)
     if args.check_inputs:
         try:
             lines = orch.check_inputs(args.human, args.syzygy if args.syzygy is not None else None)

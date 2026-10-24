@@ -23,7 +23,9 @@ partent au réseau dans un même appel (`search_batched`).
 Fichiers (« shards »), un par lot de parties et par processus, écrits de façon atomique :
   `<session>_w<k>_<n°>.npz` + `.json` (version du réseau, réglages, horodatage, nombre de positions).
   Positions : boards (N, 67) uint8 ; policy_offsets (N+1,) int32 ; policy_index (M,) int16 et policy_visits (M,)
-  uint16 = coups légaux de la racine et leurs visites (positions i : [offsets[i], offsets[i+1])) ; played (N,)
+  uint16 = coups légaux de la racine et leurs visites (positions i : [offsets[i], offsets[i+1])) ; policy_prior (M,)
+  float16 = prior du réseau SANS bruit et policy_q (M,) float16 = Q de chaque coup (W/N, camp au trait ; NaN si non
+  visité), pour débruiter la cible (chesszero/policy_target.py ; absents des shards d'avant 2026-10-24) ; played (N,)
   int16 = indice du coup joué ; result (N,) int8 ; root_q (N,) float16 (camp au trait) ; ply (N,) int16 ;
   game (N,) int32 = numéro de la partie dans le shard.
   Parties : game_uid, game_moves (coups UCI depuis la position initiale, ouverture du livre comprise),
@@ -133,7 +135,8 @@ class Game:
         self.start_index = start_index
         self.start_plies = len(mcts.board.move_stack)
         self.control = control
-        # positions enregistrées : (position compacte, indices légaux, visites, coup joué, Q racine, demi-coup)
+        # positions enregistrées : (position compacte, indices légaux, visites, coup joué, Q racine, demi-coup,
+        # prior sans bruit, Q de chaque coup)
         self.records: list[tuple] = []
         self.low_streak = {chess.WHITE: 0, chess.BLACK: 0}
         self.would_resign = {chess.WHITE: -1, chess.BLACK: -1}
@@ -178,8 +181,9 @@ class Game:
             a = best
         q_root = root.q()
         q_best = float(root.W[best] / root.N[best])
+        q_moves = np.where(visits > 0, root.W / np.maximum(visits, 1), np.nan)
         self.records.append((pack_board(board), root.idx.astype(np.int16), visits.astype(np.uint16),
-                             int(root.idx[a]), q_root, ply))
+                             int(root.idx[a]), q_root, ply, root.P_raw.astype(np.float16), q_moves.astype(np.float16)))
 
         if q_root < cfg.resign_threshold and q_best < cfg.resign_threshold:
             self.low_streak[side] += 1
@@ -202,6 +206,7 @@ class Game:
         return {
             "boards": np.stack([r[0] for r in self.records]) if n else np.zeros((0, 67), np.uint8),
             "index": [r[1] for r in self.records], "visits": [r[2] for r in self.records],
+            "prior": [r[6] for r in self.records], "q": [r[7] for r in self.records],
             "played": np.array([r[3] for r in self.records], dtype=np.int16),
             "result": (sign * self.result_white).astype(np.int8),
             "root_q": np.array([r[4] for r in self.records], dtype=np.float16),
@@ -247,6 +252,10 @@ class ShardWriter:
             "policy_index": np.concatenate(index).astype(np.int16) if index else np.zeros(0, np.int16),
             "policy_visits": (np.concatenate([v for p in parts for v in p["visits"]]).astype(np.uint16)
                               if index else np.zeros(0, np.uint16)),
+            "policy_prior": (np.concatenate([v for p in parts for v in p["prior"]]).astype(np.float16)
+                             if index else np.zeros(0, np.float16)),
+            "policy_q": (np.concatenate([v for p in parts for v in p["q"]]).astype(np.float16)
+                         if index else np.zeros(0, np.float16)),
             "played": np.concatenate([p["played"] for p in parts]),
             "result": np.concatenate([p["result"] for p in parts]),
             "root_q": np.concatenate([p["root_q"] for p in parts]),
@@ -351,11 +360,15 @@ def sync_buffer(sources, dest: str | Path, max_positions: int) -> dict:
 
 def run_selfplay(evaluator, cfg: SelfPlayConfig, mcts_cfg: MCTSConfig, writer: ShardWriter, rng: np.random.Generator,
                  uid_prefix: str, book=None, tablebase=None, max_games: int | None = None,
-                 soft_deadline: float | None = None, hard_deadline: float | None = None, log=None) -> dict:
+                 soft_deadline: float | None = None, hard_deadline: float | None = None, log=None,
+                 target_positions: int | None = None, min_seconds: float = 0.0) -> dict:
     """Joue des parties jusqu'à `max_games` parties commencées ou jusqu'aux échéances (temps `time.time()`) :
-    après `soft_deadline`, plus de nouvelles parties ; à `hard_deadline`, arrêt (parties inachevées perdues)."""
+    après `soft_deadline`, plus de nouvelles parties ; à `hard_deadline`, arrêt (parties inachevées perdues).
+    `target_positions` (tranche de la boucle) : plus de nouvelles parties dès que les positions des parties finies +
+    celles attendues des parties en cours (au moins la longueur moyenne des parties finies) couvrent l'objectif ET que
+    `min_seconds` se sont écoulées ; les parties en cours se terminent."""
     stats = {"games": 0, "positions": 0, "simulations": 0, "unfinished_dropped": 0,
-             "terminations": [0] * len(TERMINATIONS), "seconds": 0.0}
+             "terminations": [0] * len(TERMINATIONS), "seconds": 0.0, "target_reached_after": None}
     started = 0
     start_time = time.time()
 
@@ -371,8 +384,18 @@ def run_selfplay(evaluator, cfg: SelfPlayConfig, mcts_cfg: MCTSConfig, writer: S
         started += 1
         return game
 
+    def target_covered() -> bool:
+        if target_positions is None or time.time() - start_time < min_seconds:
+            return False
+        mean = stats["positions"] / stats["games"] if stats["games"] else 0.0
+        expected = stats["positions"] + sum(max(len(g.records), mean) for g in games if not g.done)
+        if expected >= target_positions and stats["target_reached_after"] is None:
+            stats["target_reached_after"] = time.time() - start_time
+        return expected >= target_positions
+
     def may_start() -> bool:
-        return (max_games is None or started < max_games) and (soft_deadline is None or time.time() < soft_deadline)
+        return ((max_games is None or started < max_games) and (soft_deadline is None or time.time() < soft_deadline)
+                and not target_covered())
 
     games: list[Game] = []
     while True:
@@ -509,6 +532,13 @@ def verify_shard(data: dict, cfg: SelfPlayConfig, tablebase=None) -> list[str]:
                     err(f"demi-coup {p} : coup forcé enregistré")
                 if int(v.sum()) < cfg.simulations:
                     err(f"demi-coup {p} : {int(v.sum())} visites < {cfg.simulations} simulations")
+                if "policy_prior" in data:  # shards depuis le 2026-10-24 : prior sans bruit et Q par coup
+                    pr = data["policy_prior"][off[r]:off[r + 1]].astype(np.float64)
+                    qm = data["policy_q"][off[r]:off[r + 1]].astype(np.float64)
+                    if abs(pr.sum() - 1) > 0.02 or (pr < 0).any():
+                        err(f"demi-coup {p} : priors de somme {pr.sum():.3f}")
+                    if not np.array_equal(np.isnan(qm), v == 0) or (np.abs(qm[v > 0]) > 1.001).any():
+                        err(f"demi-coup {p} : Q des coups incohérents avec les visites")
                 played = int(data["played"][r])
                 where = np.nonzero(legal == played)[0]
                 if len(where) != 1 or v[where[0]] == 0:
