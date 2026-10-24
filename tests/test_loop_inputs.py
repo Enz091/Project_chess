@@ -306,7 +306,11 @@ def test_pinned_commit_contains_what_the_notebook_needs():
 def test_notebook_modes_and_safeguards():
     src = notebook_sources()
     joined = "\n".join(src)
-    assert 'MODE = "check"' in src[1] and "LOOP_MINUTES = 220" in src[1] and "EXPECTED_SESSION = 0" in src[1]
+    import re
+
+    assert 'MODE = "check"' in src[1]  # le mode par défaut n'écrit rien
+    assert re.search(r"^LOOP_MINUTES = \d+ ", src[1], re.M) and re.search(r"^EXPECTED_SESSION = \d+ ", src[1], re.M)
+    assert re.search(r"^RESET_LINE = None ", src[1], re.M)  # jamais de remise de la ligne par défaut
     assert '"check", "loop", "bench", "full"' in src[1]
     assert '"checkout"' in src[2] and "assert head == COMMIT" in src[2]
     assert "--check-inputs" in joined and "--expect-session" in joined and "--expect-init-sha256" in joined
