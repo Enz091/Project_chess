@@ -992,7 +992,9 @@ class SelfPlayTrainer:
         réutilisation et part humaine remis à leurs valeurs de départ, historique des garde-fous vidé. Le tampon est
         gardé et TOUTES ses positions redeviennent nouvelles pour la ligne (elle ne les a pas encore vues) ;
         génération, réseau accepté et mesures contre l'ancre ne changent pas. Un tour en cours (de l'ancienne ligne)
-        est abandonné ; refusé si un candidat attend le verdict de l'arène."""
+        est abandonné ; refusé si un candidat attend le verdict de l'arène. Un arrêt dû à un compteur remis à zéro
+        (G4 : rejets par les garde-fous ; stagnation : rejets en arène) est levé ; l'arrêt « ancre », qui dépend de
+        l'historique contre l'ancre (inchangé), reste posé (`--clear-stop`)."""
         st = self.state
         if st["candidate"] is not None:
             raise ValueError(f"candidat {st['candidate']['id']} en attente du verdict de l'arène : le laisser décider "
@@ -1017,6 +1019,11 @@ class SelfPlayTrainer:
                "global_step": st["global_step"], "discarded_round": discarded,
                "before": {k: st[k] for k in ("lr_scale", "reuse", "human_sticky_25", "consecutive_rejections",
                                              "arena_rejections")} | {"trained_shards": len(st["trained_shards"])}}
+        reason = (st.get("stop_reason") or "G4") if st["status"] == "stop" else None
+        row["cleared_stop"] = reason if reason in ("G4", "stagnation") else None
+        row["kept_stop"] = reason if reason not in (None, "G4", "stagnation") else None
+        if row["cleared_stop"]:
+            st["status"], st["stop_reason"] = "ok", None
         if discarded is not None:
             st["round_id"] += 1  # le tour abandonné garde son numéro (graines, dossiers d'arène) : on passe au suivant
         st.update({"round": None, "lr_scale": 1.0, "reuse": self.cfg.reuse, "human_sticky_25": False,

@@ -504,9 +504,12 @@ class Orchestrator:
         if view["candidate"] is not None:
             raise LoopStop(f"Remise de la ligne demandée, mais le candidat {view['candidate']['id']} attend le verdict "
                            "de l'arène : lancer d'abord une session sans RESET_LINE")
+        stop = (f" ; arrêt en cours « {view['stop_reason'] or 'G4'} » "
+                + ("levé par la remise" if (view['stop_reason'] or 'G4') in ("G4", "stagnation") else
+                   "MAINTENU (train_selfplay.py --clear-stop)")) if view["status"] == "stop" else ""
         return (f"Remise de la ligne demandée (« {self.reset_line} ») : poids du réseau accepté (génération "
                 f"{view['generation']}), AdamW neuf, compteurs de rejets à 0 ; tampon gardé "
-                f"({view['arena_rejections']} rejet(s) en arène d'affilée avant la remise)")
+                f"({view['arena_rejections']} rejet(s) en arène d'affilée avant la remise){stop}")
 
     def prepare(self) -> None:
         """Entrée, vérification de la session attendue, démarrage éventuel, enregistrement de la session."""
@@ -546,7 +549,10 @@ class Orchestrator:
                        f"SHA-256 {row['network']['sha256'][:12]}…) : « {self.reset_line} » ; AdamW neuf, compteurs de "
                        f"rejets à 0 (avant : {row['before']['arena_rejections']} en arène), les "
                        f"{row['before']['trained_shards']} shards déjà vus redeviennent nouveaux"
-                       + (f", tour {row['discarded_round']} abandonné" if row["discarded_round"] is not None else ""))
+                       + (f", tour {row['discarded_round']} abandonné" if row["discarded_round"] is not None else "")
+                       + (f" ; arrêt {row['cleared_stop']} levé" if row["cleared_stop"] else "")
+                       + (f" ; ARRÊT « {row['kept_stop']} » MAINTENU (train_selfplay.py --clear-stop)"
+                          if row["kept_stop"] else ""))
                 self.state["sessions"][-1]["reset_line"] = {"note": self.reset_line, "row": row["round"]}
             self.log(msg)
             self.notes.append(msg)

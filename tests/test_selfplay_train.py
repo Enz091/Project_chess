@@ -320,3 +320,13 @@ def test_reset_line_returns_to_accepted_network_and_keeps_buffer(world):
     last = [json.loads(l) for l in (world["root"] / "reset" / "rounds.jsonl").read_text(encoding="utf-8").splitlines()][-1]
     first = [json.loads(l) for l in (world["root"] / "reset" / "rounds.jsonl").read_text(encoding="utf-8").splitlines()][0]
     assert last["new_positions"] == first["new_positions"] > 0
+
+
+def test_reset_line_lifts_a_stop_due_to_reset_counters_only(world):
+    cfg = replace(CFG, g1_policy_loss=10, g2_top1_points=100)
+    t = trainer(world, "reset_stop", cfg)
+    for reason, lifted in (("G4", True), ("stagnation", True), ("ancre", False)):
+        t.state["status"], t.state["stop_reason"] = "stop", reason
+        row = t.reset_line(f"arrêt {reason}")
+        assert (row["cleared_stop"] == reason) is lifted and (row["kept_stop"] == reason) is not lifted
+        assert (t.state["status"] == "ok") is lifted

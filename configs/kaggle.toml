@@ -75,7 +75,7 @@ anchor_veto_se = 2.0           # veto : Elo contre l'ancre < celui de l'accepté
 # Entraînement sur le self-play (étape 6d), choix validés le 2026-10-22 (voir CLAUDE.md et docs/journal.md).
 [selfplay_train]
 batch_size = 1024
-lr = 5e-5                      # constant après la montée (2e-4 jusqu'au 2026-10-24 : politique aplatie, journal)...
+lr = 2e-4                      # constant après la montée (5e-5 essayé le 2026-10-24 : ralentit la valeur, journal)...
 lr_start = 2e-5                # ... depuis 2e-5 (fin du pré-entraînement) sur 300 pas ; AdamW neuf
 warmup_steps = 300
 lr_min = 2.5e-5                # plancher après des divisions par 2 (G1)

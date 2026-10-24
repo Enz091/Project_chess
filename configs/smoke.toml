@@ -49,6 +49,8 @@ save_every = 10
 log_every = 10
 amp = "off"
 policy_target = "pruned"   # comme la boucle sur Kaggle
+g1_policy_loss = 0.5       # essai de mécanique : le réseau tiny à 1e-3 dépasse G1 / G2 (sur Kaggle : 0,05 / 3 points)
+g2_top1_points = 10.0
 
 [loop]
 new_positions_per_generation = 1500

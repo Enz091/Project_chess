@@ -1,0 +1,78 @@
+{
+ "buffer": "data/kaggle_out/loop_session1/selfplay",
+ "heldout_positions": 50000,
+ "lichess_positions": 50000,
+ "networks": {
+  "checkpoints/kaggle_sup/best.pt": {
+   "step": 92000,
+   "entropy": 1.4227795336070561,
+   "preferred_prob": 0.5294937379306722,
+   "tail_mass": 0.05164969607789261,
+   "agreement_with_most_visited": 0.59442,
+   "same_preferred_as_reference": 1.0,
+   "lichess_same_preferred_as_reference": 1.0,
+   "lichess": {
+    "policy_loss": 1.4049192626953124,
+    "top1": 0.53696,
+    "value_loss": 0.726738459970473
+   }
+  },
+  "data/ab_value/result_trained.pt": {
+   "step": 435,
+   "entropy": 1.5895497056305006,
+   "preferred_prob": 0.48604111431947405,
+   "tail_mass": 0.0812653172392048,
+   "agreement_with_most_visited": 0.5954,
+   "same_preferred_as_reference": 0.90764,
+   "lichess_same_preferred_as_reference": 0.91844,
+   "lichess": {
+    "policy_loss": 1.4238526196289063,
+    "top1": 0.53264,
+    "value_loss": 0.7355307828170636
+   }
+  },
+  "data/valid_pruned/visits_5e5.pt": {
+   "step": 435,
+   "entropy": 1.578840367792364,
+   "preferred_prob": 0.4869704057431058,
+   "tail_mass": 0.07831994726957811,
+   "agreement_with_most_visited": 0.59264,
+   "same_preferred_as_reference": 0.91708,
+   "lichess_same_preferred_as_reference": 0.92548,
+   "lichess": {
+    "policy_loss": 1.4214052856445312,
+    "top1": 0.53346,
+    "value_loss": 0.7304676227292678
+   }
+  },
+  "data/valid_pruned/pruned_5e5.pt": {
+   "step": 435,
+   "entropy": 1.3969088457359617,
+   "preferred_prob": 0.5344747548658523,
+   "tail_mass": 0.04897666299725085,
+   "agreement_with_most_visited": 0.59384,
+   "same_preferred_as_reference": 0.92384,
+   "lichess_same_preferred_as_reference": 0.9337,
+   "lichess": {
+    "policy_loss": 1.4170433154296875,
+    "top1": 0.53322,
+    "value_loss": 0.7304838213475338
+   }
+  },
+  "data/valid_pruned/pruned_2e4.pt": {
+   "step": 435,
+   "entropy": 1.382584232332434,
+   "preferred_prob": 0.5369558588207335,
+   "tail_mass": 0.04669041541763672,
+   "agreement_with_most_visited": 0.59572,
+   "same_preferred_as_reference": 0.91576,
+   "lichess_same_preferred_as_reference": 0.92676,
+   "lichess": {
+    "policy_loss": 1.4189026440429688,
+    "top1": 0.53382,
+    "value_loss": 0.734025180802341
+   }
+  }
+ },
+ "reference": "checkpoints/kaggle_sup/best.pt"
+}

@@ -54,6 +54,7 @@ def main() -> None:
     ap.add_argument("--value-target", choices=["result", "blend"], default=None)
     ap.add_argument("--policy-target", choices=["visits", "pruned"], default=None,
                     help="cible de politique (défaut : [selfplay_train]) ; visits = visites brutes, pruned = débruitées")
+    ap.add_argument("--lr", type=float, default=None, help="essai : taux constant après la montée (défaut : [selfplay_train])")
     ap.add_argument("--lichess-val", type=int, default=None, help="positions de validation Lichess")
     ap.add_argument("--workers", type=int, default=None, help="processus pour les masques Lichess (0 = aucun)")
     ap.add_argument("--commit-arena", type=int, default=None, metavar="CANDIDAT",
@@ -80,7 +81,7 @@ def main() -> None:
     start = time.time()
     cfg = SelfPlayTrainConfig.named(args.config)
     overrides = {k: v for k, v in (("batch_size", args.batch_size), ("value_target", args.value_target),
-                                   ("policy_target", args.policy_target),
+                                   ("policy_target", args.policy_target), ("lr", args.lr),
                                    ("lichess_val_positions", args.lichess_val), ("num_workers", args.workers))
                  if v is not None}
     cfg = replace(cfg, **overrides)
