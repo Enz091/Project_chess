@@ -7,7 +7,7 @@ import pytest
 import torch
 
 import chesszero.selfplay_train as spt
-from chesszero.arena import ArenaConfig, read_jsonl, summarize
+from chesszero.arena import ArenaConfig, gate_decision, read_jsonl, summarize
 from chesszero.checkpoint import load_for_inference
 from chesszero.selfplay_train import SelfPlayTrainer, read_train_state
 
@@ -218,6 +218,38 @@ def test_anchor_stop_counts_only_generations_from_3(world, scripted):
     assert t.state["stop_reason"] == "ancre" and "3 à 4" in c["alerts"][0]
     t.clear_stop("vu")
     assert t.state["anchor_stop_ack"] == 4  # il faudra deux nouvelles générations sous l'ancre
+
+
+def test_gate_rule_los_keeps_the_anchor_safety_net(world, scripted):
+    """Règle « los » (P(meilleur) >= 10 %) : un candidat un peu sous l'accepté passe l'arène A ; dès la génération 2,
+    l'arène ancre est obligatoire, le veto (2 erreurs types) joue, et l'arrêt « ancre » tombe quand l'accepté reste
+    sous kaggle_sup (borne haute < 0) sur 2 générations consécutives >= 3."""
+    los = ArenaConfig(gate_rule="los")
+    soft = summ([1] * 16 + [0.5, 1.5, 0.5, 0.5])  # 47,5 % : refusé à 52 %, P(meilleur) 16 %
+    a2, a3, a4 = summ([1] * 14 + [0.5] * 6), summ([1] * 12 + [0.5] * 8), summ([1] * 10 + [0.5] * 10)
+    assert soft["score"] < 0.52 and soft["los"] >= 0.10 and not gate_decision(soft, ACFG)["accept"]
+    assert all(a["elo_high"] < 0 for a in (a2, a3, a4)) and BELOW["elo"] < a2["elo"] - 60
+    scripted(*[True] * 6)
+    t = make(world, "c10")
+    run(t, world)
+    c = t.commit_arena(0, soft, None, los)  # génération 1 : l'arène A est la mesure contre l'ancre
+    assert c["accepted"] and t.state["generation"] == 1 and t.state["accepted"]["anchor"]["elo"] == soft["elo"]
+    run(t, world)
+    with pytest.raises(ValueError, match="arène ancre manquante"):
+        t.commit_arena(1, soft, None, los)
+    assert t.commit_arena(1, soft, a2, los)["accepted"]  # génération 2, sous l'ancre (ne compte pas encore)
+    run(t, world)
+    c = t.commit_arena(2, soft, BELOW, los)  # chute de ~190 Elo contre l'ancre : veto
+    assert not c["accepted"] and c["reasons"][0].startswith("veto de l'ancre") and t.state["generation"] == 2
+    run(t, world)
+    c = t.commit_arena(3, soft, a3, los)  # génération 3 sous l'ancre
+    assert c["accepted"] and c["loop_status"] == "ok"
+    run(t, world)
+    c = t.commit_arena(4, soft, a4, los)  # génération 4 sous l'ancre : arrêt
+    assert c["accepted"] and c["loop_status"] == "stop" and t.state["stop_reason"] == "ancre"
+    assert "3 à 4" in c["alerts"][0]
+    with pytest.raises(RuntimeError, match="ancre"):
+        run(t, world)
 
 
 def test_isolated_generation_below_the_anchor_does_not_stop(world, scripted):

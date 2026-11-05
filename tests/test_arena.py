@@ -10,7 +10,7 @@ import chess
 import numpy as np
 import pytest
 
-from chesszero.arena import (ArenaConfig, Player, anchor_openings, append_history, describe, gate_decision,
+from chesszero.arena import (ArenaConfig, Player, anchor_openings, append_history, describe, gate_decision, gate_passes,
                              gate_openings, play_games, read_jsonl, run_arena, schedule, summarize)
 from chesszero.book import (OpeningBook, arena_reserve_path, exclude_arena_reserve, is_arena_reserved)
 from chesszero.mcts import MCTSConfig
@@ -210,6 +210,34 @@ def test_gate_accepts_from_104_points_out_of_200():
     assert gate_decision(gate(104), ArenaConfig())["accept"]
     d = gate_decision(gate(103), ArenaConfig())
     assert not d["accept"] and "51.5%" in d["reasons"][0]
+
+
+def test_gate_rule_los_accepts_on_probability_of_being_better():
+    cfg = ArenaConfig(gate_rule="los")
+    assert cfg.accept_los == 0.10 and ArenaConfig().gate_rule == "score"  # « score » reste le défaut
+    gate = lambda los, score=0.47: {"score": score, "points": score * 200, "games": 200, "los": los}
+    assert gate_decision(gate(0.15), cfg)["accept"]  # candidat 2 de la session 2 : 47,2 %, P 15 %
+    assert gate_decision(gate(0.10), cfg)["accept"]  # seuil inclus
+    d = gate_decision(gate(0.07, 0.46), cfg)
+    assert not d["accept"] and d["reasons"][0].startswith("P(meilleur) 7.0% < 10%")
+    assert not gate_decision(gate(0.15), ArenaConfig())["accept"]  # règle « score » : 47 % < 52 %
+    assert gate_decision(gate(0.15), ArenaConfig(gate_rule="los", accept_los=0.20))["accept"] is False
+    assert gate_passes(gate(0.5, 0.5), cfg) and not gate_passes(gate(0.5, 0.5), ArenaConfig())
+    with pytest.raises(ValueError, match="P\\(meilleur\\)|probabilité"):
+        gate_decision({"score": 0.6, "points": 120, "games": 200}, cfg)  # résumé sans « los »
+    with pytest.raises(ValueError, match="gate_rule"):
+        ArenaConfig(gate_rule="elo")
+    with pytest.raises(ValueError, match="accept_los"):
+        ArenaConfig(gate_rule="los", accept_los=0.0)
+
+
+def test_gate_rule_los_keeps_the_anchor_veto():
+    cfg, accepted = ArenaConfig(gate_rule="los"), {"elo": -20.0, "elo_se": 20.0}
+    gate = {"score": 0.48, "points": 96, "games": 200, "los": 0.25}
+    se = math.hypot(20, 20)
+    assert gate_decision(gate, cfg, {"elo": -20 - 2 * se + 1, "elo_se": 20.0}, accepted)["accept"]
+    d = gate_decision(gate, cfg, {"elo": -20 - 2 * se - 1, "elo_se": 20.0}, accepted)
+    assert not d["accept"] and d["reasons"][0].startswith("veto de l'ancre")
 
 
 def test_anchor_veto_at_two_standard_errors():

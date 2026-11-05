@@ -1,0 +1,53 @@
+{
+ "arena": "data/kaggle_out/loop_session2/loop/arena/cand_0006_gate",
+ "positions": 250,
+ "min_mover_cp": 300,
+ "A": "data/kaggle_out/loop_session2/sp_train/candidate.pt",
+ "B": "checkpoints/kaggle_sup/best.pt",
+ "combos": {
+  "PA+VA": {
+   "acpl": 71.208,
+   "blunders_200": 28,
+   "mistakes_100": 47,
+   "diff_vs_PB+VB": 15.064,
+   "diff_ci95": [
+    2.9991000000000003,
+    30.413999999999987
+   ],
+   "same_move_as_PB+VB": 0.84
+  },
+  "PB+VB": {
+   "acpl": 56.144,
+   "blunders_200": 20,
+   "mistakes_100": 37,
+   "diff_vs_PB+VB": 0.0,
+   "diff_ci95": [
+    0.0,
+    0.0
+   ],
+   "same_move_as_PB+VB": 1.0
+  },
+  "PA+VB": {
+   "acpl": 66.832,
+   "blunders_200": 26,
+   "mistakes_100": 44,
+   "diff_vs_PB+VB": 10.688,
+   "diff_ci95": [
+    1.5996000000000001,
+    24.574199999999987
+   ],
+   "same_move_as_PB+VB": 0.916
+  },
+  "PB+VA": {
+   "acpl": 62.14,
+   "blunders_200": 26,
+   "mistakes_100": 43,
+   "diff_vs_PB+VB": 5.996,
+   "diff_ci95": [
+    -2.7063,
+    15.224799999999997
+   ],
+   "same_move_as_PB+VB": 0.88
+  }
+ }
+}

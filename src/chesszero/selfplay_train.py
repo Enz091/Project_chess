@@ -338,6 +338,43 @@ def eval_selfplay(model, data: SelfPlayData, rows: np.ndarray, device, value_tar
     return {"policy_loss": pol / len(rows), "value_mse": se / len(rows), "positions": int(len(rows))}
 
 
+@torch.no_grad()
+def eval_sharpness(model, ref_model, data: SelfPlayData, rows: np.ndarray, device, tail: float = 0.02,
+                   batch_size: int = 1024, max_rows: int = 20_000) -> dict:
+    """Netteté de la politique sur les parties MISES DE CÔTÉ (coups légaux enregistrés, même échantillon fixe pour
+    les deux réseaux) : entropie moyenne (nats), probabilité du coup préféré, masse sur la « queue » (coups de prior
+    < `tail` pour le réseau de référence `ref_model`, kaggle_sup), part des coups préférés identiques à la référence ;
+    et les mêmes mesures pour la référence (`ref_*`). Comme `analyse_generation.py policy` (journal, 2026-10-24)."""
+    if len(rows) == 0:
+        return {"positions": 0}
+    if len(rows) > max_rows:
+        rows = np.sort(np.random.default_rng(0).choice(rows, max_rows, replace=False))
+    acc = {k: 0.0 for k in ("entropy", "preferred_prob", "tail_mass", "same_preferred", "ref_entropy",
+                            "ref_preferred_prob", "ref_tail_mass")}
+    was = model.training, ref_model.training
+    model.eval()
+    ref_model.eval()
+    for i in range(0, len(rows), batch_size):
+        r = rows[i:i + batch_size]
+        legal, _, _ = data.targets(r, "result")
+        x = torch.from_numpy(unpack_batch(data.boards[r])).to(device)
+        lm = torch.from_numpy(legal).to(device)
+        p = torch.exp(masked_log_softmax(model(x)[0].float(), lm))
+        q = torch.exp(masked_log_softmax(ref_model(x)[0].float(), lm))
+        ent = lambda d: -(torch.where(d > 0, d * torch.log(d.clamp_min(1e-30)), torch.zeros_like(d))).sum(1)
+        small = (q < tail) & lm
+        acc["entropy"] += float(ent(p).sum())
+        acc["ref_entropy"] += float(ent(q).sum())
+        acc["preferred_prob"] += float(p.max(1).values.sum())
+        acc["ref_preferred_prob"] += float(q.max(1).values.sum())
+        acc["tail_mass"] += float((p * small).sum())
+        acc["ref_tail_mass"] += float((q * small).sum())
+        acc["same_preferred"] += float((p.argmax(1) == q.argmax(1)).sum())
+    model.train(was[0])
+    ref_model.train(was[1])
+    return {"positions": int(len(rows)), "tail_threshold": tail, **{k: v / len(rows) for k, v in acc.items()}}
+
+
 # --------------------------------------------------------------------------- garde-fous
 
 
@@ -817,6 +854,16 @@ class SelfPlayTrainer:
         self._t_launch = t_launch
         return self._finish_round(data, human_val)
 
+    def _reference_model(self):
+        """Réseau de départ (kaggle_sup), chargé une fois : référence de la netteté de la politique. None s'il n'est pas
+        connu (`init_checkpoint` absent)."""
+        if (getattr(self, "_ref_model", None) is None and self.init_checkpoint is not None
+                and Path(self.init_checkpoint).is_file()):
+            from chesszero.checkpoint import load_for_inference
+
+            self._ref_model, _ = load_for_inference(self.init_checkpoint, self.device)
+        return getattr(self, "_ref_model", None)
+
     def _finish_round(self, data: SelfPlayData, human_val: dict) -> dict:
         """Garde-fous. Passés : le tour devient le CANDIDAT en attente de l'arène (candidate.pt), ses shards sont
         marqués comme utilisés et il devient le point de retour (line_ok.pt) : la ligne d'entraînement continue
@@ -831,6 +878,9 @@ class SelfPlayTrainer:
             "train": {"sp_value": last[0]["sp_value"] if last else None,
                       "sp_policy": last[0]["sp_policy"] if last else None},
         }
+        ref = self._reference_model()
+        if ref is not None:  # netteté de la politique contre kaggle_sup (rapport, « Actions pour toi »)
+            metrics["policy"] = eval_sharpness(self.model, ref, data, data.heldout_rows, self.device)
         if self.export_trained is not None:  # expériences (A/B de la cible de valeur) : gardé même si rejeté
             _atomic_torch_save(self._model_payload(metrics, round=rnd["id"], value_target=rnd["value_target"]),
                                self.export_trained)

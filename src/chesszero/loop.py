@@ -70,6 +70,7 @@ class LoopConfig:
     v2_anchor_gain: float = 50.0  # « Actions » : mesure v2 si l'Elo contre l'ancre (lissé) a gagné plus que ça...
     v2_max_generations: int = 10  # ... ou au plus tard toutes les 10 générations acceptées
     false_resign_alert: float = 0.05
+    policy_entropy_alert: float = 0.05  # « Actions » : entropie de la politique d'un candidat > kaggle_sup + 0,05
     early_repetition_alert: float = 0.05  # part des parties finies par répétition avant le demi-coup 60
     repetition_material_reference: float = 0.145  # parties finies par répétition avec >= 20 points de matériel
     repetition_material_alert_points: float = 5.0  # alerte au-delà de la référence + 5 points
@@ -194,17 +195,20 @@ def arena_result(path: str | Path) -> dict | None:
     return json.loads(p.read_text(encoding="utf-8"))["summary"] if p.exists() else None
 
 
-def next_phase(view: dict, gate: dict | None, anchor: dict | None, new: int, cfg: LoopConfig, accept_score: float,
+def next_phase(view: dict, gate: dict | None, anchor: dict | None, new: int, cfg: LoopConfig, arena_cfg,
                train_waiting: bool = False) -> str:
     """Phase suivante, déduite de l'état durable : "stop", "arena_gate", "arena_anchor", "verdict", "train",
-    "selfplay". `gate` / `anchor` : résumés des arènes TERMINÉES du candidat en attente (None sinon)."""
+    "selfplay". `gate` / `anchor` : résumés des arènes TERMINÉES du candidat en attente (None sinon). `arena_cfg` :
+    `ArenaConfig` (règle d'acceptation : l'arène ancre n'est jouée que si le candidat passe l'arène A)."""
+    from chesszero.arena import gate_passes
+
     if view["status"] == "stop":
         return "stop"
     if view["candidate"] is not None:
         if gate is None:
             return "arena_gate"
         first = view["accepted"]["is_init"]  # génération 1 : l'arène contre l'accepté EST la mesure contre l'ancre
-        if gate["score"] >= accept_score - 1e-9 and not first and anchor is None:
+        if gate_passes(gate, arena_cfg) and not first and anchor is None:
             return "arena_anchor"
         return "verdict"
     if view["round_in_progress"] is not None:
@@ -363,7 +367,7 @@ class Orchestrator:
     def __init__(self, work: str | Path, config: str, init: str, executor, minutes: float,
                  expect_session: int | None, resume_from: str | Path | None = None, crash_at: str | None = None,
                  clock=time.time, log=print, root: Path = ROOT, configs: dict | None = None, memwatch=None,
-                 reset_line: str | None = None):
+                 reset_line: str | None = None, clear_stop: str | None = None):
         from chesszero.arena import ArenaConfig
         from chesszero.selfplay import SelfPlayConfig
         from chesszero.selfplay_train import SelfPlayTrainConfig
@@ -377,6 +381,7 @@ class Orchestrator:
         self.executor, self.minutes, self.expect, self.resume_from = executor, minutes, expect_session, resume_from
         self.crash_at, self.clock, self.log, self.root = crash_at, clock, log, root
         self.reset_line = reset_line  # décision humaine : ligne d'entraînement remise sur le réseau accepté (note)
+        self.clear_stop = clear_stop  # décision humaine : arrêt levable (stagnation, G4) levé, ligne inchangée (note)
         self.start = clock()
         self.deadline = self.start + 60 * minutes
         self.state_path = self.work / "loop" / "loop_state.json"
@@ -477,7 +482,7 @@ class Orchestrator:
         lines.append(f"Réseau de départ : {init} (SHA-256 {sha256_file(init)[:12]}…, pas {meta.get('step')})")
         lines.append(f"Réglages : budget {self.minutes:g} min, {self.loop_cfg.new_positions_per_generation:,} positions "
                      f"par génération, arène {2 * self.arena_cfg.pairs} parties à {self.arena_cfg.simulations} "
-                     "simulations")
+                     f"simulations, acceptation : {self.arena_cfg.rule_text()} (règle « {self.arena_cfg.gate_rule} »)")
         if human:
             if not Path(human).is_dir() or not any(Path(human).glob("train_*.npz")):
                 raise LoopStop(f"Données Lichess introuvables dans {human}")
@@ -489,6 +494,8 @@ class Orchestrator:
                          "Tables Syzygy : pas encore téléchargées (la cellule suivante le fait)")
         if self.reset_line is not None:
             lines.append(self._reset_line_check(src, info))
+        if self.clear_stop is not None:
+            lines.append(self._clear_stop_check(src, info))
         mem = read_memory_gb()
         if mem:
             lines.append(f"RAM : {mem[0]:.1f} Go disponibles sur {mem[1]:.1f} Go")
@@ -511,6 +518,34 @@ class Orchestrator:
                 f"{view['generation']}), AdamW neuf, compteurs de rejets à 0 ; tampon gardé "
                 f"({view['arena_rejections']} rejet(s) en arène d'affilée avant la remise){stop}")
 
+    CLEARABLE_STOPS = ("stagnation", "G4")  # arrêts dus à un compteur ; l'arrêt « ancre » (filet de sécurité) non
+
+    def _clear_stop_check(self, src: Path, info: dict) -> str:
+        """Levée d'un arrêt demandée (CLEAR_STOP) : seulement un arrêt « stagnation » (rejets en arène d'affilée) ou
+        « G4 » (rejets par les garde-fous) en cours, sans RESET_LINE (qui les lève déjà). Refus sinon (LoopStop)."""
+        from chesszero.selfplay_train import read_train_state
+
+        if self.reset_line is not None:
+            raise LoopStop("CLEAR_STOP et RESET_LINE ensemble : la remise de la ligne lève déjà un arrêt « stagnation » "
+                           "ou « G4 » ; n'en garder qu'un")
+        if info["kind"] == "selfplay_only":
+            raise LoopStop("CLEAR_STOP : l'entrée est une sortie de self-play seul, il n'y a aucun arrêt à lever ; "
+                           "remettre CLEAR_STOP = None")
+        view = read_train_state(src / "sp_train")
+        if view["status"] != "stop":
+            raise LoopStop("CLEAR_STOP : aucun arrêt en cours dans l'entrée ; remettre CLEAR_STOP = None")
+        reason = view["stop_reason"] or "G4"
+        if reason not in self.CLEARABLE_STOPS:
+            raise LoopStop(f"CLEAR_STOP : l'arrêt en cours (« {reason} ») n'est pas levable par le notebook (seulement "
+                           f"{', '.join(self.CLEARABLE_STOPS)}) : l'arrêt « ancre » est le filet de sécurité contre "
+                           "kaggle_sup, à analyser avant de continuer")
+        if view["candidate"] is not None:
+            raise LoopStop(f"CLEAR_STOP : le candidat {view['candidate']['id']} attend le verdict de l'arène")
+        counter = (f"{view['arena_rejections']} rejet(s) en arène d'affilée" if reason == "stagnation"
+                   else f"{view['consecutive_rejections']} rejet(s) par les garde-fous d'affilée")
+        return (f"Levée de l'arrêt « {reason} » demandée (« {self.clear_stop} ») : compteur remis à 0 ({counter}) ; "
+                f"ligne d'entraînement, tampon, réseau accepté et historique contre l'ancre inchangés")
+
     def prepare(self) -> None:
         """Entrée, vérification de la session attendue, démarrage éventuel, enregistrement de la session."""
         from chesszero.arena import git_info
@@ -518,6 +553,7 @@ class Orchestrator:
         from chesszero.selfplay_train import SelfPlayTrainer
 
         src, info, loop_state = self.validate_input()
+        clear_msg = self._clear_stop_check(src, info) if self.clear_stop is not None else None  # refus avant copie
         if src != self.work:  # Kaggle : l'entrée (lecture seule) est recopiée dans le dossier de travail
             sync_buffer([src / "selfplay"], self.work / "selfplay", self.sp_cfg.buffer_positions)
             if info["kind"] == "loop":
@@ -554,6 +590,14 @@ class Orchestrator:
                        + (f" ; ARRÊT « {row['kept_stop']} » MAINTENU (train_selfplay.py --clear-stop)"
                           if row["kept_stop"] else ""))
                 self.state["sessions"][-1]["reset_line"] = {"note": self.reset_line, "row": row["round"]}
+            self.log(msg)
+            self.notes.append(msg)
+        if clear_msg is not None:
+            row = SelfPlayTrainer(self.work / "sp_train", self.train_cfg, "cpu", self.init,
+                                  log=self.log).clear_stop(self.clear_stop)
+            msg = clear_msg.replace("Levée de l'arrêt", "Arrêt").replace(" demandée (", " LEVÉ (", 1)
+            self.state["sessions"][-1]["clear_stop"] = {"note": self.clear_stop, "reason": row["reason"],
+                                                        "row": row["round"]}
             self.log(msg)
             self.notes.append(msg)
         self.save()
@@ -663,7 +707,7 @@ class Orchestrator:
             gate = arena_result(self.arena_dir(cand["id"], "gate"))
             anchor = arena_result(self.arena_dir(cand["id"], "anchor"))
         new = new_positions(self.work / "selfplay", view["trained_shards"])
-        phase = next_phase(view, gate, anchor, new, cfg, acfg.accept_score, self.train_waiting)
+        phase = next_phase(view, gate, anchor, new, cfg, acfg, self.train_waiting)
         self.state["phase"] = phase
         est = estimates(self.state, cfg, self.arena_cfg.simulations)
         first = view["accepted"]["is_init"]
@@ -947,7 +991,8 @@ def actions(ctx: dict, cfg: LoopConfig) -> list[str]:
         what = {"G4": "3 rejets d'affilée par les garde-fous : regarder les métriques Lichess des derniers tours "
                       "(taux, part humaine), puis `train_selfplay.py --clear-stop`",
                 "stagnation": "5 rejets en arène d'affilée : l'entraînement ne progresse plus ; décider (taille des "
-                              "générations, taux, cible de valeur), puis `--clear-stop`",
+                              "générations, taux, cible de valeur, règle de l'arène), puis CLEAR_STOP (notebook, "
+                              "ligne gardée) ou RESET_LINE (ligne remise sur le réseau accepté)",
                 "ancre": "le réseau accepté est sous kaggle_sup sur 2 générations : régression ; lancer la mesure v2 "
                          "et décider avant de continuer, puis `--clear-stop`"}.get(view.get("stop_reason"), "")
         out.append(f"ARRÊT ({view.get('stop_reason')}) : {what}")
@@ -1006,6 +1051,12 @@ def actions(ctx: dict, cfg: LoopConfig) -> list[str]:
                    f"pendant la phase « {ram['min_phase']} » ({ram['alert_samples']} relevé(s) sous le seuil) : risque "
                    "d'arrêt par manque de mémoire ; regarder les minimums par phase dans le rapport (chargement "
                    "complet des données Lichess en RAM : sous-ensemble ou projection en mémoire)")
+    for rid, ps in ctx.get("sharpness", []):
+        if ps.get("positions") and ps["entropy"] > ps["ref_entropy"] + cfg.policy_entropy_alert:
+            out.append(f"POLITIQUE APLATIE (candidat {rid}) : entropie {ps['entropy']:.3f} sur les parties mises de "
+                       f"côté contre {ps['ref_entropy']:.3f} pour kaggle_sup (+{ps['entropy'] - ps['ref_entropy']:.3f} > "
+                       f"+{cfg.policy_entropy_alert:g}) ; queue {ps['tail_mass']:.1%} (kaggle_sup "
+                       f"{ps['ref_tail_mass']:.1%}) : regarder les cibles de politique (débruitage, part de Q exact)")
     for a in ctx["alerts"]:
         out.append(f"ALERTE (tour {a[0]}) : {a[1]}")
     if ctx["gen2_bias"]:
@@ -1032,6 +1083,8 @@ def write_report(work: Path, state: dict, session: int, notes: list[str], cfg: L
     sp_train = work / "sp_train"
     view = read_train_state(sp_train)
     sess = next(s for s in state["sessions"] if s["n"] == session)
+    arena_rule = (f"{arena_cfg.rule_text()} (« {arena_cfg.gate_rule} »)" if hasattr(arena_cfg, "rule_text")
+                  else "score >= 52 %")
     t0 = sess["started"]
     rows = read_jsonl(sp_train / "rounds.jsonl") if (sp_train / "rounds.jsonl").exists() else []
     rounds = [r for r in rows if r.get("type", "round") == "round" and (r.get("time") or 0) >= t0]
@@ -1048,7 +1101,9 @@ def write_report(work: Path, state: dict, session: int, notes: list[str], cfg: L
     v2 = measured_v2_generations(root)
     ctx = {"view": view, "end_reason": sess["end_reason"], "notes": notes, "v2": v2, "selfplay": selfplay,
            "alerts": alerts, "gen2_bias": gen2_bias, "prev_sps": prev_sps, "sps": sps, "session": session,
-           "timings": timings, "ram": sess.get("ram")}
+           "timings": timings, "ram": sess.get("ram"),
+           "sharpness": [(r["round"], r["metrics"]["policy"]) for r in rounds
+                         if (r.get("metrics") or {}).get("policy", {}).get("positions")]}
     acts = actions(ctx, cfg)
 
     hist = history_rows(sp_train) if view.get("exists") else []
@@ -1093,6 +1148,17 @@ def write_report(work: Path, state: dict, session: int, notes: list[str], cfg: L
                      f"{sh['other']:.0%}")
             L.append(f"  - chargement initial des données Lichess : {sh['load_minutes']:.1f} min ({sh['load']:.0%} du "
                      f"tour ; alerte au-delà de {cfg.load_alert_minutes:g} min)")
+    if ctx["sharpness"]:
+        sh0 = ctx["sharpness"][0][1]
+        L += ["", f"Netteté de la politique (parties mises de côté, {sh0['positions']:,} positions par tour ; queue = "
+                  f"coups de prior < {sh0['tail_threshold']:.0%} pour kaggle_sup ; alerte si l'entropie dépasse celle "
+                  f"de kaggle_sup de plus de {cfg.policy_entropy_alert:g}) :", "",
+              "| tour | entropie (kaggle_sup) | p(coup préféré) (kaggle_sup) | queue (kaggle_sup) | même coup préféré "
+              "que kaggle_sup |", "|---|---|---|---|---|"]
+        for rid, ps in ctx["sharpness"]:
+            L.append(f"| {rid} | {ps['entropy']:.3f} ({ps['ref_entropy']:.3f}) | {ps['preferred_prob']:.3f} "
+                     f"({ps['ref_preferred_prob']:.3f}) | {ps['tail_mass']:.1%} ({ps['ref_tail_mass']:.1%}) | "
+                     f"{ps['same_preferred']:.1%} |")
     pruned = [(r["round"], r["policy_target_stats"]) for r in rounds if r.get("policy_target_stats")]
     if pruned:
         L += ["", "Cibles de politique débruitées (bruit de Dirichlet retiré, chesszero/policy_target.py) :", ""]
@@ -1105,6 +1171,7 @@ def write_report(work: Path, state: dict, session: int, notes: list[str], cfg: L
     L += ["", "## État en fin de session", "",
           f"- génération acceptée : {view.get('generation')} ({acc.get('path') or 'réseau de départ'}) ; "
           f"mesure contre l'ancre : {acc.get('anchor_source')}",
+          f"- règle de l'arène contre l'accepté : {arena_rule}",
           f"- candidat en attente : {(view.get('candidate') or {}).get('id', 'aucun')} ; tour en cours : "
           f"{view.get('round_in_progress') or 'aucun'}",
           f"- rejets en arène d'affilée : {view.get('arena_rejections')} ; rejets par les garde-fous d'affilée : "

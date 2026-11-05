@@ -1,0 +1,35 @@
+{
+ "buffer": "data\\kaggle_out\\loop_session2\\selfplay",
+ "prefix": "L0002",
+ "shards": 96,
+ "positions": 410115,
+ "visited_moves": 5474872,
+ "c_puct": 1.5,
+ "positions_with_suppressed_discovery": 0.2927983614352072,
+ "positions_with_overkept_move": 0.9194664911061532,
+ "suppressed_moves_per_position": 0.5834753666654475,
+ "suppressed_share_of_raw_visits_mean": 0.025199606526882776,
+ "suppressed_target_mass_mean_all": 0.02576053467918867,
+ "suppressed_target_mass_mean_affected": 0.08798046052210975,
+ "suppressed_target_mass_quantiles_affected": [
+  0.06184629592356233,
+  0.20538154934382405,
+  0.3728491014533807
+ ],
+ "suppressed_q_gap_quantiles": [
+  0.0068359375,
+  0.0302734375,
+  0.087890625
+ ],
+ "tv_exact_vs_approx": 0.05593481872523746,
+ "tv_raw_vs_exact": 0.08648084299526566,
+ "tv_raw_vs_approx": 0.0780746847438322,
+ "removed_visits_exact": 0.09764239732889686,
+ "removed_visits_approx": 0.08343766231371884,
+ "best_share_exact": 0.6891858821791771,
+ "best_share_approx": 0.6814164759157302,
+ "most_visited_changed": 0.0,
+ "second_move_changed": 0.13225314850712605,
+ "moves_q_above_best_per_position": 0.7507601526401131,
+ "moves_q_above_best_suppressed_share": 0.7771794555339755
+}

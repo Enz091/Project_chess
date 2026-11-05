@@ -24,9 +24,13 @@ des scores moyens des paires / racine du nombre de paires quand elles sont compl
 Elo = −400 log10(1/score − 1), intervalle à 95 % = image de score ± 1,96 erreur type ; probabilité que A soit
 meilleur = Φ((score − 0,5) / erreur type). Toujours des nombres finis (cas limites : voir `summarize`).
 
-Décision (`gate_decision`) : acceptation si score ≥ `accept_score` (52 % = 104 points sur 200) ; veto de l'ancre
-si l'Elo du candidat contre l'ancre est inférieur à celui du réseau accepté de plus de `anchor_veto_se` erreurs
-types de l'écart.
+Décision (`gate_decision`) : règle `gate_rule` de l'arène contre l'accepté (`gate_passes`) : "score" (défaut) =
+acceptation si score ≥ `accept_score` (52 % = 104 points sur 200) ; "los" = acceptation si la probabilité que le
+candidat soit meilleur (`los`, ci-dessus) ≥ `accept_los` (0,10 par défaut : on refuse seulement un candidat
+nettement moins bon ; pensé pour traverser un creux au passage du supervisé au self-play, quand le seuil de 52 %
+fige le générateur). Dans les deux cas, veto de l'ancre si l'Elo du candidat contre l'ancre est inférieur à celui
+du réseau accepté de plus de `anchor_veto_se` erreurs types de l'écart (arène ancre jouée dès que l'accepté n'est
+plus le réseau de départ), et arrêt de l'entraînement si l'accepté passe sous l'ancre (selfplay_train.commit_arena).
 
 Fichiers d'une arène (dossier `out`) et ordre d'écriture :
   arena.json   description (joueurs avec SHA-256 de leur checkpoint, ouvertures, réglages, code git), écrite de
@@ -67,6 +71,9 @@ from chesszero.selfplay import T_MAX_PLIES, T_REPETITION, T_RESIGN, TERMINATIONS
 ROOT = Path(__file__).resolve().parents[2]
 
 
+GATE_RULES = ("score", "los")
+
+
 @dataclass(frozen=True)
 class ArenaConfig:
     """Section [arena] de configs/<nom>.toml."""
@@ -81,8 +88,20 @@ class ArenaConfig:
     resign_min_ply: int = 20
     max_plies: int = 400
     tablebase_pieces: int = 5
-    accept_score: float = 0.52  # acceptation : score >= 52 % contre le réseau accepté
+    gate_rule: str = "score"  # "score" : score >= accept_score ; "los" : P(candidat meilleur) >= accept_los
+    accept_score: float = 0.52  # règle "score" : score >= 52 % contre le réseau accepté
+    accept_los: float = 0.10  # règle "los" : probabilité que le candidat soit meilleur >= 10 %
     anchor_veto_se: float = 2.0  # veto : Elo contre l'ancre < celui de l'accepté - 2 erreurs types de l'écart
+
+    def __post_init__(self):
+        if self.gate_rule not in GATE_RULES:
+            raise ValueError(f"[arena] gate_rule = {self.gate_rule!r} : valeurs possibles {GATE_RULES}")
+        if not 0.0 < self.accept_los < 1.0:
+            raise ValueError(f"[arena] accept_los = {self.accept_los} : doit être dans ]0, 1[")
+
+    def rule_text(self) -> str:
+        return (f"score >= {self.accept_score:.0%}" if self.gate_rule == "score"
+                else f"P(meilleur) >= {self.accept_los:.0%}")
 
     @classmethod
     def from_toml(cls, path: str | Path) -> ArenaConfig:
@@ -420,6 +439,15 @@ def describe(summary: dict, a: str = "A", b: str = "B") -> str:
             f"parties ({s['complete_pairs']} paires complètes) ; score {s['score']:.1%} ({s['points']:g} points) ; {ci}")
 
 
+def gate_passes(gate: dict, cfg: ArenaConfig) -> bool:
+    """Le candidat passe-t-il l'arène contre l'accepté (avant le veto de l'ancre) ? Règle `cfg.gate_rule`."""
+    if cfg.gate_rule == "score":
+        return gate["score"] >= cfg.accept_score - 1e-9
+    if gate.get("los") is None:
+        raise ValueError("règle « los » : probabilité que le candidat soit meilleur absente du résumé")
+    return gate["los"] >= cfg.accept_los - 1e-12
+
+
 def gate_decision(gate: dict, cfg: ArenaConfig, anchor: dict | None = None,
                   accepted_anchor: dict | None = None) -> dict:
     """Décision sur un candidat. `gate` : résumé contre l'accepté ; `anchor` / `accepted_anchor` : résumés du
@@ -432,11 +460,15 @@ def gate_decision(gate: dict, cfg: ArenaConfig, anchor: dict | None = None,
                                                               or summ["games"] != 2 * summ["pairs"]):
             raise ValueError(f"{name} incomplète ({summ['games']} parties, {summ['complete_pairs']} paires "
                              f"complètes sur {summ['pairs']}) : pas de décision")
-    out = {"accept": True, "reasons": [], "anchor_diff": None, "anchor_diff_se": None}
-    if gate["score"] < cfg.accept_score - 1e-9:
+    out = {"accept": True, "reasons": [], "anchor_diff": None, "anchor_diff_se": None, "rule": cfg.rule_text()}
+    if not gate_passes(gate, cfg):
         out["accept"] = False
-        out["reasons"].append(f"score {gate['score']:.1%} ({gate['points']:g} points sur {gate['games']}) "
-                              f"< {cfg.accept_score:.0%}")
+        if cfg.gate_rule == "score":
+            out["reasons"].append(f"score {gate['score']:.1%} ({gate['points']:g} points sur {gate['games']}) "
+                                  f"< {cfg.accept_score:.0%}")
+        else:
+            out["reasons"].append(f"P(meilleur) {gate['los']:.1%} < {cfg.accept_los:.0%} (score {gate['score']:.1%}, "
+                                  f"{gate['points']:g} points sur {gate['games']})")
     if anchor is not None and accepted_anchor is not None:
         diff = anchor["elo"] - accepted_anchor["elo"]
         if anchor.get("elo_se") is None or accepted_anchor.get("elo_se") is None:

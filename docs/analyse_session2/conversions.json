@@ -1,0 +1,42 @@
+{
+ "A": {
+  "reached_300": 611,
+  "not_won": 205,
+  "not_won_share": 0.3355155482815057,
+  "lost": 56,
+  "terminations": {
+   "mat": 16,
+   "triple répétition": 96,
+   "tables": 70,
+   "abandon": 21,
+   "pat": 1,
+   "50 coups": 1
+  },
+  "own_blunder_200_after": 201,
+  "phase_of_first_300": {
+   "milieu": 163,
+   "ouverture": 26,
+   "finale": 16
+  },
+  "final_cp_median": 0.0
+ },
+ "B": {
+  "reached_300": 638,
+  "not_won": 147,
+  "not_won_share": 0.2304075235109718,
+  "lost": 24,
+  "terminations": {
+   "triple répétition": 68,
+   "tables": 64,
+   "abandon": 12,
+   "mat": 3
+  },
+  "own_blunder_200_after": 134,
+  "phase_of_first_300": {
+   "milieu": 105,
+   "ouverture": 22,
+   "finale": 20
+  },
+  "final_cp_median": 0.0
+ }
+}

@@ -206,7 +206,7 @@ VIEW = {"status": "ok", "candidate": None, "round_in_progress": None, "accepted"
 
 
 def test_next_phase_follows_durable_state():
-    np_ = lambda v, g=None, a=None, new=0, wait=False: next_phase({**VIEW, **v}, g, a, new, LOOP, 0.52, wait)
+    np_ = lambda v, g=None, a=None, new=0, wait=False: next_phase({**VIEW, **v}, g, a, new, LOOP, ArenaConfig(), wait)
     cand = {"candidate": {"id": 3}}
     assert np_({"status": "stop"}) == "stop"
     assert np_(cand) == "arena_gate"
@@ -220,6 +220,20 @@ def test_next_phase_follows_durable_state():
     assert np_({}, new=ninety) == "train" and np_({}, new=ninety - 1) == "selfplay"
     assert np_({}, new=LOOP.new_positions_per_generation, wait=True) == "selfplay"
     assert np_({}, new=10) == "selfplay"
+
+
+def test_next_phase_gate_rule_los_plays_the_anchor_arena():
+    """Règle « los » : un candidat à 47,5 % (P(meilleur) 16 %) passe l'arène A, donc l'arène ancre est jouée dès que
+    l'accepté n'est plus le réseau de départ ; avec la règle « score », il va directement au verdict (rejet)."""
+    soft = summ([1] * 16 + [0.5, 1.5, 0.5, 0.5])
+    assert soft["score"] < 0.52 and soft["los"] >= 0.10
+    cand = {"candidate": {"id": 3}}
+    los, score = ArenaConfig(gate_rule="los"), ArenaConfig()
+    assert next_phase({**VIEW, **cand}, soft, None, 0, LOOP, los) == "arena_anchor"
+    assert next_phase({**VIEW, **cand}, soft, NEUTRAL, 0, LOOP, los) == "verdict"
+    assert next_phase({**VIEW, **cand}, soft, None, 0, LOOP, score) == "verdict"
+    assert next_phase({**VIEW, **cand, "accepted": {"is_init": True}}, soft, None, 0, LOOP, los) == "verdict"
+    assert next_phase({**VIEW, **cand}, LOSE, None, 0, LOOP, los) == "verdict"  # 25 % : P(meilleur) ~ 0
 
 
 def test_selfplay_chunk_stops_on_a_positions_target_or_plays_to_the_end():
@@ -487,11 +501,11 @@ def test_first_loop_session_consumes_the_starting_buffer_as_planned():
 
     lc, tc = LoopConfig.named("kaggle"), SelfPlayTrainConfig.named("kaggle")
     view = {**VIEW, "accepted": {"is_init": True}}
-    assert next_phase(view, None, None, 370_840, lc, 0.52) == "train"  # entraînement tout de suite, pas de self-play
+    assert next_phase(view, None, None, 370_840, lc, ArenaConfig()) == "train"  # entraînement tout de suite, pas de self-play
     # premier tour plafonné à un passage moyen par position du tampon : 435 pas (et non 4 x 334 393 / 768 = 1 742)
     assert plan_steps(334_393, 334_393, tc, tc.reuse, tc.human_fraction) == 435
     # ensuite tout le tampon est marqué comme utilisé : self-play de 100 000 positions avec le réseau accepté
-    assert next_phase(view, None, None, 0, lc, 0.52) == "selfplay"
+    assert next_phase(view, None, None, 0, lc, ArenaConfig()) == "selfplay"
     est = estimates(new_loop_state(), lc)
     after = round_minutes(est, 469, 200, 200)
     minutes, final, target = selfplay_chunk(200, 100_000, est, after, lc)
@@ -544,3 +558,72 @@ def test_reset_line_at_the_start_of_a_session(world, tmp_path):
     loop = read_loop_state(b / "loop" / "loop_state.json")
     assert loop["sessions"][-1]["reset_line"]["note"] == "politique aplatie"
     assert read_train_state(a / "sp_train")["resets"] == []  # l'entrée (lecture seule sur Kaggle) n'est pas touchée
+
+
+def test_clear_stop_lifts_a_stagnation_stop_without_touching_the_line(world, tmp_path, monkeypatch):
+    """CLEAR_STOP (notebook) / `--clear-stop` : lève au début de la session un arrêt « stagnation » (ou « G4 »), compteur
+    remis à 0, ligne d'entraînement inchangée ; refus s'il n'y a pas d'arrêt levable (aucun arrêt, self-play seul,
+    arrêt « ancre », avec RESET_LINE)."""
+    ex = FakeExecutor(world, tmp_path / "A")
+    ex.gate = LOSE
+    o, ex, a = boot(world, tmp_path, minutes=400, name="A", ex=ex)
+    o.run()
+    before = read_train_state(a / "sp_train")
+    assert before["status"] == "stop" and before["stop_reason"] == "stagnation" and before["arena_rejections"] == 5
+    b = tmp_path / "B"
+    ex.work, ex.calls = b, []
+    mk = lambda work=b, src=a, expect=1, **kw: Orchestrator(work, "smoke", world["init"], ex, 30, expect, resume_from=src,
+                                                            clock=lambda: ex.clock[0], log=lambda m: None,
+                                                            configs=CONFIGS, **kw)
+    lines = mk(clear_stop="générations plus longues").check_inputs()
+    assert any("Levée de l'arrêt « stagnation » demandée (« générations plus longues »)" in x and "5 rejet(s)" in x
+               for x in lines) and not b.exists()
+    with pytest.raises(LoopStop, match="RESET_LINE"):
+        mk(clear_stop="x", reset_line="y").check_inputs()
+    with pytest.raises(LoopStop, match="self-play seul"):
+        mk(src=world["s0"], expect=0, clear_stop="x").check_inputs()
+    ex.gate = WIN
+    res = mk(clear_stop="générations plus longues").run()
+    after = read_train_state(b / "sp_train")
+    assert after["resets"] == [] and "Arrêt « stagnation » LEVÉ" in res["text"]
+    assert after["generation"] >= 1  # la session a repris (candidats, arènes) au lieu de s'arrêter tout de suite
+    loop = read_loop_state(b / "loop" / "loop_state.json")
+    assert loop["sessions"][-1]["clear_stop"]["reason"] == "stagnation"
+    assert read_train_state(a / "sp_train")["status"] == "stop"  # l'entrée n'est pas touchée
+    rows = read_jsonl(b / "sp_train" / "rounds.jsonl")
+    assert [r for r in rows if r.get("type") == "clear_stop"][0]["note"] == "générations plus longues"
+    # entrée sans arrêt en cours : refus
+    c = tmp_path / "C"
+    with pytest.raises(LoopStop, match="aucun arrêt en cours"):
+        mk(work=c, src=b, expect=2, clear_stop="x").check_inputs()
+    # arrêt « ancre » : filet de sécurité, pas levable par le notebook
+    import chesszero.selfplay_train as spt_mod
+    real = spt_mod.read_train_state
+    monkeypatch.setattr(spt_mod, "read_train_state", lambda d: {**real(d), "status": "stop", "stop_reason": "ancre"})
+    with pytest.raises(LoopStop, match="pas levable"):
+        mk(work=c, src=b, expect=2, clear_stop="x").check_inputs()
+
+
+def test_flat_policy_is_flagged_when_entropy_exceeds_kaggle_sup_by_005():
+    def ctx(entropy):
+        ps = {"positions": 1000, "tail_threshold": 0.02, "entropy": entropy, "ref_entropy": 1.423,
+              "preferred_prob": 0.5, "ref_preferred_prob": 0.53, "tail_mass": 0.07, "ref_tail_mass": 0.052,
+              "same_preferred": 0.91}
+        return {"view": {"status": "ok", "generation": 0, "anchor_history": []}, "end_reason": "budget", "notes": [],
+                "v2": [], "selfplay": [], "alerts": [], "gen2_bias": False, "prev_sps": None, "sps": None,
+                "session": 1, "timings": [], "sharpness": [(4, ps)]}
+    flat = lambda e: [a for a in actions(ctx(e), LoopConfig()) if a.startswith("POLITIQUE APLATIE (candidat 4)")]
+    assert flat(1.58) and "+0.157" in flat(1.58)[0]  # visites brutes (session 1)
+    assert not flat(1.47) and not flat(1.383)  # débruitées
+
+
+def test_rounds_report_policy_sharpness_against_kaggle_sup(world, tmp_path):
+    """Chaque tour mesure la netteté de sa politique sur les parties mises de côté, contre le réseau de départ ;
+    le rapport de session en fait un tableau par candidat."""
+    o, ex, work = boot(world, tmp_path, minutes=25, name="S")
+    res = o.run()
+    rows = [r for r in read_jsonl(work / "sp_train" / "rounds.jsonl") if r.get("type", "round") == "round"]
+    ps = rows[0]["metrics"]["policy"]
+    assert ps["positions"] > 0 and 0 < ps["entropy"] and 0 < ps["preferred_prob"] <= 1
+    assert 0 <= ps["tail_mass"] <= 1 and 0 <= ps["same_preferred"] <= 1 and ps["ref_entropy"] > 0
+    assert "Netteté de la politique" in res["text"] and "règle de l'arène contre l'accepté : score >= 52%" in res["text"]

@@ -1,0 +1,4262 @@
+{
+ "depth_cache": "data/diag_s2/sf_d14.json",
+ "arenas": {
+  "cand_0000": {
+   "score": 0.475,
+   "elo": -17.386277512436106,
+   "games": 200,
+   "moves": {
+    "A:ouverture": {
+     "moves": 1551,
+     "acpl": 22.482914248871694,
+     "blunders_200": 21,
+     "blunder_rate": 0.013539651837524178,
+     "mistakes_100": 80
+    },
+    "A:milieu": {
+     "moves": 5900,
+     "acpl": 39.65474576271186,
+     "blunders_200": 280,
+     "blunder_rate": 0.04745762711864407,
+     "mistakes_100": 661
+    },
+    "A:finale": {
+     "moves": 1967,
+     "acpl": 23.637010676156585,
+     "blunders_200": 55,
+     "blunder_rate": 0.027961362480935434,
+     "mistakes_100": 123
+    },
+    "A:tout": {
+     "moves": 9418,
+     "acpl": 33.48141856020386,
+     "blunders_200": 356,
+     "blunder_rate": 0.03779995752813761,
+     "mistakes_100": 864
+    },
+    "B:ouverture": {
+     "moves": 1551,
+     "acpl": 21.182462927143778,
+     "blunders_200": 22,
+     "blunder_rate": 0.014184397163120567,
+     "mistakes_100": 63
+    },
+    "B:milieu": {
+     "moves": 5896,
+     "acpl": 38.27781546811398,
+     "blunders_200": 253,
+     "blunder_rate": 0.04291044776119403,
+     "mistakes_100": 624
+    },
+    "B:finale": {
+     "moves": 1967,
+     "acpl": 24.584138281647178,
+     "blunders_200": 57,
+     "blunder_rate": 0.028978139298423997,
+     "mistakes_100": 126
+    },
+    "B:tout": {
+     "moves": 9414,
+     "acpl": 32.60006373486297,
+     "blunders_200": 332,
+     "blunder_rate": 0.03526662417675802,
+     "mistakes_100": 813
+    }
+   },
+   "swing_A_lost": {
+    "lost_games": 67,
+    "never_ok": 3,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 52,
+     "ouverture": 5,
+     "finale": 7
+    },
+    "own_move": 58,
+    "own_blunder_200": 37,
+    "phase": {
+     "ouverture": 10,
+     "milieu": 45,
+     "finale": 9
+    },
+    "ply_median": 62.0,
+    "material_median": 44.5
+   },
+   "swing_B_lost": {
+    "lost_games": 57,
+    "never_ok": 5,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 41,
+     "ouverture": 4,
+     "finale": 6
+    },
+    "own_move": 51,
+    "own_blunder_200": 22,
+    "phase": {
+     "milieu": 37,
+     "ouverture": 7,
+     "finale": 8
+    },
+    "ply_median": 58.5,
+    "material_median": 38.5
+   },
+   "repetitions": {
+    "total": 48,
+    "adv_150": 2,
+    "renounced_by_A": 2,
+    "renounced_by_B": 0
+   },
+   "conversion_300": {
+    "A": {
+     "reached": 89,
+     "not_won": 32,
+     "lost": 6
+    },
+    "B": {
+     "reached": 89,
+     "not_won": 22,
+     "lost": 5
+    }
+   }
+  },
+  "cand_0001": {
+   "score": 0.45,
+   "elo": -34.86007028756008,
+   "games": 200,
+   "moves": {
+    "A:ouverture": {
+     "moves": 1551,
+     "acpl": 23.85170857511283,
+     "blunders_200": 28,
+     "blunder_rate": 0.018052869116698903,
+     "mistakes_100": 85
+    },
+    "A:milieu": {
+     "moves": 6071,
+     "acpl": 40.54323834623621,
+     "blunders_200": 308,
+     "blunder_rate": 0.05073299291714709,
+     "mistakes_100": 691
+    },
+    "A:finale": {
+     "moves": 2024,
+     "acpl": 26.62697628458498,
+     "blunders_200": 68,
+     "blunder_rate": 0.03359683794466403,
+     "mistakes_100": 140
+    },
+    "A:tout": {
+     "moves": 9646,
+     "acpl": 34.93935309973046,
+     "blunders_200": 404,
+     "blunder_rate": 0.04188264565623056,
+     "mistakes_100": 916
+    },
+    "B:ouverture": {
+     "moves": 1551,
+     "acpl": 20.982591876208897,
+     "blunders_200": 18,
+     "blunder_rate": 0.01160541586073501,
+     "mistakes_100": 62
+    },
+    "B:milieu": {
+     "moves": 6083,
+     "acpl": 38.77757685352622,
+     "blunders_200": 281,
+     "blunder_rate": 0.046194312017096825,
+     "mistakes_100": 659
+    },
+    "B:finale": {
+     "moves": 2024,
+     "acpl": 25.438241106719367,
+     "blunders_200": 66,
+     "blunder_rate": 0.03260869565217391,
+     "mistakes_100": 140
+    },
+    "B:tout": {
+     "moves": 9658,
+     "acpl": 33.12435286808863,
+     "blunders_200": 365,
+     "blunder_rate": 0.037792503623938704,
+     "mistakes_100": 861
+    }
+   },
+   "swing_A_lost": {
+    "lost_games": 74,
+    "never_ok": 4,
+    "worst_own_blunder_200_by_phase": {
+     "ouverture": 4,
+     "milieu": 53,
+     "finale": 12
+    },
+    "own_move": 70,
+    "own_blunder_200": 44,
+    "phase": {
+     "ouverture": 8,
+     "milieu": 52,
+     "finale": 10
+    },
+    "ply_median": 62.0,
+    "material_median": 47.5
+   },
+   "swing_B_lost": {
+    "lost_games": 54,
+    "never_ok": 3,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 42,
+     "finale": 9,
+     "ouverture": 1
+    },
+    "own_move": 49,
+    "own_blunder_200": 30,
+    "phase": {
+     "milieu": 36,
+     "ouverture": 5,
+     "finale": 10
+    },
+    "ply_median": 59.0,
+    "material_median": 44.0
+   },
+   "repetitions": {
+    "total": 47,
+    "adv_150": 1,
+    "renounced_by_A": 0,
+    "renounced_by_B": 1
+   },
+   "conversion_300": {
+    "A": {
+     "reached": 78,
+     "not_won": 24,
+     "lost": 7
+    },
+    "B": {
+     "reached": 96,
+     "not_won": 22,
+     "lost": 3
+    }
+   }
+  },
+  "cand_0002": {
+   "score": 0.4725,
+   "elo": -19.128260449779457,
+   "games": 200,
+   "moves": {
+    "A:ouverture": {
+     "moves": 1551,
+     "acpl": 22.557059961315282,
+     "blunders_200": 22,
+     "blunder_rate": 0.014184397163120567,
+     "mistakes_100": 80
+    },
+    "A:milieu": {
+     "moves": 5976,
+     "acpl": 38.80020080321285,
+     "blunders_200": 259,
+     "blunder_rate": 0.04334002677376171,
+     "mistakes_100": 627
+    },
+    "A:finale": {
+     "moves": 2005,
+     "acpl": 26.083790523690773,
+     "blunders_200": 67,
+     "blunder_rate": 0.03341645885286783,
+     "mistakes_100": 138
+    },
+    "A:tout": {
+     "moves": 9532,
+     "acpl": 33.482375157364665,
+     "blunders_200": 348,
+     "blunder_rate": 0.03650860260176248,
+     "mistakes_100": 845
+    },
+    "B:ouverture": {
+     "moves": 1551,
+     "acpl": 21.05029013539652,
+     "blunders_200": 16,
+     "blunder_rate": 0.010315925209542231,
+     "mistakes_100": 64
+    },
+    "B:milieu": {
+     "moves": 5982,
+     "acpl": 37.059511868940156,
+     "blunders_200": 236,
+     "blunder_rate": 0.03945168839852892,
+     "mistakes_100": 604
+    },
+    "B:finale": {
+     "moves": 2005,
+     "acpl": 26.40847880299252,
+     "blunders_200": 72,
+     "blunder_rate": 0.035910224438902745,
+     "mistakes_100": 128
+    },
+    "B:tout": {
+     "moves": 9538,
+     "acpl": 32.217236317886346,
+     "blunders_200": 324,
+     "blunder_rate": 0.03396938561543301,
+     "mistakes_100": 796
+    }
+   },
+   "swing_A_lost": {
+    "lost_games": 72,
+    "never_ok": 6,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 49,
+     "ouverture": 6,
+     "finale": 9
+    },
+    "own_move": 63,
+    "own_blunder_200": 32,
+    "phase": {
+     "ouverture": 10,
+     "milieu": 47,
+     "finale": 9
+    },
+    "ply_median": 59.5,
+    "material_median": 44.5
+   },
+   "swing_B_lost": {
+    "lost_games": 61,
+    "never_ok": 4,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 45,
+     "finale": 9,
+     "ouverture": 3
+    },
+    "own_move": 55,
+    "own_blunder_200": 37,
+    "phase": {
+     "ouverture": 4,
+     "milieu": 44,
+     "finale": 9
+    },
+    "ply_median": 67.0,
+    "material_median": 35.0
+   },
+   "repetitions": {
+    "total": 46,
+    "adv_150": 2,
+    "renounced_by_A": 2,
+    "renounced_by_B": 0
+   },
+   "conversion_300": {
+    "A": {
+     "reached": 87,
+     "not_won": 26,
+     "lost": 9
+    },
+    "B": {
+     "reached": 93,
+     "not_won": 21,
+     "lost": 3
+    }
+   }
+  },
+  "cand_0003": {
+   "score": 0.46,
+   "elo": -27.85437125655775,
+   "games": 200,
+   "moves": {
+    "A:ouverture": {
+     "moves": 1551,
+     "acpl": 21.66602192134107,
+     "blunders_200": 25,
+     "blunder_rate": 0.016118633139909737,
+     "mistakes_100": 72
+    },
+    "A:milieu": {
+     "moves": 5990,
+     "acpl": 43.334557595993324,
+     "blunders_200": 315,
+     "blunder_rate": 0.052587646076794656,
+     "mistakes_100": 766
+    },
+    "A:finale": {
+     "moves": 1730,
+     "acpl": 26.106936416184972,
+     "blunders_200": 54,
+     "blunder_rate": 0.03121387283236994,
+     "mistakes_100": 106
+    },
+    "A:tout": {
+     "moves": 9271,
+     "acpl": 36.494768633372885,
+     "blunders_200": 394,
+     "blunder_rate": 0.04249811239348506,
+     "mistakes_100": 944
+    },
+    "B:ouverture": {
+     "moves": 1551,
+     "acpl": 20.47001934235977,
+     "blunders_200": 15,
+     "blunder_rate": 0.009671179883945842,
+     "mistakes_100": 61
+    },
+    "B:milieu": {
+     "moves": 5985,
+     "acpl": 41.327318295739346,
+     "blunders_200": 301,
+     "blunder_rate": 0.050292397660818715,
+     "mistakes_100": 711
+    },
+    "B:finale": {
+     "moves": 1736,
+     "acpl": 24.1889400921659,
+     "blunders_200": 53,
+     "blunder_rate": 0.03052995391705069,
+     "mistakes_100": 108
+    },
+    "B:tout": {
+     "moves": 9272,
+     "acpl": 34.62952976704055,
+     "blunders_200": 369,
+     "blunder_rate": 0.03979723899913719,
+     "mistakes_100": 880
+    }
+   },
+   "swing_A_lost": {
+    "lost_games": 69,
+    "never_ok": 6,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 48,
+     "ouverture": 5,
+     "finale": 8
+    },
+    "own_move": 61,
+    "own_blunder_200": 40,
+    "phase": {
+     "ouverture": 8,
+     "milieu": 47,
+     "finale": 8
+    },
+    "ply_median": 59.0,
+    "material_median": 47.0
+   },
+   "swing_B_lost": {
+    "lost_games": 53,
+    "never_ok": 1,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 39,
+     "ouverture": 2,
+     "finale": 6
+    },
+    "own_move": 49,
+    "own_blunder_200": 25,
+    "phase": {
+     "milieu": 42,
+     "ouverture": 7,
+     "finale": 3
+    },
+    "ply_median": 51.0,
+    "material_median": 47.5
+   },
+   "repetitions": {
+    "total": 57,
+    "adv_150": 5,
+    "renounced_by_A": 1,
+    "renounced_by_B": 4
+   },
+   "conversion_300": {
+    "A": {
+     "reached": 82,
+     "not_won": 29,
+     "lost": 9
+    },
+    "B": {
+     "reached": 94,
+     "not_won": 25,
+     "lost": 3
+    }
+   }
+  },
+  "cand_0004": {
+   "score": 0.45,
+   "elo": -34.86007028756008,
+   "games": 200,
+   "moves": {
+    "A:ouverture": {
+     "moves": 1551,
+     "acpl": 23.15022566086396,
+     "blunders_200": 28,
+     "blunder_rate": 0.018052869116698903,
+     "mistakes_100": 79
+    },
+    "A:milieu": {
+     "moves": 5739,
+     "acpl": 42.45321484579195,
+     "blunders_200": 292,
+     "blunder_rate": 0.050879944241156994,
+     "mistakes_100": 662
+    },
+    "A:finale": {
+     "moves": 1806,
+     "acpl": 26.90753045404208,
+     "blunders_200": 63,
+     "blunder_rate": 0.03488372093023256,
+     "mistakes_100": 122
+    },
+    "A:tout": {
+     "moves": 9096,
+     "acpl": 36.07519788918206,
+     "blunders_200": 383,
+     "blunder_rate": 0.042106420404573436,
+     "mistakes_100": 863
+    },
+    "B:ouverture": {
+     "moves": 1551,
+     "acpl": 21.431334622823986,
+     "blunders_200": 20,
+     "blunder_rate": 0.012894906511927788,
+     "mistakes_100": 69
+    },
+    "B:milieu": {
+     "moves": 5745,
+     "acpl": 39.45483028720626,
+     "blunders_200": 259,
+     "blunder_rate": 0.045082680591818976,
+     "mistakes_100": 648
+    },
+    "B:finale": {
+     "moves": 1805,
+     "acpl": 27.280886426592797,
+     "blunders_200": 56,
+     "blunder_rate": 0.03102493074792244,
+     "mistakes_100": 124
+    },
+    "B:tout": {
+     "moves": 9101,
+     "acpl": 33.96879463795187,
+     "blunders_200": 335,
+     "blunder_rate": 0.03680914185254368,
+     "mistakes_100": 841
+    }
+   },
+   "swing_A_lost": {
+    "lost_games": 75,
+    "never_ok": 2,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 56,
+     "ouverture": 8,
+     "finale": 9
+    },
+    "own_move": 72,
+    "own_blunder_200": 47,
+    "phase": {
+     "ouverture": 11,
+     "milieu": 51,
+     "finale": 11
+    },
+    "ply_median": 60.0,
+    "material_median": 49.0
+   },
+   "swing_B_lost": {
+    "lost_games": 55,
+    "never_ok": 5,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 40,
+     "ouverture": 4,
+     "finale": 9
+    },
+    "own_move": 49,
+    "own_blunder_200": 38,
+    "phase": {
+     "milieu": 36,
+     "ouverture": 6,
+     "finale": 8
+    },
+    "ply_median": 58.0,
+    "material_median": 45.0
+   },
+   "repetitions": {
+    "total": 47,
+    "adv_150": 3,
+    "renounced_by_A": 1,
+    "renounced_by_B": 2
+   },
+   "conversion_300": {
+    "A": {
+     "reached": 83,
+     "not_won": 28,
+     "lost": 8
+    },
+    "B": {
+     "reached": 100,
+     "not_won": 25,
+     "lost": 2
+    }
+   }
+  },
+  "cand_0005": {
+   "score": 0.4875,
+   "elo": -8.687699877294557,
+   "games": 200,
+   "moves": {
+    "A:ouverture": {
+     "moves": 1551,
+     "acpl": 22.50870406189555,
+     "blunders_200": 26,
+     "blunder_rate": 0.016763378465506126,
+     "mistakes_100": 77
+    },
+    "A:milieu": {
+     "moves": 6031,
+     "acpl": 39.60122699386503,
+     "blunders_200": 269,
+     "blunder_rate": 0.04460288509368264,
+     "mistakes_100": 673
+    },
+    "A:finale": {
+     "moves": 1765,
+     "acpl": 32.27082152974504,
+     "blunders_200": 83,
+     "blunder_rate": 0.04702549575070822,
+     "mistakes_100": 153
+    },
+    "A:tout": {
+     "moves": 9347,
+     "acpl": 35.380763881459295,
+     "blunders_200": 378,
+     "blunder_rate": 0.040440783138975075,
+     "mistakes_100": 903
+    },
+    "B:ouverture": {
+     "moves": 1551,
+     "acpl": 21.423597678916828,
+     "blunders_200": 20,
+     "blunder_rate": 0.012894906511927788,
+     "mistakes_100": 67
+    },
+    "B:milieu": {
+     "moves": 6034,
+     "acpl": 38.708153795160754,
+     "blunders_200": 261,
+     "blunder_rate": 0.043254888962545576,
+     "mistakes_100": 671
+    },
+    "B:finale": {
+     "moves": 1763,
+     "acpl": 29.030629608621666,
+     "blunders_200": 59,
+     "blunder_rate": 0.033465683494044246,
+     "mistakes_100": 140
+    },
+    "B:tout": {
+     "moves": 9348,
+     "acpl": 34.015190415062044,
+     "blunders_200": 340,
+     "blunder_rate": 0.036371416345742404,
+     "mistakes_100": 878
+    }
+   },
+   "swing_A_lost": {
+    "lost_games": 67,
+    "never_ok": 4,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 41,
+     "ouverture": 9,
+     "finale": 12
+    },
+    "own_move": 61,
+    "own_blunder_200": 39,
+    "phase": {
+     "ouverture": 13,
+     "milieu": 42,
+     "finale": 8
+    },
+    "ply_median": 62.0,
+    "material_median": 47.0
+   },
+   "swing_B_lost": {
+    "lost_games": 62,
+    "never_ok": 4,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 42,
+     "ouverture": 4,
+     "finale": 10
+    },
+    "own_move": 54,
+    "own_blunder_200": 33,
+    "phase": {
+     "milieu": 44,
+     "ouverture": 8,
+     "finale": 6
+    },
+    "ply_median": 60.5,
+    "material_median": 44.5
+   },
+   "repetitions": {
+    "total": 51,
+    "adv_150": 5,
+    "renounced_by_A": 3,
+    "renounced_by_B": 2
+   },
+   "conversion_300": {
+    "A": {
+     "reached": 96,
+     "not_won": 34,
+     "lost": 8
+    },
+    "B": {
+     "reached": 80,
+     "not_won": 13,
+     "lost": 4
+    }
+   }
+  },
+  "cand_0006": {
+   "score": 0.4925,
+   "elo": -5.211924700647974,
+   "games": 200,
+   "moves": {
+    "A:ouverture": {
+     "moves": 1551,
+     "acpl": 21.273372018052868,
+     "blunders_200": 18,
+     "blunder_rate": 0.01160541586073501,
+     "mistakes_100": 70
+    },
+    "A:milieu": {
+     "moves": 6017,
+     "acpl": 41.360312448063816,
+     "blunders_200": 291,
+     "blunder_rate": 0.04836297158052186,
+     "mistakes_100": 660
+    },
+    "A:finale": {
+     "moves": 1882,
+     "acpl": 26.396386822529223,
+     "blunders_200": 65,
+     "blunder_rate": 0.03453772582359192,
+     "mistakes_100": 122
+    },
+    "A:tout": {
+     "moves": 9450,
+     "acpl": 35.083386243386244,
+     "blunders_200": 374,
+     "blunder_rate": 0.03957671957671958,
+     "mistakes_100": 852
+    },
+    "B:ouverture": {
+     "moves": 1551,
+     "acpl": 21.91231463571889,
+     "blunders_200": 20,
+     "blunder_rate": 0.012894906511927788,
+     "mistakes_100": 67
+    },
+    "B:milieu": {
+     "moves": 6026,
+     "acpl": 41.17524062396283,
+     "blunders_200": 274,
+     "blunder_rate": 0.04546963159641553,
+     "mistakes_100": 667
+    },
+    "B:finale": {
+     "moves": 1871,
+     "acpl": 21.176376269374664,
+     "blunders_200": 32,
+     "blunder_rate": 0.017103153393907,
+     "mistakes_100": 95
+    },
+    "B:tout": {
+     "moves": 9448,
+     "acpl": 34.052603725656226,
+     "blunders_200": 326,
+     "blunder_rate": 0.03450465707027942,
+     "mistakes_100": 829
+    }
+   },
+   "swing_A_lost": {
+    "lost_games": 67,
+    "never_ok": 3,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 46,
+     "ouverture": 4,
+     "finale": 11
+    },
+    "own_move": 61,
+    "own_blunder_200": 41,
+    "phase": {
+     "ouverture": 8,
+     "milieu": 43,
+     "finale": 13
+    },
+    "ply_median": 70.0,
+    "material_median": 35.5
+   },
+   "swing_B_lost": {
+    "lost_games": 64,
+    "never_ok": 3,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 50,
+     "finale": 4,
+     "ouverture": 5
+    },
+    "own_move": 59,
+    "own_blunder_200": 29,
+    "phase": {
+     "milieu": 47,
+     "ouverture": 10,
+     "finale": 4
+    },
+    "ply_median": 50.0,
+    "material_median": 53.0
+   },
+   "repetitions": {
+    "total": 40,
+    "adv_150": 4,
+    "renounced_by_A": 1,
+    "renounced_by_B": 3
+   },
+   "conversion_300": {
+    "A": {
+     "reached": 96,
+     "not_won": 32,
+     "lost": 9
+    },
+    "B": {
+     "reached": 86,
+     "not_won": 19,
+     "lost": 4
+    }
+   }
+  }
+ },
+ "swing_q": {
+  "cand_0006": {
+   "positions": 61,
+   "q_mean": -0.24549337293775605,
+   "q_median": -0.22711586710575282,
+   "q_above_0": 0.11475409836065574,
+   "q_below_-0.3": 0.36065573770491804,
+   "cp_before_median": -27.0,
+   "items": [
+    {
+     "arena": "cand_0006",
+     "key": "1680:A-noirs",
+     "ply": 27,
+     "q": -0.6375749194670227,
+     "cp_before": -82,
+     "cp_after": -316
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1401:A-blancs",
+     "ply": 24,
+     "q": -0.28844349476884107,
+     "cp_before": -41,
+     "cp_after": -395
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1696:A-blancs",
+     "ply": 54,
+     "q": 0.21027534073844217,
+     "cp_before": -2,
+     "cp_after": -1000
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1105:A-blancs",
+     "ply": 60,
+     "q": -0.16526614606788206,
+     "cp_before": -36,
+     "cp_after": -743
+    },
+    {
+     "arena": "cand_0006",
+     "key": "388:A-noirs",
+     "ply": 41,
+     "q": -0.20937288235131632,
+     "cp_before": -19,
+     "cp_after": -227
+    },
+    {
+     "arena": "cand_0006",
+     "key": "938:A-blancs",
+     "ply": 48,
+     "q": 0.6659418584139489,
+     "cp_before": 585,
+     "cp_after": -180
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1869:A-blancs",
+     "ply": 54,
+     "q": 0.07722481567672088,
+     "cp_before": -44,
+     "cp_after": -474
+    },
+    {
+     "arena": "cand_0006",
+     "key": "474:A-noirs",
+     "ply": 31,
+     "q": -0.014456228149790706,
+     "cp_before": -74,
+     "cp_after": -133
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1977:A-blancs",
+     "ply": 44,
+     "q": 0.10967067260392455,
+     "cp_before": -93,
+     "cp_after": -162
+    },
+    {
+     "arena": "cand_0006",
+     "key": "844:A-noirs",
+     "ply": 17,
+     "q": -0.20260229972955673,
+     "cp_before": -99,
+     "cp_after": -103
+    },
+    {
+     "arena": "cand_0006",
+     "key": "213:A-noirs",
+     "ply": 31,
+     "q": -0.2051721822148402,
+     "cp_before": -91,
+     "cp_after": -111
+    },
+    {
+     "arena": "cand_0006",
+     "key": "929:A-noirs",
+     "ply": 67,
+     "q": -0.17476125063828715,
+     "cp_before": -54,
+     "cp_after": -321
+    },
+    {
+     "arena": "cand_0006",
+     "key": "938:A-noirs",
+     "ply": 63,
+     "q": -0.38744285614669915,
+     "cp_before": -41,
+     "cp_after": -190
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1161:A-blancs",
+     "ply": 66,
+     "q": -0.29437186864357606,
+     "cp_before": 911,
+     "cp_after": -1000
+    },
+    {
+     "arena": "cand_0006",
+     "key": "165:A-blancs",
+     "ply": 34,
+     "q": -0.2557841016185836,
+     "cp_before": -46,
+     "cp_after": -253
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1829:A-noirs",
+     "ply": 27,
+     "q": -0.1297576109477926,
+     "cp_before": -68,
+     "cp_after": -145
+    },
+    {
+     "arena": "cand_0006",
+     "key": "709:A-noirs",
+     "ply": 11,
+     "q": -0.13083013086359652,
+     "cp_before": -46,
+     "cp_after": -160
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1161:A-noirs",
+     "ply": 53,
+     "q": -0.2085700324824571,
+     "cp_before": -18,
+     "cp_after": -529
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1851:A-blancs",
+     "ply": 60,
+     "q": 0.04996988454495385,
+     "cp_before": -78,
+     "cp_after": -242
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1658:A-blancs",
+     "ply": 52,
+     "q": -0.08171580848631574,
+     "cp_before": -93,
+     "cp_after": -266
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1063:A-noirs",
+     "ply": 29,
+     "q": -0.012984824605489992,
+     "cp_before": -31,
+     "cp_after": -457
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1395:A-blancs",
+     "ply": 22,
+     "q": -0.00664901097689695,
+     "cp_before": 37,
+     "cp_after": -249
+    },
+    {
+     "arena": "cand_0006",
+     "key": "696:A-noirs",
+     "ply": 91,
+     "q": 0.1907914244194529,
+     "cp_before": -8,
+     "cp_after": -998
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1869:A-noirs",
+     "ply": 89,
+     "q": -0.42265962079556574,
+     "cp_before": 0,
+     "cp_after": -429
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1680:A-blancs",
+     "ply": 76,
+     "q": -0.09170064626554657,
+     "cp_before": 0,
+     "cp_after": -427
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1872:A-blancs",
+     "ply": 76,
+     "q": -0.3884039664248917,
+     "cp_before": 50,
+     "cp_after": -183
+    },
+    {
+     "arena": "cand_0006",
+     "key": "538:A-blancs",
+     "ply": 32,
+     "q": -0.22027985010190695,
+     "cp_before": -12,
+     "cp_after": -294
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1948:A-blancs",
+     "ply": 44,
+     "q": -0.23005827068610682,
+     "cp_before": -28,
+     "cp_after": -239
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1647:A-noirs",
+     "ply": 69,
+     "q": -0.34717922014142594,
+     "cp_before": -98,
+     "cp_after": -203
+    },
+    {
+     "arena": "cand_0006",
+     "key": "863:A-blancs",
+     "ply": 82,
+     "q": -0.11368919871237815,
+     "cp_before": 43,
+     "cp_after": -286
+    },
+    {
+     "arena": "cand_0006",
+     "key": "115:A-blancs",
+     "ply": 72,
+     "q": -0.536699947952038,
+     "cp_before": -96,
+     "cp_after": -296
+    },
+    {
+     "arena": "cand_0006",
+     "key": "848:A-noirs",
+     "ply": 85,
+     "q": -0.3472407444198361,
+     "cp_before": -56,
+     "cp_after": -225
+    },
+    {
+     "arena": "cand_0006",
+     "key": "357:A-noirs",
+     "ply": 69,
+     "q": -0.39099966364898786,
+     "cp_before": -19,
+     "cp_after": -186
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1850:A-noirs",
+     "ply": 87,
+     "q": -0.7889197375347365,
+     "cp_before": 584,
+     "cp_after": -452
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1184:A-blancs",
+     "ply": 86,
+     "q": -0.15695498601547372,
+     "cp_before": -1,
+     "cp_after": -471
+    },
+    {
+     "arena": "cand_0006",
+     "key": "94:A-noirs",
+     "ply": 87,
+     "q": 0.0036763434879833936,
+     "cp_before": 0,
+     "cp_after": -120
+    },
+    {
+     "arena": "cand_0006",
+     "key": "21:A-blancs",
+     "ply": 82,
+     "q": -0.3099939433790614,
+     "cp_before": -25,
+     "cp_after": -448
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1948:A-noirs",
+     "ply": 93,
+     "q": -0.5508265344446887,
+     "cp_before": 0,
+     "cp_after": -645
+    },
+    {
+     "arena": "cand_0006",
+     "key": "731:A-noirs",
+     "ply": 131,
+     "q": -0.45721628692983396,
+     "cp_before": -4,
+     "cp_after": -601
+    },
+    {
+     "arena": "cand_0006",
+     "key": "87:A-blancs",
+     "ply": 26,
+     "q": -0.039163221485231686,
+     "cp_before": -89,
+     "cp_after": -122
+    },
+    {
+     "arena": "cand_0006",
+     "key": "787:A-noirs",
+     "ply": 91,
+     "q": -0.6634008029837217,
+     "cp_before": -27,
+     "cp_after": -352
+    },
+    {
+     "arena": "cand_0006",
+     "key": "902:A-blancs",
+     "ply": 86,
+     "q": -0.29093725811018245,
+     "cp_before": -19,
+     "cp_after": -202
+    },
+    {
+     "arena": "cand_0006",
+     "key": "268:A-blancs",
+     "ply": 76,
+     "q": -0.11194169948535476,
+     "cp_before": -39,
+     "cp_after": -255
+    },
+    {
+     "arena": "cand_0006",
+     "key": "335:A-noirs",
+     "ply": 71,
+     "q": -0.25274486535817237,
+     "cp_before": 38,
+     "cp_after": -462
+    },
+    {
+     "arena": "cand_0006",
+     "key": "320:A-blancs",
+     "ply": 40,
+     "q": -0.4790737423582457,
+     "cp_before": -89,
+     "cp_after": -113
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1121:A-blancs",
+     "ply": 98,
+     "q": -0.21179103046257178,
+     "cp_before": 0,
+     "cp_after": -489
+    },
+    {
+     "arena": "cand_0006",
+     "key": "17:A-noirs",
+     "ply": 39,
+     "q": -0.2030790318950399,
+     "cp_before": -31,
+     "cp_after": -105
+    },
+    {
+     "arena": "cand_0006",
+     "key": "828:A-blancs",
+     "ply": 116,
+     "q": -0.6428405685878512,
+     "cp_before": -90,
+     "cp_after": -335
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1541:A-noirs",
+     "ply": 103,
+     "q": -0.41590407873452895,
+     "cp_before": -29,
+     "cp_after": -435
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1462:A-noirs",
+     "ply": 99,
+     "q": -0.22691020643018853,
+     "cp_before": 0,
+     "cp_after": -254
+    },
+    {
+     "arena": "cand_0006",
+     "key": "959:A-noirs",
+     "ply": 73,
+     "q": -0.37502087447160987,
+     "cp_before": -92,
+     "cp_after": -136
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1395:A-noirs",
+     "ply": 47,
+     "q": -0.07258285603350473,
+     "cp_before": -21,
+     "cp_after": -312
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1401:A-noirs",
+     "ply": 119,
+     "q": -0.22711586710575282,
+     "cp_before": -47,
+     "cp_after": -391
+    },
+    {
+     "arena": "cand_0006",
+     "key": "903:A-noirs",
+     "ply": 119,
+     "q": -0.46169234383202606,
+     "cp_before": -56,
+     "cp_after": -450
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1647:A-blancs",
+     "ply": 98,
+     "q": -0.22361532594563802,
+     "cp_before": -5,
+     "cp_after": -618
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1432:A-noirs",
+     "ply": 97,
+     "q": -0.37829054064935175,
+     "cp_before": -18,
+     "cp_after": -386
+    },
+    {
+     "arena": "cand_0006",
+     "key": "166:A-blancs",
+     "ply": 112,
+     "q": -0.34315511247430425,
+     "cp_before": 529,
+     "cp_after": -187
+    },
+    {
+     "arena": "cand_0006",
+     "key": "929:A-blancs",
+     "ply": 142,
+     "q": -0.4763690742064008,
+     "cp_before": 0,
+     "cp_after": -488
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1977:A-noirs",
+     "ply": 111,
+     "q": -0.25380580422968896,
+     "cp_before": -44,
+     "cp_after": -190
+    },
+    {
+     "arena": "cand_0006",
+     "key": "459:A-blancs",
+     "ply": 126,
+     "q": -0.9020986579988727,
+     "cp_before": 155,
+     "cp_after": -662
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1242:A-noirs",
+     "ply": 239,
+     "q": -0.2725348606388854,
+     "cp_before": 0,
+     "cp_after": -446
+    }
+   ]
+  },
+  "sup": {
+   "positions": 366,
+   "q_mean": -0.25471712045642797,
+   "q_median": -0.2646663600366924,
+   "q_above_0": 0.1092896174863388,
+   "q_below_-0.3": 0.3989071038251366,
+   "cp_before_median": -35.0,
+   "items": [
+    {
+     "arena": "cand_0000",
+     "key": "732:A-blancs",
+     "ply": 43,
+     "q": 0.006489063858689361,
+     "cp_before": -75,
+     "cp_after": -816
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1012:A-blancs",
+     "ply": 41,
+     "q": -0.3812920160450282,
+     "cp_before": -26,
+     "cp_after": -356
+    },
+    {
+     "arena": "cand_0000",
+     "key": "371:A-blancs",
+     "ply": 19,
+     "q": -0.10117573013114488,
+     "cp_before": -100,
+     "cp_after": -253
+    },
+    {
+     "arena": "cand_0000",
+     "key": "929:A-noirs",
+     "ply": 58,
+     "q": 0.11705201902700152,
+     "cp_before": 0,
+     "cp_after": -121
+    },
+    {
+     "arena": "cand_0000",
+     "key": "108:A-blancs",
+     "ply": 37,
+     "q": -0.14883663950126563,
+     "cp_before": -73,
+     "cp_after": -110
+    },
+    {
+     "arena": "cand_0000",
+     "key": "959:A-blancs",
+     "ply": 81,
+     "q": -0.488199443542468,
+     "cp_before": -42,
+     "cp_after": -192
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1:A-noirs",
+     "ply": 52,
+     "q": -0.06352902552928423,
+     "cp_before": -17,
+     "cp_after": -167
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1515:A-blancs",
+     "ply": 13,
+     "q": -0.2662001207450043,
+     "cp_before": -96,
+     "cp_after": -227
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1850:A-noirs",
+     "ply": 32,
+     "q": 0.17471959228645917,
+     "cp_before": -46,
+     "cp_after": -101
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1186:A-blancs",
+     "ply": 45,
+     "q": -0.24586072370331197,
+     "cp_before": -100,
+     "cp_after": -202
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1271:A-noirs",
+     "ply": 46,
+     "q": -0.16949089270882048,
+     "cp_before": -46,
+     "cp_after": -122
+    },
+    {
+     "arena": "cand_0000",
+     "key": "108:A-noirs",
+     "ply": 20,
+     "q": -0.2904623178070161,
+     "cp_before": -18,
+     "cp_after": -429
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1541:A-blancs",
+     "ply": 65,
+     "q": -0.36994407431162263,
+     "cp_before": -44,
+     "cp_after": -111
+    },
+    {
+     "arena": "cand_0000",
+     "key": "959:A-noirs",
+     "ply": 32,
+     "q": 0.06750661882094632,
+     "cp_before": -38,
+     "cp_after": -120
+    },
+    {
+     "arena": "cand_0000",
+     "key": "335:A-noirs",
+     "ply": 80,
+     "q": -0.5653056286608995,
+     "cp_before": -59,
+     "cp_after": -194
+    },
+    {
+     "arena": "cand_0000",
+     "key": "731:A-noirs",
+     "ply": 64,
+     "q": -0.12493831918236628,
+     "cp_before": -29,
+     "cp_after": -566
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1401:A-noirs",
+     "ply": 24,
+     "q": -0.34989536175532127,
+     "cp_before": -41,
+     "cp_after": -252
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1144:A-blancs",
+     "ply": 55,
+     "q": -0.3244903460052328,
+     "cp_before": -65,
+     "cp_after": -179
+    },
+    {
+     "arena": "cand_0000",
+     "key": "903:A-blancs",
+     "ply": 45,
+     "q": -0.2912736074229823,
+     "cp_before": -65,
+     "cp_after": -144
+    },
+    {
+     "arena": "cand_0000",
+     "key": "152:A-blancs",
+     "ply": 19,
+     "q": -0.08769271979849805,
+     "cp_before": 115,
+     "cp_after": -166
+    },
+    {
+     "arena": "cand_0000",
+     "key": "335:A-blancs",
+     "ply": 65,
+     "q": 0.19132352465374478,
+     "cp_before": -8,
+     "cp_after": -492
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1186:A-noirs",
+     "ply": 16,
+     "q": 0.1358267955802872,
+     "cp_before": 117,
+     "cp_after": -321
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1432:A-noirs",
+     "ply": 70,
+     "q": -0.3276818017754762,
+     "cp_before": -39,
+     "cp_after": -223
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1948:A-noirs",
+     "ply": 48,
+     "q": -0.040269579712894576,
+     "cp_before": -53,
+     "cp_after": -330
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1869:A-blancs",
+     "ply": 55,
+     "q": -0.10570776024694319,
+     "cp_before": -79,
+     "cp_after": -240
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1768:A-blancs",
+     "ply": 65,
+     "q": -0.36173700028335426,
+     "cp_before": -88,
+     "cp_after": -149
+    },
+    {
+     "arena": "cand_0000",
+     "key": "704:A-noirs",
+     "ply": 74,
+     "q": -0.19646596088912802,
+     "cp_before": 1,
+     "cp_after": -165
+    },
+    {
+     "arena": "cand_0000",
+     "key": "115:A-blancs",
+     "ply": 63,
+     "q": -0.1497095589507464,
+     "cp_before": -79,
+     "cp_after": -271
+    },
+    {
+     "arena": "cand_0000",
+     "key": "847:A-blancs",
+     "ply": 91,
+     "q": -0.441485353863673,
+     "cp_before": -22,
+     "cp_after": -146
+    },
+    {
+     "arena": "cand_0000",
+     "key": "292:A-blancs",
+     "ply": 37,
+     "q": -0.5076871563064221,
+     "cp_before": -4,
+     "cp_after": -432
+    },
+    {
+     "arena": "cand_0000",
+     "key": "709:A-blancs",
+     "ply": 87,
+     "q": -0.5233423726364451,
+     "cp_before": -65,
+     "cp_after": -171
+    },
+    {
+     "arena": "cand_0000",
+     "key": "787:A-blancs",
+     "ply": 119,
+     "q": -0.6164864355800164,
+     "cp_before": -15,
+     "cp_after": -472
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1395:A-noirs",
+     "ply": 54,
+     "q": -0.2939218730325185,
+     "cp_before": 110,
+     "cp_after": -108
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1320:A-blancs",
+     "ply": 61,
+     "q": -0.6440714691390297,
+     "cp_before": 41,
+     "cp_after": -607
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1525:A-blancs",
+     "ply": 47,
+     "q": -0.28151022878780135,
+     "cp_before": -43,
+     "cp_after": -197
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1825:A-noirs",
+     "ply": 42,
+     "q": -0.21674596534031837,
+     "cp_before": 582,
+     "cp_after": -503
+    },
+    {
+     "arena": "cand_0000",
+     "key": "903:A-noirs",
+     "ply": 90,
+     "q": 0.07391798287683365,
+     "cp_before": -65,
+     "cp_after": -167
+    },
+    {
+     "arena": "cand_0000",
+     "key": "716:A-noirs",
+     "ply": 22,
+     "q": 0.16258032805088268,
+     "cp_before": -78,
+     "cp_after": -350
+    },
+    {
+     "arena": "cand_0000",
+     "key": "87:A-noirs",
+     "ply": 118,
+     "q": -0.7432083846324712,
+     "cp_before": -22,
+     "cp_after": -472
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1291:A-blancs",
+     "ply": 93,
+     "q": -0.529648065789422,
+     "cp_before": -90,
+     "cp_after": -504
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1848:A-noirs",
+     "ply": 146,
+     "q": -0.3559228959331168,
+     "cp_before": -22,
+     "cp_after": -329
+    },
+    {
+     "arena": "cand_0000",
+     "key": "320:A-blancs",
+     "ply": 79,
+     "q": -0.2873502623600264,
+     "cp_before": -92,
+     "cp_after": -119
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1647:A-noirs",
+     "ply": 144,
+     "q": -0.2897461231888286,
+     "cp_before": -16,
+     "cp_after": -111
+    },
+    {
+     "arena": "cand_0000",
+     "key": "21:A-noirs",
+     "ply": 86,
+     "q": -0.567996461328411,
+     "cp_before": -4,
+     "cp_after": -237
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1860:A-blancs",
+     "ply": 81,
+     "q": 0.12516892069008953,
+     "cp_before": 0,
+     "cp_after": -112
+    },
+    {
+     "arena": "cand_0000",
+     "key": "425:A-blancs",
+     "ply": 59,
+     "q": 0.2384179501564923,
+     "cp_before": 518,
+     "cp_after": -314
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1113:A-blancs",
+     "ply": 61,
+     "q": -0.17889570685674608,
+     "cp_before": 0,
+     "cp_after": -113
+    },
+    {
+     "arena": "cand_0000",
+     "key": "704:A-blancs",
+     "ply": 47,
+     "q": -0.04475511982110306,
+     "cp_before": -87,
+     "cp_after": -136
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1680:A-blancs",
+     "ply": 147,
+     "q": -0.622734578238309,
+     "cp_before": -39,
+     "cp_after": -497
+    },
+    {
+     "arena": "cand_0000",
+     "key": "1647:A-blancs",
+     "ply": 147,
+     "q": -0.6119408072783282,
+     "cp_before": -23,
+     "cp_after": -462
+    },
+    {
+     "arena": "cand_0000",
+     "key": "17:A-noirs",
+     "ply": 38,
+     "q": -0.03659696682166327,
+     "cp_before": 0,
+     "cp_after": -110
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1525:A-noirs",
+     "ply": 36,
+     "q": -0.19292938527627965,
+     "cp_before": 0,
+     "cp_after": -173
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1662:A-blancs",
+     "ply": 43,
+     "q": -0.45106903566001216,
+     "cp_before": -71,
+     "cp_after": -571
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1869:A-blancs",
+     "ply": 51,
+     "q": -0.18271687123212102,
+     "cp_before": -70,
+     "cp_after": -157
+    },
+    {
+     "arena": "cand_0001",
+     "key": "152:A-noirs",
+     "ply": 28,
+     "q": -0.17187384172314918,
+     "cp_before": -91,
+     "cp_after": -211
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1515:A-blancs",
+     "ply": 13,
+     "q": -0.2662001207450043,
+     "cp_before": -96,
+     "cp_after": -227
+    },
+    {
+     "arena": "cand_0001",
+     "key": "152:A-blancs",
+     "ply": 47,
+     "q": -0.09579164906235792,
+     "cp_before": -21,
+     "cp_after": -874
+    },
+    {
+     "arena": "cand_0001",
+     "key": "63:A-blancs",
+     "ply": 59,
+     "q": -0.34771930910090904,
+     "cp_before": -35,
+     "cp_after": -610
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1354:A-noirs",
+     "ply": 42,
+     "q": -0.34101300166725224,
+     "cp_before": 348,
+     "cp_after": -157
+    },
+    {
+     "arena": "cand_0001",
+     "key": "959:A-noirs",
+     "ply": 32,
+     "q": 0.06750661867267604,
+     "cp_before": -38,
+     "cp_after": -120
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1650:A-noirs",
+     "ply": 96,
+     "q": -0.4346392405455682,
+     "cp_before": -34,
+     "cp_after": -525
+    },
+    {
+     "arena": "cand_0001",
+     "key": "371:A-blancs",
+     "ply": 19,
+     "q": -0.10117573013114488,
+     "cp_before": -100,
+     "cp_after": -253
+    },
+    {
+     "arena": "cand_0001",
+     "key": "731:A-blancs",
+     "ply": 71,
+     "q": -0.14678505340136996,
+     "cp_before": 0,
+     "cp_after": -408
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1320:A-blancs",
+     "ply": 61,
+     "q": -0.6440714685459487,
+     "cp_before": 41,
+     "cp_after": -607
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1860:A-noirs",
+     "ply": 70,
+     "q": -0.5155868304190249,
+     "cp_before": -48,
+     "cp_after": -290
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1242:A-noirs",
+     "ply": 54,
+     "q": -0.23439725007935988,
+     "cp_before": 76,
+     "cp_after": -306
+    },
+    {
+     "arena": "cand_0001",
+     "key": "787:A-blancs",
+     "ply": 99,
+     "q": -0.4069844675412522,
+     "cp_before": -16,
+     "cp_after": -215
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1150:A-blancs",
+     "ply": 55,
+     "q": -0.47202646433936424,
+     "cp_before": -76,
+     "cp_after": -129
+    },
+    {
+     "arena": "cand_0001",
+     "key": "474:A-noirs",
+     "ply": 66,
+     "q": -0.1347658024192672,
+     "cp_before": -26,
+     "cp_after": -141
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1144:A-blancs",
+     "ply": 59,
+     "q": -0.24353948430348168,
+     "cp_before": 257,
+     "cp_after": -203
+    },
+    {
+     "arena": "cand_0001",
+     "key": "268:A-noirs",
+     "ply": 94,
+     "q": -0.6924847161944084,
+     "cp_before": 0,
+     "cp_after": -591
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1401:A-noirs",
+     "ply": 24,
+     "q": -0.34989536175532127,
+     "cp_before": -41,
+     "cp_after": -252
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1161:A-blancs",
+     "ply": 39,
+     "q": -0.143411099673272,
+     "cp_before": -79,
+     "cp_after": -127
+    },
+    {
+     "arena": "cand_0001",
+     "key": "863:A-blancs",
+     "ply": 57,
+     "q": -0.012138950698273442,
+     "cp_before": -50,
+     "cp_after": -372
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1647:A-blancs",
+     "ply": 57,
+     "q": -0.13485780512897844,
+     "cp_before": -71,
+     "cp_after": -273
+    },
+    {
+     "arena": "cand_0001",
+     "key": "828:A-noirs",
+     "ply": 44,
+     "q": -0.16286064131389283,
+     "cp_before": -89,
+     "cp_after": -130
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1869:A-noirs",
+     "ply": 94,
+     "q": -0.059915582006229595,
+     "cp_before": -44,
+     "cp_after": -379
+    },
+    {
+     "arena": "cand_0001",
+     "key": "716:A-blancs",
+     "ply": 63,
+     "q": -0.0016202469963339432,
+     "cp_before": -36,
+     "cp_after": -248
+    },
+    {
+     "arena": "cand_0001",
+     "key": "17:A-blancs",
+     "ply": 65,
+     "q": 0.002788519280596604,
+     "cp_before": 17,
+     "cp_after": -475
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1132:A-blancs",
+     "ply": 43,
+     "q": -0.11378215440225774,
+     "cp_before": -56,
+     "cp_after": -351
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1395:A-blancs",
+     "ply": 59,
+     "q": -0.3764980957329051,
+     "cp_before": -38,
+     "cp_after": -540
+    },
+    {
+     "arena": "cand_0001",
+     "key": "709:A-blancs",
+     "ply": 15,
+     "q": -0.17643816673789933,
+     "cp_before": -90,
+     "cp_after": -149
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1688:A-blancs",
+     "ply": 35,
+     "q": -0.33434679543608753,
+     "cp_before": -87,
+     "cp_after": -252
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1063:A-noirs",
+     "ply": 70,
+     "q": -0.16453073142022265,
+     "cp_before": -58,
+     "cp_after": -160
+    },
+    {
+     "arena": "cand_0001",
+     "key": "94:A-blancs",
+     "ply": 63,
+     "q": -0.27613393893808275,
+     "cp_before": -66,
+     "cp_after": -241
+    },
+    {
+     "arena": "cand_0001",
+     "key": "94:A-noirs",
+     "ply": 142,
+     "q": -0.11209065366515529,
+     "cp_before": 0,
+     "cp_after": -591
+    },
+    {
+     "arena": "cand_0001",
+     "key": "87:A-noirs",
+     "ply": 42,
+     "q": -0.25998407560956677,
+     "cp_before": -31,
+     "cp_after": -462
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1432:A-noirs",
+     "ply": 54,
+     "q": -0.43473055604289274,
+     "cp_before": -37,
+     "cp_after": -389
+    },
+    {
+     "arena": "cand_0001",
+     "key": "165:A-noirs",
+     "ply": 104,
+     "q": -0.3195564951168475,
+     "cp_before": -49,
+     "cp_after": -422
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1291:A-noirs",
+     "ply": 66,
+     "q": -0.5257781366284807,
+     "cp_before": -92,
+     "cp_after": -325
+    },
+    {
+     "arena": "cand_0001",
+     "key": "268:A-blancs",
+     "ply": 113,
+     "q": 0.004384058499847775,
+     "cp_before": 19,
+     "cp_after": -130
+    },
+    {
+     "arena": "cand_0001",
+     "key": "771:A-blancs",
+     "ply": 113,
+     "q": -0.05666282264091797,
+     "cp_before": -8,
+     "cp_after": -271
+    },
+    {
+     "arena": "cand_0001",
+     "key": "809:A-noirs",
+     "ply": 106,
+     "q": -0.10093514276297753,
+     "cp_before": -99,
+     "cp_after": -120
+    },
+    {
+     "arena": "cand_0001",
+     "key": "1662:A-noirs",
+     "ply": 86,
+     "q": -0.3544710672631934,
+     "cp_before": -16,
+     "cp_after": -134
+    },
+    {
+     "arena": "cand_0001",
+     "key": "463:A-blancs",
+     "ply": 39,
+     "q": -0.5465026364675654,
+     "cp_before": -80,
+     "cp_after": -587
+    },
+    {
+     "arena": "cand_0001",
+     "key": "929:A-blancs",
+     "ply": 129,
+     "q": -0.519695768127014,
+     "cp_before": 0,
+     "cp_after": -407
+    },
+    {
+     "arena": "cand_0001",
+     "key": "704:A-blancs",
+     "ply": 89,
+     "q": -0.3818227002809556,
+     "cp_before": -78,
+     "cp_after": -123
+    },
+    {
+     "arena": "cand_0001",
+     "key": "459:A-blancs",
+     "ply": 45,
+     "q": -0.4674325544729977,
+     "cp_before": 0,
+     "cp_after": -537
+    },
+    {
+     "arena": "cand_0001",
+     "key": "292:A-noirs",
+     "ply": 128,
+     "q": -0.5133768260317961,
+     "cp_before": 0,
+     "cp_after": -652
+    },
+    {
+     "arena": "cand_0001",
+     "key": "696:A-blancs",
+     "ply": 161,
+     "q": -0.4087946805176302,
+     "cp_before": -38,
+     "cp_after": -284
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1956:A-noirs",
+     "ply": 28,
+     "q": -0.14951789714349664,
+     "cp_before": -48,
+     "cp_after": -223
+    },
+    {
+     "arena": "cand_0002",
+     "key": "357:A-blancs",
+     "ply": 35,
+     "q": -0.03929401891287509,
+     "cp_before": 343,
+     "cp_after": -237
+    },
+    {
+     "arena": "cand_0002",
+     "key": "407:A-noirs",
+     "ply": 30,
+     "q": -0.16997780327439604,
+     "cp_before": 1,
+     "cp_after": -199
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1948:A-noirs",
+     "ply": 36,
+     "q": 0.02351527611970605,
+     "cp_before": 19,
+     "cp_after": -344
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1113:A-blancs",
+     "ply": 59,
+     "q": -0.33851756137767947,
+     "cp_before": -43,
+     "cp_after": -762
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1012:A-blancs",
+     "ply": 41,
+     "q": -0.3812920160450282,
+     "cp_before": -26,
+     "cp_after": -356
+    },
+    {
+     "arena": "cand_0002",
+     "key": "21:A-noirs",
+     "ply": 48,
+     "q": -0.4108581466760153,
+     "cp_before": -29,
+     "cp_after": -401
+    },
+    {
+     "arena": "cand_0002",
+     "key": "959:A-noirs",
+     "ply": 32,
+     "q": 0.06750661867267604,
+     "cp_before": -38,
+     "cp_after": -120
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1320:A-blancs",
+     "ply": 61,
+     "q": -0.6440714691390297,
+     "cp_before": 41,
+     "cp_after": -607
+    },
+    {
+     "arena": "cand_0002",
+     "key": "732:A-blancs",
+     "ply": 63,
+     "q": -0.12201044529291862,
+     "cp_before": -72,
+     "cp_after": -369
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1515:A-blancs",
+     "ply": 13,
+     "q": -0.26620012111568,
+     "cp_before": -96,
+     "cp_after": -227
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1193:A-blancs",
+     "ply": 71,
+     "q": -0.4076487499460652,
+     "cp_before": -100,
+     "cp_after": -287
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1121:A-noirs",
+     "ply": 88,
+     "q": 0.039498748055042984,
+     "cp_before": 0,
+     "cp_after": -540
+    },
+    {
+     "arena": "cand_0002",
+     "key": "33:A-noirs",
+     "ply": 70,
+     "q": -0.20308353790471248,
+     "cp_before": 0,
+     "cp_after": -437
+    },
+    {
+     "arena": "cand_0002",
+     "key": "844:A-noirs",
+     "ply": 52,
+     "q": 0.05900761413049713,
+     "cp_before": 0,
+     "cp_after": -477
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1202:A-blancs",
+     "ply": 47,
+     "q": -0.23508394617976539,
+     "cp_before": -91,
+     "cp_after": -353
+    },
+    {
+     "arena": "cand_0002",
+     "key": "704:A-blancs",
+     "ply": 71,
+     "q": -0.33142900845471457,
+     "cp_before": -80,
+     "cp_after": -242
+    },
+    {
+     "arena": "cand_0002",
+     "key": "704:A-noirs",
+     "ply": 34,
+     "q": -0.033431165484162466,
+     "cp_before": -18,
+     "cp_after": -200
+    },
+    {
+     "arena": "cand_0002",
+     "key": "538:A-blancs",
+     "ply": 77,
+     "q": -0.2572893076912217,
+     "cp_before": -20,
+     "cp_after": -261
+    },
+    {
+     "arena": "cand_0002",
+     "key": "320:A-blancs",
+     "ply": 77,
+     "q": -0.3419535618567311,
+     "cp_before": -61,
+     "cp_after": -404
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1850:A-blancs",
+     "ply": 69,
+     "q": -0.015645876892874788,
+     "cp_before": 23,
+     "cp_after": -250
+    },
+    {
+     "arena": "cand_0002",
+     "key": "959:A-blancs",
+     "ply": 63,
+     "q": -0.21444047268987423,
+     "cp_before": -40,
+     "cp_after": -257
+    },
+    {
+     "arena": "cand_0002",
+     "key": "731:A-noirs",
+     "ply": 58,
+     "q": -0.23129598368700613,
+     "cp_before": 0,
+     "cp_after": -210
+    },
+    {
+     "arena": "cand_0002",
+     "key": "268:A-noirs",
+     "ply": 106,
+     "q": -0.2938971588618599,
+     "cp_before": -65,
+     "cp_after": -385
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1401:A-noirs",
+     "ply": 24,
+     "q": -0.34989536175532127,
+     "cp_before": -41,
+     "cp_after": -252
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1647:A-noirs",
+     "ply": 44,
+     "q": -0.1160113730801464,
+     "cp_before": 10,
+     "cp_after": -132
+    },
+    {
+     "arena": "cand_0002",
+     "key": "268:A-blancs",
+     "ply": 95,
+     "q": -0.7969088903744126,
+     "cp_before": -35,
+     "cp_after": -627
+    },
+    {
+     "arena": "cand_0002",
+     "key": "202:A-noirs",
+     "ply": 16,
+     "q": -0.1219735915071229,
+     "cp_before": 10,
+     "cp_after": -194
+    },
+    {
+     "arena": "cand_0002",
+     "key": "292:A-noirs",
+     "ply": 110,
+     "q": -0.560369922265188,
+     "cp_before": -41,
+     "cp_after": -465
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1242:A-noirs",
+     "ply": 108,
+     "q": -0.013505571275087657,
+     "cp_before": 0,
+     "cp_after": -436
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1432:A-blancs",
+     "ply": 99,
+     "q": -0.14865696045166965,
+     "cp_before": -2,
+     "cp_after": -364
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1105:A-noirs",
+     "ply": 60,
+     "q": -0.3723492444312172,
+     "cp_before": -69,
+     "cp_after": -264
+    },
+    {
+     "arena": "cand_0002",
+     "key": "902:A-noirs",
+     "ply": 82,
+     "q": -0.6861930847612779,
+     "cp_before": -16,
+     "cp_after": -672
+    },
+    {
+     "arena": "cand_0002",
+     "key": "87:A-noirs",
+     "ply": 72,
+     "q": -0.269050420859634,
+     "cp_before": -26,
+     "cp_after": -264
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1948:A-blancs",
+     "ply": 103,
+     "q": -0.297086111740186,
+     "cp_before": -51,
+     "cp_after": -174
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1825:A-noirs",
+     "ply": 56,
+     "q": -0.27539912377257103,
+     "cp_before": -26,
+     "cp_after": -241
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1848:A-noirs",
+     "ply": 34,
+     "q": -0.26497590153209344,
+     "cp_before": -16,
+     "cp_after": -316
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1462:A-noirs",
+     "ply": 130,
+     "q": -0.5085124402534013,
+     "cp_before": -66,
+     "cp_after": -269
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1658:A-noirs",
+     "ply": 108,
+     "q": -0.11370138534279864,
+     "cp_before": -88,
+     "cp_after": -114
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1161:A-blancs",
+     "ply": 67,
+     "q": -0.31166840906588555,
+     "cp_before": -34,
+     "cp_after": -236
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1186:A-noirs",
+     "ply": 44,
+     "q": -0.3181115395357063,
+     "cp_before": -26,
+     "cp_after": -363
+    },
+    {
+     "arena": "cand_0002",
+     "key": "425:A-blancs",
+     "ply": 91,
+     "q": -0.11503564557367565,
+     "cp_before": -16,
+     "cp_after": -137
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1291:A-blancs",
+     "ply": 61,
+     "q": -0.39875681775816674,
+     "cp_before": -80,
+     "cp_after": -260
+    },
+    {
+     "arena": "cand_0002",
+     "key": "63:A-noirs",
+     "ply": 106,
+     "q": -0.48648548954680787,
+     "cp_before": -31,
+     "cp_after": -326
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1848:A-blancs",
+     "ply": 35,
+     "q": 0.1590024956562255,
+     "cp_before": -13,
+     "cp_after": -172
+    },
+    {
+     "arena": "cand_0002",
+     "key": "459:A-blancs",
+     "ply": 115,
+     "q": -0.26004949630300667,
+     "cp_before": -2,
+     "cp_after": -244
+    },
+    {
+     "arena": "cand_0002",
+     "key": "166:A-blancs",
+     "ply": 35,
+     "q": 0.0006066162129910431,
+     "cp_before": -100,
+     "cp_after": -113
+    },
+    {
+     "arena": "cand_0002",
+     "key": "35:A-blancs",
+     "ply": 73,
+     "q": -0.28426473770540817,
+     "cp_before": -45,
+     "cp_after": -226
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1132:A-noirs",
+     "ply": 144,
+     "q": -0.9584644694826496,
+     "cp_before": 0,
+     "cp_after": -1000
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1869:A-noirs",
+     "ply": 138,
+     "q": -0.21329747630568194,
+     "cp_before": -39,
+     "cp_after": -293
+    },
+    {
+     "arena": "cand_0002",
+     "key": "1851:A-blancs",
+     "ply": 51,
+     "q": -0.15854953279873976,
+     "cp_before": -4,
+     "cp_after": -114
+    },
+    {
+     "arena": "cand_0002",
+     "key": "311:A-blancs",
+     "ply": 75,
+     "q": -0.034944479349671646,
+     "cp_before": 0,
+     "cp_after": -891
+    },
+    {
+     "arena": "cand_0002",
+     "key": "538:A-noirs",
+     "ply": 186,
+     "q": -0.19336081024106425,
+     "cp_before": 0,
+     "cp_after": -415
+    },
+    {
+     "arena": "cand_0002",
+     "key": "94:A-noirs",
+     "ply": 88,
+     "q": -0.14205474720049224,
+     "cp_before": 0,
+     "cp_after": -408
+    },
+    {
+     "arena": "cand_0002",
+     "key": "320:A-noirs",
+     "ply": 98,
+     "q": -0.15910538476289468,
+     "cp_before": -18,
+     "cp_after": -108
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1658:A-blancs",
+     "ply": 51,
+     "q": 0.21373241075050475,
+     "cp_before": 0,
+     "cp_after": -1000
+    },
+    {
+     "arena": "cand_0003",
+     "key": "732:A-blancs",
+     "ply": 37,
+     "q": -0.0904242918471602,
+     "cp_before": 82,
+     "cp_after": -242
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1948:A-noirs",
+     "ply": 36,
+     "q": 0.02351527611970605,
+     "cp_before": 19,
+     "cp_after": -344
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1150:A-blancs",
+     "ply": 29,
+     "q": -0.31280525729050906,
+     "cp_before": -80,
+     "cp_after": -134
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1186:A-blancs",
+     "ply": 45,
+     "q": -0.24586072370331197,
+     "cp_before": -100,
+     "cp_after": -202
+    },
+    {
+     "arena": "cand_0003",
+     "key": "152:A-noirs",
+     "ply": 18,
+     "q": 0.029759487429105523,
+     "cp_before": -49,
+     "cp_after": -115
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1515:A-blancs",
+     "ply": 13,
+     "q": -0.2662001207450043,
+     "cp_before": -96,
+     "cp_after": -227
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1320:A-blancs",
+     "ply": 37,
+     "q": -0.33384139748146546,
+     "cp_before": -68,
+     "cp_after": -166
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1860:A-noirs",
+     "ply": 30,
+     "q": -0.53252740290053,
+     "cp_before": -33,
+     "cp_after": -329
+    },
+    {
+     "arena": "cand_0003",
+     "key": "371:A-blancs",
+     "ply": 43,
+     "q": -0.5758946495853475,
+     "cp_before": -46,
+     "cp_after": -323
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1851:A-noirs",
+     "ply": 52,
+     "q": 0.22630238959181181,
+     "cp_before": 96,
+     "cp_after": -110
+    },
+    {
+     "arena": "cand_0003",
+     "key": "292:A-blancs",
+     "ply": 45,
+     "q": -0.29896713850732465,
+     "cp_before": 35,
+     "cp_after": -195
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1658:A-noirs",
+     "ply": 38,
+     "q": -0.3854253109827156,
+     "cp_before": -79,
+     "cp_after": -265
+    },
+    {
+     "arena": "cand_0003",
+     "key": "828:A-blancs",
+     "ply": 77,
+     "q": -0.28561378168451845,
+     "cp_before": -11,
+     "cp_after": -212
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1872:A-blancs",
+     "ply": 45,
+     "q": -0.09385965249080684,
+     "cp_before": -52,
+     "cp_after": -216
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1161:A-blancs",
+     "ply": 71,
+     "q": 0.010522628340879409,
+     "cp_before": 181,
+     "cp_after": -382
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1977:A-blancs",
+     "ply": 53,
+     "q": 0.12523159905526768,
+     "cp_before": 0,
+     "cp_after": -142
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1121:A-noirs",
+     "ply": 46,
+     "q": -0.15708133668420993,
+     "cp_before": -98,
+     "cp_after": -280
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1401:A-noirs",
+     "ply": 24,
+     "q": -0.34989536190359155,
+     "cp_before": -41,
+     "cp_after": -252
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1850:A-noirs",
+     "ply": 70,
+     "q": -0.07399441018719133,
+     "cp_before": -34,
+     "cp_after": -612
+    },
+    {
+     "arena": "cand_0003",
+     "key": "716:A-noirs",
+     "ply": 40,
+     "q": -0.13065420091963045,
+     "cp_before": -67,
+     "cp_after": -207
+    },
+    {
+     "arena": "cand_0003",
+     "key": "903:A-blancs",
+     "ply": 25,
+     "q": -0.1564642598896533,
+     "cp_before": -88,
+     "cp_after": -174
+    },
+    {
+     "arena": "cand_0003",
+     "key": "809:A-noirs",
+     "ply": 44,
+     "q": -0.21368462827279053,
+     "cp_before": 18,
+     "cp_after": -317
+    },
+    {
+     "arena": "cand_0003",
+     "key": "938:A-blancs",
+     "ply": 69,
+     "q": -0.24109047155048866,
+     "cp_before": -61,
+     "cp_after": -156
+    },
+    {
+     "arena": "cand_0003",
+     "key": "929:A-blancs",
+     "ply": 27,
+     "q": -0.005628525521559872,
+     "cp_before": 100,
+     "cp_after": -131
+    },
+    {
+     "arena": "cand_0003",
+     "key": "320:A-noirs",
+     "ply": 80,
+     "q": -0.2940885775551126,
+     "cp_before": -41,
+     "cp_after": -184
+    },
+    {
+     "arena": "cand_0003",
+     "key": "152:A-blancs",
+     "ply": 51,
+     "q": -0.020540548349494366,
+     "cp_before": -84,
+     "cp_after": -146
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1113:A-blancs",
+     "ply": 45,
+     "q": -0.3470429010636843,
+     "cp_before": -26,
+     "cp_after": -411
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1688:A-blancs",
+     "ply": 39,
+     "q": -0.31086085951743436,
+     "cp_before": -77,
+     "cp_after": -140
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1432:A-noirs",
+     "ply": 76,
+     "q": -0.3666995598248841,
+     "cp_before": 59,
+     "cp_after": -273
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1088:A-noirs",
+     "ply": 112,
+     "q": -0.4946653629799109,
+     "cp_before": 0,
+     "cp_after": -1000
+    },
+    {
+     "arena": "cand_0003",
+     "key": "929:A-noirs",
+     "ply": 110,
+     "q": -0.8670456748993243,
+     "cp_before": 0,
+     "cp_after": -797
+    },
+    {
+     "arena": "cand_0003",
+     "key": "731:A-blancs",
+     "ply": 83,
+     "q": 0.16858870746679047,
+     "cp_before": 75,
+     "cp_after": -222
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1525:A-blancs",
+     "ply": 83,
+     "q": -0.14596090667454795,
+     "cp_before": -75,
+     "cp_after": -260
+    },
+    {
+     "arena": "cand_0003",
+     "key": "425:A-noirs",
+     "ply": 30,
+     "q": -0.2252458503066715,
+     "cp_before": -60,
+     "cp_after": -230
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1829:A-noirs",
+     "ply": 116,
+     "q": -0.3886822661227403,
+     "cp_before": -27,
+     "cp_after": -489
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1144:A-noirs",
+     "ply": 50,
+     "q": -0.13745163709958505,
+     "cp_before": -58,
+     "cp_after": -113
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1696:A-blancs",
+     "ply": 81,
+     "q": -0.322428398734927,
+     "cp_before": 0,
+     "cp_after": -374
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1150:A-noirs",
+     "ply": 56,
+     "q": -0.10840306500904262,
+     "cp_before": -79,
+     "cp_after": -248
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1462:A-noirs",
+     "ply": 86,
+     "q": -0.47289808236516606,
+     "cp_before": 165,
+     "cp_after": -434
+    },
+    {
+     "arena": "cand_0003",
+     "key": "166:A-noirs",
+     "ply": 64,
+     "q": -0.20119024677125655,
+     "cp_before": -27,
+     "cp_after": -152
+    },
+    {
+     "arena": "cand_0003",
+     "key": "388:A-blancs",
+     "ply": 113,
+     "q": -0.5989496073551217,
+     "cp_before": -43,
+     "cp_after": -403
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1550:A-noirs",
+     "ply": 40,
+     "q": -0.16421947344953416,
+     "cp_before": -36,
+     "cp_after": -252
+    },
+    {
+     "arena": "cand_0003",
+     "key": "63:A-blancs",
+     "ply": 105,
+     "q": -0.19783477870219235,
+     "cp_before": -66,
+     "cp_after": -129
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1354:A-blancs",
+     "ply": 53,
+     "q": -0.034016642109050754,
+     "cp_before": -7,
+     "cp_after": -363
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1193:A-noirs",
+     "ply": 74,
+     "q": -0.15002368931283258,
+     "cp_before": -37,
+     "cp_after": -138
+    },
+    {
+     "arena": "cand_0003",
+     "key": "847:A-noirs",
+     "ply": 78,
+     "q": -0.5156461854849882,
+     "cp_before": -55,
+     "cp_after": -104
+    },
+    {
+     "arena": "cand_0003",
+     "key": "1872:A-noirs",
+     "ply": 170,
+     "q": -0.6743061882420559,
+     "cp_before": 0,
+     "cp_after": -518
+    },
+    {
+     "arena": "cand_0003",
+     "key": "213:A-blancs",
+     "ply": 19,
+     "q": -0.20933051157362798,
+     "cp_before": -48,
+     "cp_after": -115
+    },
+    {
+     "arena": "cand_0004",
+     "key": "425:A-noirs",
+     "ply": 48,
+     "q": -0.6712678577658252,
+     "cp_before": 1000,
+     "cp_after": -606
+    },
+    {
+     "arena": "cand_0004",
+     "key": "292:A-blancs",
+     "ply": 65,
+     "q": -0.4192732100002004,
+     "cp_before": -53,
+     "cp_after": -1000
+    },
+    {
+     "arena": "cand_0004",
+     "key": "704:A-blancs",
+     "ply": 29,
+     "q": -0.3326629719080691,
+     "cp_before": -60,
+     "cp_after": -267
+    },
+    {
+     "arena": "cand_0004",
+     "key": "463:A-noirs",
+     "ply": 72,
+     "q": -0.364733311384731,
+     "cp_before": -57,
+     "cp_after": -344
+    },
+    {
+     "arena": "cand_0004",
+     "key": "357:A-noirs",
+     "ply": 42,
+     "q": 0.1182861855182338,
+     "cp_before": 2,
+     "cp_after": -345
+    },
+    {
+     "arena": "cand_0004",
+     "key": "152:A-blancs",
+     "ply": 47,
+     "q": -0.09579164921062817,
+     "cp_before": -21,
+     "cp_after": -874
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1354:A-noirs",
+     "ply": 42,
+     "q": -0.34101300166725224,
+     "cp_before": 348,
+     "cp_after": -157
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1848:A-noirs",
+     "ply": 76,
+     "q": -0.7246709365156753,
+     "cp_before": 29,
+     "cp_after": -683
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1186:A-blancs",
+     "ply": 45,
+     "q": -0.24586072370331197,
+     "cp_before": -100,
+     "cp_after": -202
+    },
+    {
+     "arena": "cand_0004",
+     "key": "94:A-noirs",
+     "ply": 52,
+     "q": -0.26435681854129134,
+     "cp_before": -1,
+     "cp_after": -221
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1869:A-noirs",
+     "ply": 60,
+     "q": -0.40049163797703474,
+     "cp_before": -31,
+     "cp_after": -331
+    },
+    {
+     "arena": "cand_0004",
+     "key": "371:A-blancs",
+     "ply": 19,
+     "q": -0.10117573013114488,
+     "cp_before": -100,
+     "cp_after": -253
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1658:A-noirs",
+     "ply": 38,
+     "q": -0.3854253109827156,
+     "cp_before": -79,
+     "cp_after": -265
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1184:A-blancs",
+     "ply": 69,
+     "q": -0.10488402592805933,
+     "cp_before": 0,
+     "cp_after": -769
+    },
+    {
+     "arena": "cand_0004",
+     "key": "63:A-blancs",
+     "ply": 45,
+     "q": 0.09743649913785767,
+     "cp_before": -41,
+     "cp_after": -129
+    },
+    {
+     "arena": "cand_0004",
+     "key": "696:A-blancs",
+     "ply": 31,
+     "q": -0.45171236799130987,
+     "cp_before": -30,
+     "cp_after": -266
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1432:A-blancs",
+     "ply": 63,
+     "q": -0.4493306211163452,
+     "cp_before": -31,
+     "cp_after": -370
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1012:A-blancs",
+     "ply": 41,
+     "q": -0.3812920160450282,
+     "cp_before": -26,
+     "cp_after": -356
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1:A-noirs",
+     "ply": 86,
+     "q": -0.10563491332397995,
+     "cp_before": 0,
+     "cp_after": -793
+    },
+    {
+     "arena": "cand_0004",
+     "key": "828:A-blancs",
+     "ply": 65,
+     "q": -0.18295295476862483,
+     "cp_before": -95,
+     "cp_after": -484
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1121:A-noirs",
+     "ply": 88,
+     "q": 0.039498748055042984,
+     "cp_before": 0,
+     "cp_after": -540
+    },
+    {
+     "arena": "cand_0004",
+     "key": "459:A-blancs",
+     "ply": 29,
+     "q": -0.5604464112044271,
+     "cp_before": -97,
+     "cp_after": -321
+    },
+    {
+     "arena": "cand_0004",
+     "key": "108:A-noirs",
+     "ply": 40,
+     "q": -0.06577255939416106,
+     "cp_before": -22,
+     "cp_after": -358
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1401:A-noirs",
+     "ply": 24,
+     "q": -0.34989536175532127,
+     "cp_before": -41,
+     "cp_after": -252
+    },
+    {
+     "arena": "cand_0004",
+     "key": "929:A-noirs",
+     "ply": 68,
+     "q": -0.3349744540671656,
+     "cp_before": -99,
+     "cp_after": -135
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1850:A-noirs",
+     "ply": 76,
+     "q": -0.48282619136899935,
+     "cp_before": -13,
+     "cp_after": -484
+    },
+    {
+     "arena": "cand_0004",
+     "key": "311:A-blancs",
+     "ply": 79,
+     "q": -0.2265187693442408,
+     "cp_before": 484,
+     "cp_after": -304
+    },
+    {
+     "arena": "cand_0004",
+     "key": "847:A-noirs",
+     "ply": 50,
+     "q": -0.0474867108382229,
+     "cp_before": -10,
+     "cp_after": -136
+    },
+    {
+     "arena": "cand_0004",
+     "key": "94:A-blancs",
+     "ply": 115,
+     "q": -0.5120619116582681,
+     "cp_before": -1,
+     "cp_after": -754
+    },
+    {
+     "arena": "cand_0004",
+     "key": "716:A-blancs",
+     "ply": 41,
+     "q": -0.05000345807479676,
+     "cp_before": -100,
+     "cp_after": -287
+    },
+    {
+     "arena": "cand_0004",
+     "key": "33:A-blancs",
+     "ply": 51,
+     "q": -0.5065201344107514,
+     "cp_before": 7,
+     "cp_after": -203
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1105:A-noirs",
+     "ply": 76,
+     "q": -0.3720894910543416,
+     "cp_before": -90,
+     "cp_after": -321
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1202:A-blancs",
+     "ply": 41,
+     "q": -0.0349303594030514,
+     "cp_before": -99,
+     "cp_after": -136
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1132:A-blancs",
+     "ply": 43,
+     "q": -0.1137821538091767,
+     "cp_before": -56,
+     "cp_after": -351
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1046:A-blancs",
+     "ply": 95,
+     "q": -0.272481699182828,
+     "cp_before": -61,
+     "cp_after": -622
+    },
+    {
+     "arena": "cand_0004",
+     "key": "844:A-noirs",
+     "ply": 104,
+     "q": -0.050107802903807876,
+     "cp_before": -49,
+     "cp_after": -282
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1850:A-blancs",
+     "ply": 99,
+     "q": -0.27613075787030084,
+     "cp_before": -41,
+     "cp_after": -302
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1948:A-noirs",
+     "ply": 54,
+     "q": -0.31271778982172055,
+     "cp_before": 55,
+     "cp_after": -305
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1851:A-blancs",
+     "ply": 13,
+     "q": -0.07229005189413269,
+     "cp_before": -82,
+     "cp_after": -117
+    },
+    {
+     "arena": "cand_0004",
+     "key": "771:A-blancs",
+     "ply": 107,
+     "q": -0.5456303598669668,
+     "cp_before": -16,
+     "cp_after": -247
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1395:A-noirs",
+     "ply": 70,
+     "q": -0.4816655848796169,
+     "cp_before": 51,
+     "cp_after": -643
+    },
+    {
+     "arena": "cand_0004",
+     "key": "787:A-noirs",
+     "ply": 56,
+     "q": -0.1822818756643312,
+     "cp_before": -32,
+     "cp_after": -374
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1047:A-blancs",
+     "ply": 97,
+     "q": -0.5490432997623375,
+     "cp_before": -28,
+     "cp_after": -504
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1525:A-blancs",
+     "ply": 87,
+     "q": -0.46564683318977934,
+     "cp_before": -15,
+     "cp_after": -655
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1320:A-blancs",
+     "ply": 37,
+     "q": -0.33384139748146546,
+     "cp_before": -68,
+     "cp_after": -166
+    },
+    {
+     "arena": "cand_0004",
+     "key": "828:A-noirs",
+     "ply": 74,
+     "q": -0.2834948235439294,
+     "cp_before": 640,
+     "cp_after": -351
+    },
+    {
+     "arena": "cand_0004",
+     "key": "1860:A-blancs",
+     "ply": 89,
+     "q": -0.43532818084610486,
+     "cp_before": -34,
+     "cp_after": -307
+    },
+    {
+     "arena": "cand_0004",
+     "key": "709:A-blancs",
+     "ply": 15,
+     "q": -0.29961652535162125,
+     "cp_before": -2,
+     "cp_after": -184
+    },
+    {
+     "arena": "cand_0004",
+     "key": "459:A-noirs",
+     "ply": 196,
+     "q": -0.5110407850892742,
+     "cp_before": -95,
+     "cp_after": -417
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1046:A-noirs",
+     "ply": 50,
+     "q": -0.36411358742622557,
+     "cp_before": -31,
+     "cp_after": -136
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1869:A-blancs",
+     "ply": 61,
+     "q": -0.27208604724076924,
+     "cp_before": 6,
+     "cp_after": -852
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1956:A-noirs",
+     "ply": 28,
+     "q": -0.1495178977365777,
+     "cp_before": -48,
+     "cp_after": -223
+    },
+    {
+     "arena": "cand_0005",
+     "key": "21:A-blancs",
+     "ply": 45,
+     "q": -0.2923406056241093,
+     "cp_before": -99,
+     "cp_after": -106
+    },
+    {
+     "arena": "cand_0005",
+     "key": "903:A-blancs",
+     "ply": 25,
+     "q": -0.1564642598896533,
+     "cp_before": -88,
+     "cp_after": -174
+    },
+    {
+     "arena": "cand_0005",
+     "key": "771:A-noirs",
+     "ply": 40,
+     "q": 0.2525268036835081,
+     "cp_before": 90,
+     "cp_after": -179
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1046:A-blancs",
+     "ply": 59,
+     "q": 0.23101639771366037,
+     "cp_before": 42,
+     "cp_after": -535
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1850:A-noirs",
+     "ply": 60,
+     "q": -0.1146900338301463,
+     "cp_before": -79,
+     "cp_after": -346
+    },
+    {
+     "arena": "cand_0005",
+     "key": "335:A-noirs",
+     "ply": 36,
+     "q": -0.2300114744761032,
+     "cp_before": -83,
+     "cp_after": -272
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1271:A-blancs",
+     "ply": 73,
+     "q": -0.024893830048756685,
+     "cp_before": 0,
+     "cp_after": -111
+    },
+    {
+     "arena": "cand_0005",
+     "key": "371:A-blancs",
+     "ply": 19,
+     "q": -0.10117573013114488,
+     "cp_before": -100,
+     "cp_after": -253
+    },
+    {
+     "arena": "cand_0005",
+     "key": "63:A-noirs",
+     "ply": 46,
+     "q": -0.04335948794996783,
+     "cp_before": -68,
+     "cp_after": -201
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1105:A-noirs",
+     "ply": 80,
+     "q": -0.2513743902154647,
+     "cp_before": -47,
+     "cp_after": -251
+    },
+    {
+     "arena": "cand_0005",
+     "key": "152:A-blancs",
+     "ply": 53,
+     "q": -0.22958924427897257,
+     "cp_before": -59,
+     "cp_after": -146
+    },
+    {
+     "arena": "cand_0005",
+     "key": "152:A-noirs",
+     "ply": 18,
+     "q": 0.029759487429105523,
+     "cp_before": -49,
+     "cp_after": -115
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1977:A-noirs",
+     "ply": 38,
+     "q": -0.003191611066689965,
+     "cp_before": -76,
+     "cp_after": -143
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1525:A-blancs",
+     "ply": 41,
+     "q": 0.11225158668966473,
+     "cp_before": -48,
+     "cp_after": -615
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1395:A-noirs",
+     "ply": 82,
+     "q": -0.2431751264094732,
+     "cp_before": -5,
+     "cp_after": -561
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1647:A-noirs",
+     "ply": 86,
+     "q": -0.2229115342502992,
+     "cp_before": 0,
+     "cp_after": -247
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1320:A-noirs",
+     "ply": 34,
+     "q": -0.1293907257431738,
+     "cp_before": 90,
+     "cp_after": -220
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1401:A-noirs",
+     "ply": 24,
+     "q": -0.34989536190359155,
+     "cp_before": -41,
+     "cp_after": -252
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1851:A-blancs",
+     "ply": 71,
+     "q": -0.3577997981586878,
+     "cp_before": -30,
+     "cp_after": -133
+    },
+    {
+     "arena": "cand_0005",
+     "key": "320:A-noirs",
+     "ply": 50,
+     "q": -0.1864104360224452,
+     "cp_before": -74,
+     "cp_after": -158
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1872:A-blancs",
+     "ply": 59,
+     "q": -0.34052186691004144,
+     "cp_before": -41,
+     "cp_after": -257
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1829:A-noirs",
+     "ply": 64,
+     "q": 0.0987131135742092,
+     "cp_before": 209,
+     "cp_after": -233
+    },
+    {
+     "arena": "cand_0005",
+     "key": "828:A-blancs",
+     "ply": 67,
+     "q": 0.10812163068009402,
+     "cp_before": -12,
+     "cp_after": -400
+    },
+    {
+     "arena": "cand_0005",
+     "key": "771:A-blancs",
+     "ply": 83,
+     "q": -0.2210135570801424,
+     "cp_before": -5,
+     "cp_after": -573
+    },
+    {
+     "arena": "cand_0005",
+     "key": "357:A-noirs",
+     "ply": 42,
+     "q": -0.060294147064232854,
+     "cp_before": -43,
+     "cp_after": -298
+    },
+    {
+     "arena": "cand_0005",
+     "key": "202:A-noirs",
+     "ply": 16,
+     "q": -0.1219735915071229,
+     "cp_before": 10,
+     "cp_after": -194
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1432:A-noirs",
+     "ply": 100,
+     "q": -0.4738368135112435,
+     "cp_before": -28,
+     "cp_after": -526
+    },
+    {
+     "arena": "cand_0005",
+     "key": "914:A-noirs",
+     "ply": 88,
+     "q": -0.3401052153730691,
+     "cp_before": -96,
+     "cp_after": -143
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1150:A-blancs",
+     "ply": 29,
+     "q": -0.2761459321030346,
+     "cp_before": -84,
+     "cp_after": -165
+    },
+    {
+     "arena": "cand_0005",
+     "key": "165:A-blancs",
+     "ply": 79,
+     "q": -0.25944946383010825,
+     "cp_before": -24,
+     "cp_after": -501
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1432:A-blancs",
+     "ply": 63,
+     "q": -0.4493306211163452,
+     "cp_before": -31,
+     "cp_after": -370
+    },
+    {
+     "arena": "cand_0005",
+     "key": "388:A-noirs",
+     "ply": 102,
+     "q": -0.3263151982564025,
+     "cp_before": -15,
+     "cp_after": -243
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1515:A-blancs",
+     "ply": 13,
+     "q": -0.2662001207450043,
+     "cp_before": -96,
+     "cp_after": -227
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1662:A-blancs",
+     "ply": 81,
+     "q": -0.38256145404149033,
+     "cp_before": -71,
+     "cp_after": -231
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1161:A-noirs",
+     "ply": 104,
+     "q": -0.5115525556440971,
+     "cp_before": -96,
+     "cp_after": -548
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1012:A-noirs",
+     "ply": 118,
+     "q": -0.42659037704903874,
+     "cp_before": 0,
+     "cp_after": -451
+    },
+    {
+     "arena": "cand_0005",
+     "key": "425:A-noirs",
+     "ply": 126,
+     "q": -0.3759003612514011,
+     "cp_before": 0,
+     "cp_after": -340
+    },
+    {
+     "arena": "cand_0005",
+     "key": "929:A-blancs",
+     "ply": 129,
+     "q": -0.6108780428141689,
+     "cp_before": -24,
+     "cp_after": -723
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1848:A-noirs",
+     "ply": 64,
+     "q": -0.36064838244700204,
+     "cp_before": -70,
+     "cp_after": -222
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1688:A-noirs",
+     "ply": 162,
+     "q": -0.1792407901065693,
+     "cp_before": -23,
+     "cp_after": -397
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1320:A-blancs",
+     "ply": 37,
+     "q": -0.33384139748146546,
+     "cp_before": -68,
+     "cp_after": -166
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1063:A-blancs",
+     "ply": 107,
+     "q": -0.21338827069501268,
+     "cp_before": 0,
+     "cp_after": -318
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1647:A-blancs",
+     "ply": 99,
+     "q": -0.5802679592233837,
+     "cp_before": -40,
+     "cp_after": -434
+    },
+    {
+     "arena": "cand_0005",
+     "key": "1242:A-noirs",
+     "ply": 76,
+     "q": -0.13711047474647042,
+     "cp_before": -16,
+     "cp_after": -304
+    },
+    {
+     "arena": "cand_0005",
+     "key": "33:A-blancs",
+     "ply": 169,
+     "q": -0.22622040064486476,
+     "cp_before": -65,
+     "cp_after": -401
+    },
+    {
+     "arena": "cand_0005",
+     "key": "357:A-blancs",
+     "ply": 147,
+     "q": -0.5444981441346567,
+     "cp_before": -57,
+     "cp_after": -464
+    },
+    {
+     "arena": "cand_0005",
+     "key": "459:A-blancs",
+     "ply": 51,
+     "q": -0.4736154335574131,
+     "cp_before": -53,
+     "cp_after": -238
+    },
+    {
+     "arena": "cand_0005",
+     "key": "17:A-noirs",
+     "ply": 64,
+     "q": -0.372643852286708,
+     "cp_before": -85,
+     "cp_after": -172
+    },
+    {
+     "arena": "cand_0005",
+     "key": "166:A-noirs",
+     "ply": 36,
+     "q": -0.3337725335257174,
+     "cp_before": -95,
+     "cp_after": -384
+    },
+    {
+     "arena": "cand_0005",
+     "key": "704:A-blancs",
+     "ply": 61,
+     "q": -0.11125487068712026,
+     "cp_before": 0,
+     "cp_after": -428
+    },
+    {
+     "arena": "cand_0005",
+     "key": "848:A-noirs",
+     "ply": 118,
+     "q": -0.029633701834549653,
+     "cp_before": 88,
+     "cp_after": -547
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1662:A-noirs",
+     "ply": 56,
+     "q": -0.26988734834160266,
+     "cp_before": -61,
+     "cp_after": -169
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1193:A-noirs",
+     "ply": 48,
+     "q": 0.055123273683167454,
+     "cp_before": -56,
+     "cp_after": -114
+    },
+    {
+     "arena": "cand_0006",
+     "key": "732:A-noirs",
+     "ply": 48,
+     "q": -0.17384514540207424,
+     "cp_before": -6,
+     "cp_after": -113
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1242:A-blancs",
+     "ply": 45,
+     "q": -0.3018519133775361,
+     "cp_before": -90,
+     "cp_after": -310
+    },
+    {
+     "arena": "cand_0006",
+     "key": "903:A-blancs",
+     "ply": 59,
+     "q": -0.5535527608399071,
+     "cp_before": 202,
+     "cp_after": -728
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1848:A-noirs",
+     "ply": 34,
+     "q": -0.26497590153209344,
+     "cp_before": -16,
+     "cp_after": -316
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1860:A-noirs",
+     "ply": 30,
+     "q": -0.53252740290053,
+     "cp_before": -33,
+     "cp_after": -329
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1728:A-blancs",
+     "ply": 51,
+     "q": -0.45064120391263296,
+     "cp_before": -14,
+     "cp_after": -216
+    },
+    {
+     "arena": "cand_0006",
+     "key": "425:A-noirs",
+     "ply": 48,
+     "q": -0.6712678577658252,
+     "cp_before": 1000,
+     "cp_after": -606
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1515:A-blancs",
+     "ply": 13,
+     "q": -0.2662001207450043,
+     "cp_before": -96,
+     "cp_after": -227
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1541:A-blancs",
+     "ply": 43,
+     "q": -0.2455600054589429,
+     "cp_before": -84,
+     "cp_after": -109
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1186:A-blancs",
+     "ply": 29,
+     "q": -0.26082787097927496,
+     "cp_before": -90,
+     "cp_after": -138
+    },
+    {
+     "arena": "cand_0006",
+     "key": "764:A-noirs",
+     "ply": 70,
+     "q": -0.27407304935541876,
+     "cp_before": -74,
+     "cp_after": -307
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1354:A-noirs",
+     "ply": 42,
+     "q": -0.3410130017413874,
+     "cp_before": 348,
+     "cp_after": -157
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1688:A-blancs",
+     "ply": 39,
+     "q": -0.17949661545325718,
+     "cp_before": -59,
+     "cp_after": -185
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1658:A-noirs",
+     "ply": 38,
+     "q": -0.3854253112792561,
+     "cp_before": -79,
+     "cp_after": -265
+    },
+    {
+     "arena": "cand_0006",
+     "key": "87:A-noirs",
+     "ply": 22,
+     "q": -0.22979126086421497,
+     "cp_before": -95,
+     "cp_after": -105
+    },
+    {
+     "arena": "cand_0006",
+     "key": "771:A-blancs",
+     "ply": 35,
+     "q": -0.2610808769530566,
+     "cp_before": 2,
+     "cp_after": -175
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1848:A-blancs",
+     "ply": 21,
+     "q": -0.21625925304046115,
+     "cp_before": -45,
+     "cp_after": -140
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1202:A-blancs",
+     "ply": 67,
+     "q": -0.24793027483844268,
+     "cp_before": -49,
+     "cp_after": -198
+    },
+    {
+     "arena": "cand_0006",
+     "key": "35:A-noirs",
+     "ply": 44,
+     "q": -0.04043601878191257,
+     "cp_before": 0,
+     "cp_after": -272
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1432:A-blancs",
+     "ply": 63,
+     "q": -0.4493306211163452,
+     "cp_before": -31,
+     "cp_after": -370
+    },
+    {
+     "arena": "cand_0006",
+     "key": "33:A-blancs",
+     "ply": 51,
+     "q": -0.5065201360417243,
+     "cp_before": 7,
+     "cp_after": -203
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1320:A-noirs",
+     "ply": 46,
+     "q": -0.5014674191441925,
+     "cp_before": 1000,
+     "cp_after": -515
+    },
+    {
+     "arena": "cand_0006",
+     "key": "809:A-blancs",
+     "ply": 85,
+     "q": -0.2951275957812004,
+     "cp_before": -98,
+     "cp_after": -287
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1525:A-noirs",
+     "ply": 114,
+     "q": -0.7584906238228527,
+     "cp_before": -20,
+     "cp_after": -495
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1291:A-blancs",
+     "ply": 35,
+     "q": -0.24460529495176594,
+     "cp_before": -90,
+     "cp_after": -233
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1291:A-noirs",
+     "ply": 50,
+     "q": -0.03964389235578218,
+     "cp_before": 340,
+     "cp_after": -168
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1186:A-noirs",
+     "ply": 22,
+     "q": -0.20947577262677214,
+     "cp_before": 211,
+     "cp_after": -322
+    },
+    {
+     "arena": "cand_0006",
+     "key": "459:A-noirs",
+     "ply": 32,
+     "q": 0.2522930904472275,
+     "cp_before": -15,
+     "cp_after": -106
+    },
+    {
+     "arena": "cand_0006",
+     "key": "202:A-blancs",
+     "ply": 15,
+     "q": 0.006944564343876071,
+     "cp_before": -93,
+     "cp_after": -160
+    },
+    {
+     "arena": "cand_0006",
+     "key": "311:A-blancs",
+     "ply": 21,
+     "q": -0.4180142476376313,
+     "cp_before": -96,
+     "cp_after": -220
+    },
+    {
+     "arena": "cand_0006",
+     "key": "165:A-noirs",
+     "ply": 68,
+     "q": -0.3855881222248059,
+     "cp_before": -42,
+     "cp_after": -199
+    },
+    {
+     "arena": "cand_0006",
+     "key": "863:A-noirs",
+     "ply": 24,
+     "q": -0.013945727199038018,
+     "cp_before": 22,
+     "cp_after": -287
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1047:A-blancs",
+     "ply": 83,
+     "q": -0.3308570513951208,
+     "cp_before": -63,
+     "cp_after": -255
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1113:A-blancs",
+     "ply": 57,
+     "q": -0.20232353621713856,
+     "cp_before": 0,
+     "cp_after": -127
+    },
+    {
+     "arena": "cand_0006",
+     "key": "292:A-noirs",
+     "ply": 94,
+     "q": -0.35835288045464536,
+     "cp_before": -52,
+     "cp_after": -153
+    },
+    {
+     "arena": "cand_0006",
+     "key": "213:A-blancs",
+     "ply": 19,
+     "q": -0.2093305116477631,
+     "cp_before": -48,
+     "cp_after": -115
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1105:A-noirs",
+     "ply": 42,
+     "q": -0.5917104595197151,
+     "cp_before": 1000,
+     "cp_after": -599
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1768:A-noirs",
+     "ply": 74,
+     "q": -0.2942283218680181,
+     "cp_before": 0,
+     "cp_after": -494
+    },
+    {
+     "arena": "cand_0006",
+     "key": "914:A-noirs",
+     "ply": 88,
+     "q": -0.34010521448344755,
+     "cp_before": -96,
+     "cp_after": -143
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1662:A-blancs",
+     "ply": 89,
+     "q": -0.1911032725871536,
+     "cp_before": -92,
+     "cp_after": -138
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1150:A-blancs",
+     "ply": 29,
+     "q": -0.2761459320288995,
+     "cp_before": -84,
+     "cp_after": -165
+    },
+    {
+     "arena": "cand_0006",
+     "key": "388:A-blancs",
+     "ply": 73,
+     "q": 0.29221417607544964,
+     "cp_before": 195,
+     "cp_after": -231
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1550:A-noirs",
+     "ply": 84,
+     "q": -0.39638691276919436,
+     "cp_before": -22,
+     "cp_after": -316
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1144:A-noirs",
+     "ply": 56,
+     "q": -0.2208954924972385,
+     "cp_before": -11,
+     "cp_after": -440
+    },
+    {
+     "arena": "cand_0006",
+     "key": "709:A-blancs",
+     "ply": 89,
+     "q": -0.6296199741240461,
+     "cp_before": -73,
+     "cp_after": -460
+    },
+    {
+     "arena": "cand_0006",
+     "key": "35:A-blancs",
+     "ply": 75,
+     "q": -0.21870692904496483,
+     "cp_before": -58,
+     "cp_after": -132
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1193:A-blancs",
+     "ply": 83,
+     "q": 0.09529001107300396,
+     "cp_before": -6,
+     "cp_after": -167
+    },
+    {
+     "arena": "cand_0006",
+     "key": "202:A-noirs",
+     "ply": 78,
+     "q": -0.5246142697061843,
+     "cp_before": 0,
+     "cp_after": -414
+    },
+    {
+     "arena": "cand_0006",
+     "key": "407:A-noirs",
+     "ply": 136,
+     "q": -0.4834811302986163,
+     "cp_before": -39,
+     "cp_after": -404
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1860:A-blancs",
+     "ply": 39,
+     "q": -0.10450069779942545,
+     "cp_before": 45,
+     "cp_after": -210
+    },
+    {
+     "arena": "cand_0006",
+     "key": "696:A-blancs",
+     "ply": 111,
+     "q": -0.3237798749944149,
+     "cp_before": -36,
+     "cp_after": -175
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1012:A-noirs",
+     "ply": 126,
+     "q": -0.29297465907058806,
+     "cp_before": 0,
+     "cp_after": -310
+    },
+    {
+     "arena": "cand_0006",
+     "key": "731:A-blancs",
+     "ply": 47,
+     "q": -0.2876180709172874,
+     "cp_before": -41,
+     "cp_after": -178
+    },
+    {
+     "arena": "cand_0006",
+     "key": "474:A-blancs",
+     "ply": 57,
+     "q": -0.34174669804329527,
+     "cp_before": 0,
+     "cp_after": -248
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1320:A-blancs",
+     "ply": 37,
+     "q": -0.33384139748146546,
+     "cp_before": -68,
+     "cp_after": -166
+    },
+    {
+     "arena": "cand_0006",
+     "key": "704:A-blancs",
+     "ply": 61,
+     "q": -0.0723454771027379,
+     "cp_before": -35,
+     "cp_after": -329
+    },
+    {
+     "arena": "cand_0006",
+     "key": "1850:A-blancs",
+     "ply": 85,
+     "q": -0.0631807327261241,
+     "cp_before": 0,
+     "cp_after": -274
+    }
+   ]
+  }
+ }
+}
