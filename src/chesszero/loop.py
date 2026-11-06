@@ -138,6 +138,43 @@ def record_estimate(state: dict, key: str, value: float, keep: int = 20) -> None
 # --------------------------------------------------------------------------- entrée de la session
 
 
+def make_writable(path: str | Path) -> None:
+    """Rend un dossier copié depuis une entrée en lecture seule (Kaggle : /kaggle/input) modifiable : `copytree` et
+    `copy2` gardent les droits de la source, or la boucle réécrit des fichiers de `sp_train/` et de `loop/`."""
+    import os
+    import stat
+
+    path = Path(path)
+    for root, dirs, files in os.walk(path):
+        for name in [""] + dirs + files:
+            p = Path(root) / name if name else Path(root)
+            try:
+                mode = p.stat().st_mode
+                extra = stat.S_IRWXU if p.is_dir() else stat.S_IRUSR | stat.S_IWUSR
+                if (mode & extra) != extra:
+                    p.chmod(mode | extra)
+            except OSError:
+                pass
+
+
+def session_exit_code(end_reason: str) -> int:
+    """Code de sortie de `alphazero_session.py` : 0 pour toute fin voulue, y compris un arrêt DÉCISIONNEL (stagnation, G4,
+    ancre, contrôle d'arène échoué : ce sont des verdicts, pas des erreurs, et Kaggle marque « failed » toute version dont
+    une cellule lève une exception, ce qui empêche d'utiliser sa sortie en entrée) ; 2 seulement pour un vrai plantage
+    (une phase échoue deux fois)."""
+    return 2 if end_reason.startswith("erreur") else 0
+
+
+def end_banner(end_reason: str) -> str:
+    """Dernière ligne affichée par la session : dit clairement comment elle s'est terminée."""
+    if end_reason.startswith("erreur"):
+        return f"SESSION EN ERREUR : {end_reason}. La version doit échouer : lire le rapport et la chronologie."
+    if end_reason.startswith(("arrêt", "contrôle")):
+        return (f"SESSION TERMINÉE SUR UN ARRÊT DÉCISIONNEL (ce n'est pas une erreur) : {end_reason}. "
+                "Lire « Actions pour toi » dans loop/reports/ ; la sortie de cette version est utilisable en entrée.")
+    return f"SESSION TERMINÉE : {end_reason}."
+
+
 def classify_output(d: str | Path) -> dict:
     """Ce que contient une sortie de session : tampon (`selfplay/`), état d'entraînement, état de boucle."""
     from chesszero.selfplay import list_shards
@@ -562,6 +599,9 @@ class Orchestrator:
             for sessions in (src / "selfplay" / "sessions",):
                 if sessions.is_dir():
                     shutil.copytree(sessions, self.work / "selfplay" / "sessions", dirs_exist_ok=True)
+            for sub in ("selfplay", "sp_train", "loop"):  # entrée en lecture seule : les copies doivent être modifiables
+                if (self.work / sub).exists():
+                    make_writable(self.work / sub)
         if info["kind"] == "selfplay_only":
             n = info["train_positions"]  # vérifié par validate_input (même fenêtre du tampon qu'après la copie)
             msg = (f"Démarrage de la boucle à partir d'une sortie de self-play seul : {info['positions']:,} positions "

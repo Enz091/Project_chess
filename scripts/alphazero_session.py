@@ -13,7 +13,9 @@ Voir chesszero/loop.py.
 
 Sorties dans --work : selfplay/ (tampon), sp_train/ (entraînement : source de vérité), loop/ (loop_state.json,
 arena/, reports/session_XXXX.md, history.csv, progress.png).
-Code de sortie : 0 session terminée (budget), 2 arrêt (décisionnel ou erreur : voir le rapport), 4 refus de démarrer.
+Code de sortie : 0 session terminée, y compris sur un arrêt DÉCISIONNEL (stagnation, G4, ancre, contrôle d'arène échoué :
+des verdicts, affichés dans un bandeau final ; Kaggle garde alors la version « Successful » et propose sa sortie en entrée),
+2 vrai plantage (une phase a échoué deux fois), 4 refus de démarrer.
 """
 
 import argparse
@@ -71,7 +73,7 @@ def main() -> None:
     if args.minutes > 660 and not args.smoke:
         sys.exit("--minutes : 660 au plus (coupure de Kaggle à 12 h, 1 h de marge)")
 
-    from chesszero.loop import LoopStop, Orchestrator, SubprocessExecutor
+    from chesszero.loop import LoopStop, Orchestrator, SubprocessExecutor, end_banner, session_exit_code
 
     if args.expect_init_sha256:
         from chesszero.kaggle_inputs import sha256_of
@@ -99,8 +101,10 @@ def main() -> None:
         print(f"\nREFUS DE DÉMARRER : {e}", flush=True)
         sys.exit(4)
     print("\n" + result["text"], flush=True)
-    stopped = result["end_reason"].startswith(("arrêt", "erreur", "contrôle"))
-    sys.exit(2 if stopped else 0)
+    print("\n" + "=" * 100 + "\n" + end_banner(result["end_reason"]) + "\n" + "=" * 100, flush=True)
+    # Un arrêt décisionnel (stagnation, G4, ancre, contrôle échoué) est un verdict : code 0, la version Kaggle reste
+    # « Successful » et sa sortie est proposée en entrée de la session suivante. Seul un vrai plantage donne le code 2.
+    sys.exit(session_exit_code(result["end_reason"]))
 
 
 if __name__ == "__main__":

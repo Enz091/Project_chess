@@ -328,3 +328,123 @@ def test_notebook_refuses_an_unpinned_commit():
         code = re.sub(r'^COMMIT = .*$', f"COMMIT = {bad}", settings, flags=re.M)
         with pytest.raises(ValueError, match="COMMIT doit être un hash complet"):
             exec(compile(code, "cellule 0", "exec"), {"__name__": "nb"})
+
+
+# --------------------------------------------------------------------------- sortie de session ajoutée comme Dataset
+
+
+def dataset_output(inp: Path, world, parts: tuple[str, ...], session: int = 2, read_only: bool = False) -> Path:
+    """Sortie d'une session de boucle téléversée comme Dataset privé : `/kaggle/input/datasets/<compte>/<slug>/...`,
+    avec ou sans dossier intermédiaire (selon la façon dont Kaggle extrait le zip) ; `read_only` = fichiers en 0o444."""
+    import os
+
+    top = inp / "datasets" / "compte" / "loop-session2"
+    base = top.joinpath(*parts)
+    shutil_copy_selfplay(world["s0"] / "selfplay", base / "selfplay")
+    SelfPlayTrainer(base / "sp_train", TRAIN, "cpu", world["init"], log=lambda m: None)
+    (base / "loop").mkdir()
+    state = {"format": 1, "sessions": [{"n": i} for i in range(1, session + 1)], "controls": {"done": True},
+             "estimates": {}, "events": [], "failures": {}, "phase": None}
+    (base / "loop" / "loop_state.json").write_text(json.dumps(state), encoding="utf-8")
+    if read_only:
+        for root, _, files in os.walk(top):
+            for f in files:
+                os.chmod(Path(root) / f, 0o444)
+    return base
+
+
+@pytest.mark.parametrize("parts", [(), ("loop_session2",), ("loop_session2", "extrait")])
+def test_dataset_output_is_recognised_at_any_depth_as_the_loop_session(tmp_path, world, parts):
+    """Chemin libre sous /kaggle/input, avec ou sans dossier intermédiaire : reconnu par son contenu."""
+    inp = fake_tree(tmp_path, world, outputs=())
+    base = dataset_output(inp, world, parts)
+    found = ki.discover(inp, SHA(world))
+    assert found["problems"] == [] and len(found["previous"]) == 1
+    prev = found["previous"][0]
+    assert prev["kind"] == "loop" and prev["session"] == 2 and prev["path"] == base
+    assert "boucle, session n°2" in ki.describe_previous(prev)
+    path, problems = ki.select_previous(found, 2)
+    assert problems == [] and path == base
+    assert "session de boucle n°2" in "\n".join(orchestrator(world, tmp_path / "w", path, expect=2).check_inputs())
+    assert ki.select_previous(found, 1)[0] is None  # la mauvaise session attendue reste refusée
+
+
+def test_dataset_and_notebook_output_together_are_refused(tmp_path, world):
+    inp = fake_tree(tmp_path, world, outputs=("loop:2",))  # sortie de notebook de la session 2
+    dataset_output(inp, world, ("loop_session2",))  # + le même contenu en Dataset
+    found = ki.discover(inp, SHA(world))
+    assert len(found["previous"]) == 2
+    path, problems = ki.select_previous(found, 2)
+    assert path is None and "EXACTEMENT une" in problems[0] and "Retirer" in problems[0]
+
+
+def test_read_only_input_is_copied_writable(tmp_path, world):
+    """/kaggle/input est en lecture seule : les copies de sp_train/, loop/ et selfplay/ doivent pouvoir être réécrites."""
+    import os
+
+    inp = fake_tree(tmp_path, world, outputs=())
+    base = dataset_output(inp, world, ("loop_session2",), read_only=True)
+    assert not os.access(base / "loop" / "loop_state.json", os.W_OK)  # le test part bien d'une entrée en lecture seule
+    work = tmp_path / "working"
+    orch = orchestrator(world, work, base, expect=2)
+    orch.prepare()
+    files = [p for sub in ("selfplay", "sp_train", "loop") for p in (work / sub).rglob("*") if p.is_file()]
+    assert files and all(os.access(p, os.W_OK) for p in files)
+    with open(work / "loop" / "loop_state.json", "a", encoding="utf-8"):
+        pass
+    assert not os.access(base / "loop" / "loop_state.json", os.W_OK)  # l'entrée, elle, n'a pas été touchée
+
+
+# --------------------------------------------------------------------------- fin de session : arrêt décisionnel = succès
+
+
+def test_exit_code_only_a_real_failure_fails_the_kaggle_version():
+    from chesszero.loop import end_banner, session_exit_code
+
+    decisional = ["arrêt décisionnel : stagnation", "arrêt décisionnel : G4", "arrêt décisionnel : ancre",
+                  "contrôle (b) échoué : 40.0% < 70%"]
+    fine = ["budget : fin de session", "budget : arène inachevée (reprise à la session suivante)", "fin"]
+    for reason in decisional + fine:
+        assert session_exit_code(reason) == 0, reason
+    assert session_exit_code("erreur : la phase train a échoué 2 fois (code 1)") == 2
+    for reason in decisional:
+        assert "ARRÊT DÉCISIONNEL (ce n'est pas une erreur)" in end_banner(reason) and reason in end_banner(reason)
+    assert "EN ERREUR" in end_banner("erreur : la phase train a échoué 2 fois (code 1)")
+    assert "ARRÊT" not in end_banner("budget : fin de session")
+
+
+@pytest.mark.parametrize("reason, code", [("arrêt décisionnel : stagnation", 0), ("arrêt décisionnel : ancre", 0),
+                                          ("contrôle (b) échoué : 40.0% < 70%", 0), ("budget : fin de session", 0),
+                                          ("erreur : la phase train a échoué 2 fois (code 1)", 2)])
+def test_session_script_exit_code_and_final_banner(tmp_path, monkeypatch, capsys, reason, code):
+    """`alphazero_session.py` de bout en bout (orchestrateur remplacé) : code de sortie et bandeau final."""
+    import importlib.util
+
+    import chesszero.loop as loop
+
+    class FakeOrchestrator:
+        def __init__(self, *a, **k):
+            pass
+
+        def run(self):
+            return {"end_reason": reason, "text": "RAPPORT"}
+
+    monkeypatch.setattr(loop, "Orchestrator", FakeOrchestrator)
+    spec = importlib.util.spec_from_file_location("alphazero_session_under_test", ROOT / "scripts" / "alphazero_session.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    monkeypatch.setattr(sys, "argv", ["alphazero_session.py", "--work", str(tmp_path / "w"), "--resume-from",
+                                      str(tmp_path), "--expect-session", "2", "--minutes", "30", "--init", "x",
+                                      "--human", "x"])
+    monkeypatch.setattr("chesszero.cpu_guard.protect", lambda *a, **k: None)
+    with pytest.raises(SystemExit) as exit_info:
+        module.main()
+    out = capsys.readouterr().out
+    assert exit_info.value.code == code
+    assert "RAPPORT" in out and reason in out.splitlines()[-2]  # bandeau final : la dernière ligne est sa bordure
+    assert ("ARRÊT DÉCISIONNEL" in out) == reason.startswith(("arrêt", "contrôle"))
+
+
+def test_notebook_last_cell_prints_the_end_of_the_session():
+    last = notebook_sources()[8]
+    assert "end_banner" in last and "end_reason" in last and 'MODE == "loop"' in last
