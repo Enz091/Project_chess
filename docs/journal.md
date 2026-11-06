@@ -1569,3 +1569,28 @@ Script `scripts/diagnose_session.py` (`prune`, `sfeval`, `games`, `conversions`,
 
   - **L'indicateur reproduit le sens de l'écart Stockfish** : le candidat convertit moins bien que `kaggle_sup` dans les 7 arènes sur 7 ; écart global +17 points (z ≈ 6,4), contre +10,6 avec Stockfish. Aux seuils 0,4 / 0,5 / 0,7 : 44,8 / 37,8 / 21,7 % contre 29,6 / 22,4 / 6,0 %.
   - **Contrôle avec le même juge** (`conversion_q_juge_sup.json`, valeur brute de `kaggle_sup` pour les deux camps) : 16,0 % (71/444) contre 13,9 % (64/461), perdues 13 contre 5 : écart de +2 points, non significatif. Donc **une partie de l'écart de l'indicateur « Q de son propre réseau » vient de la confiance** : un réseau plus confiant (|v| 0,41 contre 0,35) franchit +0,6 plus souvent, y compris dans des positions pas vraiment gagnées. À lire en tendance d'une génération à l'autre et entre deux réseaux proches, pas comme une mesure absolue de conversion ; la mesure Stockfish reste la référence. Limite : valeur brute et non Q de recherche (200 simulations) pour les anciennes arènes ; les arènes de la session 3 donneront le vrai Q.
+
+### Instructions pas à pas : troisième session de boucle — code figé `17880e84ec3a5254852adfd3ecf47a1a8c24d65f`
+**Avant de commencer (sur le PC)** : `git log origin/main -2` montre le commit de code `17880e8` (règle « los » 0,20, indicateur de conversion) et le suivant (notebook avec ce hash). `notebooks\kaggle_selfplay.ipynb` contient `COMMIT = "17880e84ec3a5254852adfd3ecf47a1a8c24d65f"`, `LOOP_MINUTES = 660`, `EXPECTED_SESSION = 2`, `RESET_LINE = None`, `CLEAR_STOP = "stagnation session 2 : passage à la règle los 0,20, H2"`.
+
+1. **Ouvrir le notebook de la session de boucle 2** (kaggle.com → *Code* → *Your Work*).
+2. **Réimporter le notebook : obligatoire.** La copie sur Kaggle date de la session 2 et n'a pas `CLEAR_STOP` (cellule de réglages, cellules de vérification et de lancement). *File* → *Import Notebook* → *Upload* de `notebooks\kaggle_selfplay.ipynb` (ou onglet *GitHub*) → confirmer le remplacement. Vérifier **9 cellules**.
+3. **Cellule de réglages (la première cellule de code)** : `MODE = "check"`, `COMMIT` = les 40 caractères ci-dessus (à comparer), `LOOP_MINUTES = 660`, `EXPECTED_SESSION = 2`, `RESET_LINE = None`, `CLEAR_STOP = "stagnation session 2 : passage à la règle los 0,20, H2"`. Rien d'autre.
+4. **Session options** : *Accelerator* = **None** (vérification) ; *Internet* = **On** ; *Persistence* = *No persistence*.
+5. **Entrées : exactement trois** : Dataset `chesszero-kaggle-sup` ; Dataset `lichess-24m` ; *Your Work* → *Notebooks* → **la sortie de la session de boucle 2** (version « boucle session 2 », terminée). **Retirer la sortie de la session 1.**
+6. **Vérification** : *Run all* (~3 à 6 min). Fin de la cellule de vérification attendue : **« VÉRIFICATION DES ENTRÉES : la session démarrerait. »**, puis (sortie obtenue en local sur `data\kaggle_out\loop_session2`, code 0, rien d'écrit ; les chemins diffèrent sur Kaggle) :
+   - « Entrée : … — sortie de la session de boucle n°2 (génération acceptée 0) » ;
+   - « Tampon : 122 shards, 500,156 positions ; session attendue EXPECTED_SESSION = 2 : conforme » ;
+   - « Réseau de départ : … (SHA-256 c1f616c6eb90…, pas 92000) » ;
+   - « Réglages : budget 660 min, 100,000 positions par génération, arène 200 parties à 200 simulations, **acceptation : P(meilleur) >= 20% (règle « los »)** » ;
+   - « Lichess : … (95 shards d'entraînement, 2 de validation) » ;
+   - « Tables Syzygy : pas encore téléchargées (la cellule suivante le fait) » (normal en mode check) ;
+   - **« Levée de l'arrêt « stagnation » demandée (« stagnation session 2 : passage à la règle los 0,20, H2 ») : compteur remis à 0 (5 rejet(s) en arène d'affilée) ; ligne d'entraînement, tampon, réseau accepté et historique contre l'ancre inchangés »** ;
+   - la ligne RAM, puis « /kaggle/working après la vérification : vide ».
+   Un refus dit quoi corriger (par exemple « aucun arrêt en cours » si l'entrée n'est pas la sortie de la session 2, ou un arrêt « ancre »).
+7. **Mode boucle** : *Accelerator* = **GPU T4 x2** ; réglages : `MODE = "loop"` (garder `CLEAR_STOP`).
+8. **Lancer** : *Save Version* → **Save & Run All (Commit)**, nom « boucle session 3 ». Durée ~11 h 05 ; quota GPU ≈ 11 h.
+9. **À la fin** : lire `loop/reports/session_0003.md` : « Actions pour toi », notes de démarrage (levée de l'arrêt), **tableau des candidats avec la colonne « conversion »** (vrai Q de recherche à 200 simulations), netteté de la politique. Appliquer les **critères fixés à l'avance** (plus haut). Télécharger dans `data\kaggle_out\loop_session3\`.
+10. **Session 4** : `CLEAR_STOP = None`, `EXPECTED_SESSION = 3`, entrée = sortie de la session 3 (retirer celle de la session 2) ; `COMMIT` inchangé tant que le code ne change pas.
+
+**Déroulé attendu au début** (estimations) : le tampon de la session 2 est entièrement consommé par la ligne (0 position nouvelle, 218 shards entraînés), donc **pas de tour tout de suite** : self-play par `kaggle_sup` (accepté, génération 0) jusqu'à 100 000 positions nouvelles (au moins 25 min, ~78 min), tour 7 dès 90 000 (~469 pas, Q exact pour toutes les nouvelles positions), puis **arène de la génération 1** contre `kaggle_sup` sur les ouvertures fixes de l'ancre (~16 min) avec la règle « los » 0,20. L'ancre n'est consultée à part qu'à partir de la génération 2.
