@@ -1075,7 +1075,7 @@ def write_report(work: Path, state: dict, session: int, notes: list[str], cfg: L
                  root: Path = ROOT) -> dict:
     """loop/reports/session_XXXX.md + .json ; loop/history.csv ; loop/progress.png."""
     from chesszero.agreement import describe_agreement, merge_agreement
-    from chesszero.arena import atomic_write_text, read_jsonl, write_json_atomic
+    from chesszero.arena import atomic_write_text, describe_conversion, read_jsonl, write_json_atomic
     from chesszero.memwatch import describe_memory
     from chesszero.selfplay import describe_repetitions
     from chesszero.selfplay_train import read_train_state
@@ -1119,25 +1119,35 @@ def write_report(work: Path, state: dict, session: int, notes: list[str], cfg: L
     L += [f"- {a}" for a in acts]
     L += ["", "## Notes de démarrage et contrôles", ""] + ([f"- {n}" for n in notes] or ["- (aucune)"])
     L += ["", "## Candidats de la session", "",
-          "| candidat | pas | nouvelles positions | garde-fous | arène contre l'accepté | contre l'ancre | décision |",
-          "|---|---|---|---|---|---|---|"]
+          "| candidat | pas | nouvelles positions | garde-fous | arène contre l'accepté | contre l'ancre | "
+          "conversion (parties non gagnées après Q > +0,6 sur 3 coups) | décision |",
+          "|---|---|---|---|---|---|---|---|"]
     by_cand = {v["candidate"]: v for v in verdicts}
     for r in rounds:
         cid = r.get("candidate")
         g = "passés" if cid is not None else "REJET : " + " ; ".join(r.get("reasons", []))
         v = by_cand.get(cid) if cid is not None else None
         gate = anch = dec = "en attente" if cid is not None else "—"
+        conv = "—"
         if v:
             gs, an = v["gate"], v.get("anchor")
             gate = (f"{gs['score']:.1%}, Elo {gs['elo']:+.0f} ({_fmt(gs['elo_low'])} à {_fmt(gs['elo_high'])}), "
                     f"P(meilleur) {gs['los']:.0%}")
             anch = f"Elo {an['elo']:+.0f} ({_fmt(an['elo_low'])} à {_fmt(an['elo_high'])})" if an else "—"
             dec = "ACCEPTÉ" if v["accepted"] else "rejeté : " + " ; ".join(v["reasons"])
-        L.append(f"| {r['round']} | {r['steps']} | {r['new_positions']:,} | {g} | {gate} | {anch} | {dec} |")
+            conv = describe_conversion(gs.get("conversion"))
+        L.append(f"| {r['round']} | {r['steps']} | {r['new_positions']:,} | {g} | {gate} | {anch} | {conv} | {dec} |")
     for v in verdicts:  # verdicts de candidats créés lors d'une session précédente
         if v["candidate"] not in {r["round"] for r in rounds}:
             L.append(f"| {v['candidate']} (session précédente) | | | | {v['gate']['score']:.1%} | | "
-                     f"{'ACCEPTÉ' if v['accepted'] else 'rejeté'} |")
+                     f"{describe_conversion(v['gate'].get('conversion'))} | {'ACCEPTÉ' if v['accepted'] else 'rejeté'} |")
+    if any(v.get("gate", {}).get("conversion") for v in verdicts):
+        L += ["", "Conversion : parties où le camp a eu Q > +0,6 pendant 3 de ses coups consécutifs (Q racine de son "
+                  "propre réseau, à ses propres coups), et part de ces parties qu'il ne gagne pas (nulle ou défaite). "
+                  "Le candidat convertit plus mal que l'accepté si sa part est nettement plus haute. Un réseau plus "
+                  "confiant atteint le seuil plus souvent, y compris dans des positions pas vraiment gagnées, ce qui "
+                  "gonfle sa part. Référence des sessions 1-2, mesurée avec la valeur brute des réseaux : candidats "
+                  "31 % contre kaggle_sup 14 % (Stockfish, +300 cp non gagnés : 34 % contre 23 %)."]
     if timings:
         L += ["", "Temps des tours d'entraînement (part du temps total du tour) :", ""]
         for rid, sh in timings:

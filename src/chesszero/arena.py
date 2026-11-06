@@ -174,6 +174,7 @@ class ArenaGame:
         self.start_plies = len(board.move_stack)
         self.low = {"a": 0, "b": 0}  # coups d'affilée où le joueur se voit perdant (Q < seuil)
         self.high = {"a": 0, "b": 0}  # coups d'affilée où le joueur se voit gagnant (Q > -seuil)
+        self.q = {"a": [], "b": []}  # Q racine de chaque joueur à chacun de ses coups cherchés (son point de vue)
         self.result_white: int | None = None
         self.termination: int | None = None
         self.reported = False
@@ -214,6 +215,7 @@ class ArenaGame:
         root = tree.root
         best = int(np.lexsort((root.P_raw, root.N))[-1])
         q_root, q_best = root.q(), float(root.W[best] / root.N[best])
+        self.q[p].append(round(float(q_root), 3))
         thr = cfg.resign_threshold
         self.low[p] = self.low[p] + 1 if (q_root < thr and q_best < thr) else 0
         self.high[p] = self.high[p] + 1 if (q_root > -thr and q_best > -thr) else 0
@@ -229,7 +231,8 @@ class ArenaGame:
         ra = rw if self.spec["a_white"] else -rw
         return {**self.spec, "score_a": (ra + 1) / 2, "result_white": rw, "termination": TERMINATIONS[self.termination],
                 "plies": len(self.board.move_stack), "start_plies": self.start_plies,
-                "moves": " ".join(m.uci() for m in self.board.move_stack)}
+                "moves": " ".join(m.uci() for m in self.board.move_stack),
+                "q_a": self.q["a"], "q_b": self.q["b"]}
 
 
 def play_games(specs: list[dict], reserve, evaluators: dict, players: dict[str, Player], cfg: ArenaConfig,
@@ -391,6 +394,49 @@ def score_se(by_pair: dict[int, list[float]], score: float, n: int) -> float:
     return max(cluster, 0.5 / n)
 
 
+CONVERSION_Q = 0.6  # un camp « se voit gagnant » quand son Q racine dépasse ce seuil...
+CONVERSION_RUN = 3  # ... pendant au moins ce nombre de ses coups cherchés consécutifs
+
+
+def longest_run(values: list[float], threshold: float) -> int:
+    best = run = 0
+    for v in values:
+        run = run + 1 if v > threshold else 0
+        best = max(best, run)
+    return best
+
+
+def conversion_stats(records: list[dict], threshold: float = CONVERSION_Q, run: int = CONVERSION_RUN) -> dict | None:
+    """Indicateur de conversion, sans Stockfish, d'après le Q de chaque réseau (celui de ses propres recherches) :
+    parties où un joueur a eu Q > `threshold` pendant au moins `run` de ses coups consécutifs, et part de ces parties
+    qu'il ne gagne pas (nulle ou défaite), pour A et pour B. None si les parties n'enregistrent pas les Q."""
+    rows = [r for r in records if "q_a" in r]
+    if not rows:
+        return None
+    out = {"threshold": threshold, "run": run, "games_with_q": len(rows)}
+    for p in ("a", "b"):
+        seen = not_won = lost = 0
+        for r in rows:
+            if longest_run(r["q_" + p], threshold) < run:
+                continue
+            score = r["score_a"] if p == "a" else 1 - r["score_a"]
+            seen += 1
+            not_won += score < 1
+            lost += score == 0
+        out[p] = {"games": seen, "not_won": not_won, "lost": lost, "not_won_share": not_won / seen if seen else None}
+    return out
+
+
+def describe_conversion(conv: dict | None, a: str = "candidat", b: str = "accepté") -> str:
+    if not conv:
+        return "—"
+
+    def one(name, c):
+        share = f" ({c['not_won_share']:.0%})" if c["not_won_share"] is not None else ""
+        return f"{name} {c['not_won']}/{c['games']}{share}"
+    return f"{one(a, conv['a'])} ; {one(b, conv['b'])}"
+
+
 def summarize(records: list[dict]) -> dict:
     """Score de A, Elo et intervalle (erreur type par paires d'ouvertures), probabilité que A soit meilleur, fins.
     Toujours des nombres finis (JSON strict). Score de 0 % ou 100 % : Elo calculé avec une demi-partie de moins
@@ -425,7 +471,8 @@ def summarize(records: list[dict]) -> dict:
             "pairs_scored_1": mirrored, "terminations": dict(terms),
             "repetitions_before_ply_60": early_reps,
             "mean_plies": sum(r["plies"] for r in records) / n,
-            "white_score": sum((r["result_white"] + 1) / 2 for r in records) / n}
+            "white_score": sum((r["result_white"] + 1) / 2 for r in records) / n,
+            "conversion": conversion_stats(records)}
 
 
 def describe(summary: dict, a: str = "A", b: str = "B") -> str:

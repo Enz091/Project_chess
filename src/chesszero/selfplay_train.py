@@ -973,7 +973,8 @@ class SelfPlayTrainer:
             cand_anchor, source = anchor, "arène ancre (ouvertures fixes)"
         commit = {"candidate": candidate_id, "accepted": decision["accept"], "reasons": decision["reasons"],
                   "anchor_diff": decision["anchor_diff"], "anchor_diff_se": decision["anchor_diff_se"],
-                  "gate": {k: gate[k] for k in ("games", "score", "points", "elo", "elo_low", "elo_high", "los")},
+                  "gate": {**{k: gate[k] for k in ("games", "score", "points", "elo", "elo_low", "elo_high", "los")},
+                           **({"conversion": gate["conversion"]} if gate.get("conversion") else {})},
                   "anchor": ({k: cand_anchor[k] for k in ("games", "score", "elo", "elo_se", "elo_low", "elo_high")}
                              if cand_anchor is not None else None),
                   "opponent": cand["opponent"], "alerts": [], "time": time.time()}

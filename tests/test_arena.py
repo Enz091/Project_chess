@@ -422,3 +422,44 @@ def test_process_runner_with_a_real_small_network(tmp_path):
     assert result["summary"]["games"] == 4 and len(read_jsonl(out / "games.jsonl")) == 4
     assert result["players"]["a"]["sha256"] == result["players"]["b"]["sha256"]
     assert stats and all(s["simulations"]["a"] > 0 for s in stats if s["games"])
+
+
+# --------------------------------------------------------------------------- indicateur de conversion
+
+
+def test_games_record_the_root_q_of_each_player_at_each_searched_move():
+    out = []
+    play_games(schedule([0]), RESERVE, {"a": Stub(), "b": Stub()}, players(), CFG, MCTSConfig(), out.append)
+    for r in out:
+        searched = {"a": 0, "b": 0}
+        for ply in range(r["start_plies"], r["plies"]):
+            searched["a" if (ply % 2 == 0) == r["a_white"] else "b"] += 1
+        assert len(r["q_a"]) + len(r["q_b"]) <= searched["a"] + searched["b"]
+        assert all(-1 <= q <= 1 for q in r["q_a"] + r["q_b"]) and (r["q_a"] or r["q_b"])
+        assert summarize(out)["conversion"]["games_with_q"] == len(out)
+
+
+def test_conversion_stats_counts_games_with_three_consecutive_winning_moves_not_won():
+    from chesszero.arena import conversion_stats, describe_conversion, longest_run
+
+    assert longest_run([0.7, 0.7, 0.5, 0.9, 0.9, 0.9, 0.1], 0.6) == 3 and longest_run([], 0.6) == 0
+    assert longest_run([0.6, 0.6, 0.6], 0.6) == 0  # strictement au-dessus du seuil
+
+    def game(q_a, q_b, score_a):
+        return {"q_a": q_a, "q_b": q_b, "score_a": score_a}
+    recs = [game([0.7, 0.8, 0.9], [-0.7, -0.8, -0.9], 1.0),      # A converti
+            game([0.7, 0.8, 0.9], [-0.7, -0.8, -0.9], 0.5),      # A nulle
+            game([0.7, 0.8, 0.9, 0.1], [0.0], 0.0),               # A perd
+            game([0.7, 0.2, 0.9, 0.8], [0.7, 0.7, 0.7], 0.0),     # A jamais 3 d'affilée ; B converti (score B = 1)
+            game([0.1], [0.9, 0.9, 0.9, 0.9], 0.5)]               # B nulle
+    c = conversion_stats(recs)
+    assert c["a"] == {"games": 3, "not_won": 2, "lost": 1, "not_won_share": 2 / 3}
+    assert c["b"] == {"games": 2, "not_won": 1, "lost": 0, "not_won_share": 0.5}
+    assert conversion_stats([{"score_a": 1.0}]) is None  # anciennes parties sans Q
+    assert describe_conversion(c) == "candidat 2/3 (67%) ; accepté 1/2 (50%)" and describe_conversion(None) == "—"
+
+
+def test_kaggle_config_uses_the_los_rule_at_020():
+    """Décision de l'auteur du 2026-11-06 (voir docs/journal.md) ; les tests de la règle « score » passent la config."""
+    cfg = ArenaConfig.named("kaggle")
+    assert cfg.gate_rule == "los" and cfg.accept_los == 0.20 and cfg.accept_score == 0.52 and cfg.anchor_veto_se == 2.0

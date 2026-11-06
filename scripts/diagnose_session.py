@@ -11,6 +11,10 @@
         donnée par analyse_generation.py policy
   diagnose_session.py conversions --arenas <arène> ... --sf sf.json --out conv.json
         conversions ratées (> +300 cp sans gain) : fins, gaffe du camp avantagé, phase
+  diagnose_session.py qconv  --arenas <arène> ... --cand <pt> --sup <pt> --out qconv.json [--sf sf.json]
+        indicateur de conversion du rapport (arena.conversion_stats : Q > +0,6 sur 3 coups consécutifs, partie non gagnée)
+        recalculé sur d'anciennes arènes qui n'enregistraient pas les Q : valeur BRUTE du réseau (sans recherche) du
+        joueur au trait à chacun de ses coups ; le candidat est représenté par --cand pour toutes les arènes
   diagnose_session.py gates  --arenas <arène> ...  --out gates.json
         ce qu'auraient décidé plusieurs règles d'arène (score 52 %, 50 %, P(meilleur) 0,10 / 0,20, sans arène)
   diagnose_session.py hybrid --arena <arène> --sf sf.json --policy-a <pt> --policy-b <pt> --out hybrid.json
@@ -430,6 +434,56 @@ def print_games(report: dict) -> None:
               + f" | {r['conversion_300']['A']['not_won']}/{r['conversion_300']['B']['not_won']}")
 
 
+def cmd_qconv(args) -> int:
+    """Rejoue les parties d'anciennes arènes et note, à chaque coup d'un réseau, la valeur brute de SON réseau
+    (candidat = --cand pour A, --sup pour B), pour recalculer l'indicateur de conversion du rapport."""
+    from chesszero.arena import conversion_stats
+    from chesszero.encoding import pack_board
+
+    games_by_arena, items = {}, {"a": [], "b": []}  # items : (arène, partie, rang du coup) dans l'ordre des positions
+    packed = {"a": [], "b": []}
+    for a in args.arenas:
+        _, games = read_arena(Path(a))
+        games_by_arena[Path(a).name] = games
+        for gi, g in enumerate(games):
+            board = chess.Board()
+            moves = g["moves"].split()
+            for ply, uci in enumerate(moves):
+                if ply >= g["start_plies"] and board.legal_moves.count() > 1:
+                    p = "a" if (board.turn == chess.WHITE) == g["a_white"] else "b"
+                    packed[p].append(pack_board(board))
+                    items[p].append((Path(a).name, gi))
+                board.push_uci(uci)
+    values = {}
+    for p, path in (("a", args.cand), ("b", args.sup)):
+        print(f"{p}: {len(packed[p])} positions, réseau {path}", flush=True)
+        values[p] = net_values(path, np.stack(packed[p]), args.threads)
+    qs = {name: [{"q_a": [], "q_b": []} for _ in games] for name, games in games_by_arena.items()}
+    for p in ("a", "b"):
+        for (name, gi), v in zip(items[p], values[p]):
+            qs[name][gi]["q_" + p].append(round(float(v), 3))
+    out = {"method": "valeur brute du réseau du joueur au trait (sans recherche), coups cherchés seulement",
+           "cand": args.cand, "sup": args.sup, "arenas": {}}
+    pooled = []
+    for name, games in games_by_arena.items():
+        recs = [{**g, **q} for g, q in zip(games, qs[name])]
+        pooled += recs
+        out["arenas"][name] = conversion_stats(recs)
+    out["pooled"] = conversion_stats(pooled)
+    for thr in args.thresholds:
+        out.setdefault("thresholds", {})[str(thr)] = conversion_stats(pooled, threshold=thr)
+    for name, c in {**out["arenas"], "TOUTES": out["pooled"]}.items():
+        a, b = c["a"], c["b"]
+        print(f"{name:<16} candidat {a['not_won']:>3}/{a['games']:<3} ({a['not_won_share']:.1%}) perdues {a['lost']:>3}"
+              f" | kaggle_sup {b['not_won']:>3}/{b['games']:<3} ({b['not_won_share']:.1%}) perdues {b['lost']:>3}")
+    for thr, c in out.get("thresholds", {}).items():
+        a, b = c["a"], c["b"]
+        print(f"seuil {thr:>5}: candidat {a['not_won']}/{a['games']} ({a['not_won_share']:.1%}) | "
+              f"kaggle_sup {b['not_won']}/{b['games']} ({b['not_won_share']:.1%})")
+    write_json(args.out, out)
+    return 0
+
+
 def cmd_conversions(args) -> int:
     """Conversions ratées (camp à > +300 cp sur deux positions consécutives, partie non gagnée) : fins, gaffe du camp
     avantagé ensuite, perdues, phase du premier +300 ; pour A (candidat) et B (kaggle_sup), toutes arènes ensemble."""
@@ -792,12 +846,19 @@ def main() -> None:
     p.add_argument("--arenas", nargs="+", required=True)
     p.add_argument("--sf", required=True)
     p.add_argument("--out", default=None)
+    p = sub.add_parser("qconv")
+    p.add_argument("--arenas", nargs="+", required=True)
+    p.add_argument("--cand", required=True)
+    p.add_argument("--sup", required=True)
+    p.add_argument("--thresholds", nargs="*", type=float, default=[0.4, 0.5, 0.7])
+    p.add_argument("--threads", type=int, default=14)
+    p.add_argument("--out", default=None)
     p = sub.add_parser("gates")
     p.add_argument("--arenas", nargs="+", required=True)
     p.add_argument("--out", default=None)
     args = ap.parse_args()
     sys.exit({"conversions": cmd_conversions, "gates": cmd_gates, "prune": cmd_prune, "sfeval": cmd_sfeval, "games": cmd_games, "nets": cmd_nets,
-              "hybrid": cmd_hybrid}[args.command](args))
+              "hybrid": cmd_hybrid, "qconv": cmd_qconv}[args.command](args))
 
 
 if __name__ == "__main__":

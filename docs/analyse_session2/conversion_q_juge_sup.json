@@ -1,0 +1,196 @@
+{
+ "method": "valeur brute du réseau du joueur au trait (sans recherche), coups cherchés seulement",
+ "cand": "checkpoints/kaggle_sup/best.pt",
+ "sup": "checkpoints/kaggle_sup/best.pt",
+ "arenas": {
+  "cand_0000_gate": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 64,
+    "not_won": 12,
+    "lost": 3,
+    "not_won_share": 0.1875
+   },
+   "b": {
+    "games": 62,
+    "not_won": 7,
+    "lost": 1,
+    "not_won_share": 0.11290322580645161
+   }
+  },
+  "cand_0001_gate": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 56,
+    "not_won": 5,
+    "lost": 1,
+    "not_won_share": 0.08928571428571429
+   },
+   "b": {
+    "games": 74,
+    "not_won": 12,
+    "lost": 2,
+    "not_won_share": 0.16216216216216217
+   }
+  },
+  "cand_0002_gate": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 63,
+    "not_won": 7,
+    "lost": 3,
+    "not_won_share": 0.1111111111111111
+   },
+   "b": {
+    "games": 68,
+    "not_won": 8,
+    "lost": 0,
+    "not_won_share": 0.11764705882352941
+   }
+  },
+  "cand_0003_gate": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 59,
+    "not_won": 9,
+    "lost": 1,
+    "not_won_share": 0.15254237288135594
+   },
+   "b": {
+    "games": 66,
+    "not_won": 13,
+    "lost": 1,
+    "not_won_share": 0.19696969696969696
+   }
+  },
+  "cand_0004_gate": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 62,
+    "not_won": 8,
+    "lost": 3,
+    "not_won_share": 0.12903225806451613
+   },
+   "b": {
+    "games": 74,
+    "not_won": 14,
+    "lost": 1,
+    "not_won_share": 0.1891891891891892
+   }
+  },
+  "cand_0005_gate": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 67,
+    "not_won": 16,
+    "lost": 1,
+    "not_won_share": 0.23880597014925373
+   },
+   "b": {
+    "games": 59,
+    "not_won": 5,
+    "lost": 0,
+    "not_won_share": 0.0847457627118644
+   }
+  },
+  "cand_0006_gate": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 73,
+    "not_won": 14,
+    "lost": 1,
+    "not_won_share": 0.1917808219178082
+   },
+   "b": {
+    "games": 58,
+    "not_won": 5,
+    "lost": 0,
+    "not_won_share": 0.08620689655172414
+   }
+  }
+ },
+ "pooled": {
+  "threshold": 0.6,
+  "run": 3,
+  "games_with_q": 1400,
+  "a": {
+   "games": 444,
+   "not_won": 71,
+   "lost": 13,
+   "not_won_share": 0.15990990990990991
+  },
+  "b": {
+   "games": 461,
+   "not_won": 64,
+   "lost": 5,
+   "not_won_share": 0.13882863340563992
+  }
+ },
+ "thresholds": {
+  "0.4": {
+   "threshold": 0.4,
+   "run": 3,
+   "games_with_q": 1400,
+   "a": {
+    "games": 615,
+    "not_won": 222,
+    "lost": 51,
+    "not_won_share": 0.36097560975609755
+   },
+   "b": {
+    "games": 641,
+    "not_won": 190,
+    "lost": 27,
+    "not_won_share": 0.296411856474259
+   }
+  },
+  "0.5": {
+   "threshold": 0.5,
+   "run": 3,
+   "games_with_q": 1400,
+   "a": {
+    "games": 517,
+    "not_won": 133,
+    "lost": 27,
+    "not_won_share": 0.2572533849129594
+   },
+   "b": {
+    "games": 557,
+    "not_won": 125,
+    "lost": 13,
+    "not_won_share": 0.2244165170556553
+   }
+  },
+  "0.7": {
+   "threshold": 0.7,
+   "run": 3,
+   "games_with_q": 1400,
+   "a": {
+    "games": 370,
+    "not_won": 32,
+    "lost": 6,
+    "not_won_share": 0.08648648648648649
+   },
+   "b": {
+    "games": 384,
+    "not_won": 23,
+    "lost": 2,
+    "not_won_share": 0.059895833333333336
+   }
+  }
+ }
+}

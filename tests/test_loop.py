@@ -627,3 +627,4 @@ def test_rounds_report_policy_sharpness_against_kaggle_sup(world, tmp_path):
     assert ps["positions"] > 0 and 0 < ps["entropy"] and 0 < ps["preferred_prob"] <= 1
     assert 0 <= ps["tail_mass"] <= 1 and 0 <= ps["same_preferred"] <= 1 and ps["ref_entropy"] > 0
     assert "Netteté de la politique" in res["text"] and "règle de l'arène contre l'accepté : score >= 52%" in res["text"]
+    assert "conversion (parties non gagnées après Q > +0,6 sur 3 coups)" in res["text"]
