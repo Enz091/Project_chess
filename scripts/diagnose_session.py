@@ -683,6 +683,267 @@ def cmd_hybrid(args) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------- auto-renforcement (session 3)
+
+
+def entropy(p: np.ndarray) -> float:
+    p = np.asarray(p, dtype=np.float64)
+    p = p[p > 0] / p.sum()
+    return float(-(p * np.log(p)).sum())
+
+
+def pieces(board: chess.Board) -> int:
+    return len(board.piece_map())
+
+
+def heldout_sample(buffer: Path, n: int, seed: int, fraction: float = 0.10, min_pieces: int = 6) -> list[dict]:
+    """`n` positions tirées (graine fixe) des parties MISES DE CÔTÉ du tampon, échiquier reconstruit en rejouant la
+    partie depuis la position initiale (historique compris, pour les répétitions) ; > 5 pièces (sinon les tables
+    décident) ; position vérifiée contre l'échiquier compact enregistré."""
+    from chesszero.encoding import pack_board
+    from chesszero.selfplay_train import is_heldout
+
+    pool = []
+    files = sorted(Path(buffer).glob("*.npz"))
+    for fi, f in enumerate(files):
+        d = np.load(f)
+        held = np.array([is_heldout(u, fraction) for u in d["game_uid"].tolist()], bool)
+        pool += [(fi, int(i)) for i in np.nonzero(held[d["game"]])[0]]
+    rng = np.random.default_rng(seed)
+    order = rng.permutation(len(pool))
+    out, cache = [], {}
+    for k in order:
+        fi, i = pool[int(k)]
+        if fi not in cache:
+            cache[fi] = dict(np.load(files[fi]))
+        d = cache[fi]
+        g = int(d["game"][i])
+        board = chess.Board()
+        for uci in str(d["game_moves"][g]).split()[:int(d["ply"][i])]:
+            board.push_uci(uci)
+        if pieces(board) < min_pieces or board.legal_moves.count() < 2:
+            continue
+        assert np.array_equal(pack_board(board), d["boards"][i]), f"position mal reconstruite : {files[fi].name} {i}"
+        out.append({"source": f"{files[fi].name}:{i}", "moves": [m.uci() for m in board.move_stack], "fen": board.fen()})
+        if len(out) == n:
+            break
+    return out
+
+
+def winning_sample(arenas: list[str], sf: dict, n: int, seed: int, lo: int = 300, hi: int = 999,
+                   min_pieces: int = 6) -> list[dict]:
+    """`n` positions d'arènes où le camp au trait (un réseau) a lo..hi cp selon Stockfish ; > 5 pièces."""
+    pool = []
+    for a in arenas:
+        _, games = read_arena(Path(a))
+        for g in games:
+            moves = g["moves"].split()
+            for ply, fen in game_positions(g)[:-1]:
+                cp = sf.get(fen_key(fen))
+                if cp is None:
+                    continue
+                b = chess.Board(fen)
+                mover = cp if b.turn == chess.WHITE else -cp
+                if lo <= mover <= hi and pieces(b) >= min_pieces and b.legal_moves.count() > 1:
+                    pool.append({"source": f"{Path(a).name}:{g['key']}:{ply}", "moves": moves[:ply], "fen": fen})
+    rng = np.random.default_rng(seed)
+    return [pool[int(i)] for i in np.sort(rng.choice(len(pool), min(n, len(pool)), replace=False))]
+
+
+def board_of(item: dict) -> chess.Board:
+    b = chess.Board()
+    for uci in item["moves"]:
+        b.push_uci(uci)
+    assert fen_key(b.fen()) == fen_key(item["fen"])
+    return b
+
+
+def search_net(path: str, items: list[dict], sims: int, threads: int) -> list[dict]:
+    """MCTS sans bruit ni température (comme l'arène, sans tables) : coup choisi, visites, priors, Q racine."""
+    import torch
+
+    from chesszero.checkpoint import load_for_inference
+    from chesszero.mcts import MCTS, MCTSConfig, NetEvaluator, search_batched
+
+    torch.set_num_threads(threads)
+    ev = NetEvaluator(load_for_inference(path, "cpu")[0], "cpu")
+    cfg = dataclasses.replace(MCTSConfig.named("kaggle"), dirichlet_epsilon=0.0, temperature=0.0)
+    out = []
+    for s in range(0, len(items), 64):
+        trees = [MCTS(ev, cfg, board_of(it)) for it in items[s:s + 64]]
+        search_batched(trees, ev, sims, 4)
+        for t in trees:
+            r = t.root
+            N = r.N.astype(np.float64)
+            out.append({"move": t.best_move(0.0).uci(), "visit_entropy": entropy(N), "top_visit_share": float(N.max() / N.sum()),
+                        "prior_entropy": entropy(r.P_raw), "prior_top": float(np.max(r.P_raw)),
+                        "prior_top_move": r.moves[int(np.argmax(r.P_raw))].uci(),
+                        "moves_10pct": int((N >= 0.10 * N.sum()).sum()), "root_q": float(r.q())})
+    return out
+
+
+def sf_complete(sf: dict, fens: list[str], args) -> None:
+    need = list({fen_key(f): f for f in fens if fen_key(f) not in sf}.values())
+    if not need:
+        return
+    print(f"  Stockfish profondeur {args.depth} sur {len(need)} positions nouvelles", flush=True)
+    chunks = [(f"s{i}", need[i::args.workers]) for i in range(args.workers)]
+    with mp.get_context("spawn").Pool(args.workers, _init_sf, (str(STOCKFISH), args.depth, 64)) as pool:
+        for _, res in pool.imap_unordered(_eval_game, chunks):
+            sf.update(res)
+    Path(args.sf).write_text(json.dumps(sf) + "\n", encoding="utf-8")
+
+
+def after_fen(item: dict, uci: str) -> str:
+    b = chess.Board(item["fen"])
+    b.push_uci(uci)
+    return b.fen()
+
+
+def mover_cp(sf: dict, fen: str, mover_white: bool) -> float:
+    cp = clamp(sf[fen_key(fen)])
+    return cp if mover_white else -cp
+
+
+def set_metrics(items: list[dict], res: list[dict], ref: list[dict], sf: dict, rng) -> dict:
+    """Moyennes d'un réseau sur un jeu de positions ; pertes Stockfish du coup choisi (et écart apparié à la
+    référence, bootstrap) ; en position gagnante, part des coups qui laissent moins de +200 cp (« gain gâché »)."""
+    loss, ref_loss, spoiled, kept = [], [], [], []
+    for it, r, rr in zip(items, res, ref):
+        white = chess.Board(it["fen"]).turn == chess.WHITE
+        before = sf[fen_key(it["fen"])]
+        loss.append(move_loss(before, sf[fen_key(after_fen(it, r["move"]))], white))
+        ref_loss.append(move_loss(before, sf[fen_key(after_fen(it, rr["move"]))], white))
+        after = mover_cp(sf, after_fen(it, r["move"]), white)
+        spoiled.append(after < 200)
+        kept.append(after >= 300)
+    loss, d = np.array(loss), np.array(loss) - np.array(ref_loss)
+    bs = [rng.choice(d, len(d)).mean() for _ in range(2000)]
+    m = {k: float(np.mean([r[k] for r in res])) for k in
+         ("visit_entropy", "top_visit_share", "prior_entropy", "prior_top", "moves_10pct", "root_q")}
+    m.update({"same_search_move_as_ref": float(np.mean([r["move"] == rr["move"] for r, rr in zip(res, ref)])),
+              "same_prior_top_as_ref": float(np.mean([r["prior_top_move"] == rr["prior_top_move"] for r, rr in zip(res, ref)])),
+              "search_move_is_prior_top": float(np.mean([r["move"] == r["prior_top_move"] for r in res])),
+              "acpl": float(loss.mean()), "blunders_200": int((loss > 200).sum()), "mistakes_100": int((loss > 100).sum()),
+              "acpl_diff_vs_ref": float(d.mean()),
+              "acpl_diff_ci95": [float(np.quantile(bs, 0.025)), float(np.quantile(bs, 0.975))],
+              "spoiled_below_200": float(np.mean(spoiled)), "kept_300": float(np.mean(kept))})
+    return m
+
+
+def correlations(rows: dict, elo: dict) -> dict:
+    """Corrélation (Pearson, et Spearman = Pearson des rangs) de chaque mesure avec l'Elo contre l'ancre."""
+    labels = [k for k in rows if k in elo]
+    if len(labels) < 3:
+        return {}
+    e = np.array([elo[k] for k in labels], float)
+    rank = lambda x: np.argsort(np.argsort(x)).astype(float)  # noqa: E731
+    out = {}
+    for key in rows[labels[0]]:
+        vals = [rows[k].get(key) for k in labels]
+        if not all(isinstance(v, (int, float)) for v in vals):
+            continue
+        x = np.array(vals, float)
+        if x.std() == 0:
+            continue
+        out[key] = {"pearson": float(np.corrcoef(x, e)[0, 1]), "spearman": float(np.corrcoef(rank(x), rank(e))[0, 1])}
+    return out
+
+
+def cmd_selfref(args) -> int:
+    """Hypothèse d'auto-renforcement : les réseaux de la ligne, dans l'ordre, sur les MÊMES positions : (1) recherche
+    MCTS sans bruit sur des positions des parties mises de côté (entropie des visites, accord avec la référence,
+    perte Stockfish du coup) ; (2) même chose sur des positions gagnantes d'arènes (Stockfish lo..hi cp pour le camp
+    au trait). La netteté de la politique brute sur beaucoup de positions vient de analyse_generation.py policy."""
+    nets = dict(x.split("=", 1) for x in args.net)
+    elo = {k: float(v) for k, v in (x.split("=", 1) for x in (args.elo or []))}
+    ref = next(iter(nets))
+    sf = json.loads(Path(args.sf).read_text(encoding="utf-8"))
+    start = time.perf_counter()
+    sets = {"random": heldout_sample(args.buffer, args.random, args.seed),
+            "winning": winning_sample(args.arenas, sf, args.winning, args.seed, args.min_cp, args.max_cp)}
+    print(f"positions : {len(sets['random'])} mises de côté, {len(sets['winning'])} gagnantes "
+          f"({args.min_cp} à {args.max_cp} cp pour le camp au trait) ; {len(nets)} réseaux, {args.simulations} simulations",
+          flush=True)
+    items = sets["random"] + sets["winning"]
+    results = {}
+    for label, path in nets.items():
+        results[label] = search_net(path, items, args.simulations, args.threads)
+        print(f"  {label} : {len(items)} recherches, {(time.perf_counter() - start) / 60:.1f} min", flush=True)
+    fens = [it["fen"] for it in items] + [after_fen(it, r["move"]) for res in results.values() for it, r in zip(items, res)]
+    sf_complete(sf, fens, args)
+    rng = np.random.default_rng(args.seed)
+    out = {"buffer": str(args.buffer), "arenas": args.arenas, "simulations": args.simulations, "reference": ref,
+           "networks": nets, "elo_vs_anchor": elo, "positions": {k: len(v) for k, v in sets.items()}, "sets": {}}
+    for name, its in sets.items():
+        off = 0 if name == "random" else len(sets["random"])
+        rows = {label: set_metrics(its, res[off:off + len(its)], results[ref][off:off + len(its)], sf, rng)
+                for label, res in results.items()}
+        out["sets"][name] = {"networks": rows, "correlation_with_elo": correlations(rows, elo)}
+        print(f"\n{name} ({len(its)} positions)\n{'réseau':<12}{'H visites':>10}{'part 1er':>9}{'H prior':>9}{'p prior':>9}"
+              f"{'= réf.':>8}{'Q':>7}{'ACPL':>7}{'écart réf. (95 %)':>22}{'gaffes':>7}{'gâché':>7}")
+        for label, m in rows.items():
+            ci = m["acpl_diff_ci95"]
+            print(f"{label:<12}{m['visit_entropy']:>10.3f}{m['top_visit_share']:>9.3f}{m['prior_entropy']:>9.3f}"
+                  f"{m['prior_top']:>9.3f}{m['same_search_move_as_ref']:>8.1%}{m['root_q']:>7.3f}{m['acpl']:>7.1f}"
+                  f"{m['acpl_diff_vs_ref']:>+8.1f} ({ci[0]:+.1f} à {ci[1]:+.1f}){m['blunders_200']:>7}"
+                  f"{m['spoiled_below_200']:>7.1%}")
+        for key, c in out["sets"][name]["correlation_with_elo"].items():
+            if key in ("visit_entropy", "prior_entropy", "top_visit_share", "same_search_move_as_ref", "acpl", "spoiled_below_200"):
+                print(f"  corrélation avec l'Elo contre l'ancre : {key:<26} Pearson {c['pearson']:+.2f}  Spearman {c['spearman']:+.2f}")
+    out["items"] = {name: [{"source": it["source"], "fen": it["fen"], **{label: results[label][k + (0 if name == 'random' else len(sets['random']))]['move']
+                                     for label in nets}} for k, it in enumerate(its)] for name, its in sets.items()}
+    out["minutes"] = (time.perf_counter() - start) / 60
+    write_json(args.out, out)
+    return 0
+
+
+def cmd_targets(args) -> int:
+    """Netteté des cibles du self-play par tranche (donc par réseau qui a joué) : visites brutes, cibles débruitées
+    (Q et prior exacts enregistrés), Q racine ; toutes les positions des shards qui ont prior et Q."""
+    from chesszero.policy_target import best_moves, prune_visits, segments
+
+    groups = defaultdict(list)
+    for buf in args.buffers:
+        for f in sorted(Path(buf).glob("*.npz")):
+            tranche = f.name.rsplit("_w", 1)[0]
+            if f.name not in {g.name for g in groups[tranche]}:
+                groups[tranche].append(f)
+    gen = {}
+    for buf in args.buffers:
+        for s in Path(buf, "sessions").glob("*.json"):
+            gen[s.stem] = json.loads(s.read_text(encoding="utf-8")).get("checkpoint")
+    out = {}
+    print(f"{'tranche':<12}{'réseau':<14}{'positions':>10}{'H brute':>9}{'H débruitée':>12}{'1er brut':>9}{'1er débr.':>10}{'|Q|':>7}")
+    for tranche, files in sorted(groups.items()):
+        acc = defaultdict(float)
+        n = 0
+        for f in files:
+            d = np.load(f)
+            if "policy_q" not in d.files or len(d["policy_offsets"]) < 2:
+                continue
+            off = d["policy_offsets"].astype(np.int64)
+            v = d["policy_visits"].astype(np.float64)
+            prior, q = d["policy_prior"].astype(np.float64), d["policy_q"].astype(np.float64)
+            pr = prune_visits(off, v, prior, q, args.c_puct)
+            starts, seg = segments(off)
+            for name, x in (("raw", v), ("pruned", pr)):
+                tot = np.add.reduceat(x, starts)
+                p = x / tot[seg]
+                acc[f"{name}_entropy"] += float(np.add.reduceat(np.where(p > 0, -p * np.log(np.maximum(p, 1e-300)), 0.0), starts).sum())
+                acc[f"{name}_top"] += float((x[best_moves(off, v, prior)] / tot).sum())
+            acc["abs_q"] += float(np.abs(d["root_q"].astype(np.float64)).sum())
+            n += len(off) - 1
+        if not n:
+            continue
+        out[tranche] = {"network": gen.get(tranche), "positions": n, **{k: v / n for k, v in acc.items()}}
+        r = out[tranche]
+        print(f"{tranche:<12}{str(r['network']):<14}{n:>10}{r['raw_entropy']:>9.3f}{r['pruned_entropy']:>12.3f}"
+              f"{r['raw_top']:>9.3f}{r['pruned_top']:>10.3f}{r['abs_q']:>7.3f}")
+    write_json(args.out, out)
+    return 0
+
+
 # --------------------------------------------------------------------------- règles d'arène
 
 
@@ -856,9 +1117,29 @@ def main() -> None:
     p = sub.add_parser("gates")
     p.add_argument("--arenas", nargs="+", required=True)
     p.add_argument("--out", default=None)
+    p = sub.add_parser("selfref")
+    p.add_argument("--buffer", required=True, type=Path, help="tampon : positions des parties mises de côté")
+    p.add_argument("--arenas", nargs="+", required=True, help="arènes notées par Stockfish (positions gagnantes)")
+    p.add_argument("--sf", required=True)
+    p.add_argument("--net", nargs="+", required=True, help="label=checkpoint, dans l'ordre ; le premier = référence")
+    p.add_argument("--elo", nargs="*", default=None, help="label=Elo contre l'ancre (corrélations)")
+    p.add_argument("--random", type=int, default=300)
+    p.add_argument("--winning", type=int, default=250)
+    p.add_argument("--min-cp", type=int, default=300)
+    p.add_argument("--max-cp", type=int, default=999)
+    p.add_argument("--simulations", type=int, default=200)
+    p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--depth", type=int, default=14)
+    p.add_argument("--workers", type=int, default=10)
+    p.add_argument("--threads", type=int, default=14)
+    p.add_argument("--out", default=None)
+    p = sub.add_parser("targets")
+    p.add_argument("--buffers", nargs="+", required=True, type=Path)
+    p.add_argument("--c-puct", type=float, default=1.5)
+    p.add_argument("--out", default=None)
     args = ap.parse_args()
     sys.exit({"conversions": cmd_conversions, "gates": cmd_gates, "prune": cmd_prune, "sfeval": cmd_sfeval, "games": cmd_games, "nets": cmd_nets,
-              "hybrid": cmd_hybrid, "qconv": cmd_qconv}[args.command](args))
+              "hybrid": cmd_hybrid, "qconv": cmd_qconv, "selfref": cmd_selfref, "targets": cmd_targets}[args.command](args))
 
 
 if __name__ == "__main__":

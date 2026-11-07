@@ -1,0 +1,230 @@
+{
+ "method": "valeur brute du réseau du joueur au trait (sans recherche), coups cherchés seulement",
+ "cand": "checkpoints/kaggle_sup/best.pt",
+ "sup": "checkpoints/kaggle_sup/best.pt",
+ "arenas": {
+  "cand_0007_gate": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 67,
+    "not_won": 12,
+    "lost": 2,
+    "not_won_share": 0.1791044776119403
+   },
+   "b": {
+    "games": 56,
+    "not_won": 10,
+    "lost": 1,
+    "not_won_share": 0.17857142857142858
+   }
+  },
+  "cand_0008_gate": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 52,
+    "not_won": 13,
+    "lost": 1,
+    "not_won_share": 0.25
+   },
+   "b": {
+    "games": 63,
+    "not_won": 8,
+    "lost": 3,
+    "not_won_share": 0.12698412698412698
+   }
+  },
+  "cand_0009_gate": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 55,
+    "not_won": 7,
+    "lost": 1,
+    "not_won_share": 0.12727272727272726
+   },
+   "b": {
+    "games": 62,
+    "not_won": 14,
+    "lost": 0,
+    "not_won_share": 0.22580645161290322
+   }
+  },
+  "cand_0009_anchor": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 58,
+    "not_won": 8,
+    "lost": 2,
+    "not_won_share": 0.13793103448275862
+   },
+   "b": {
+    "games": 65,
+    "not_won": 15,
+    "lost": 1,
+    "not_won_share": 0.23076923076923078
+   }
+  },
+  "cand_0010_gate": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 57,
+    "not_won": 8,
+    "lost": 1,
+    "not_won_share": 0.14035087719298245
+   },
+   "b": {
+    "games": 60,
+    "not_won": 11,
+    "lost": 3,
+    "not_won_share": 0.18333333333333332
+   }
+  },
+  "cand_0011_gate": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 50,
+    "not_won": 7,
+    "lost": 2,
+    "not_won_share": 0.14
+   },
+   "b": {
+    "games": 57,
+    "not_won": 11,
+    "lost": 0,
+    "not_won_share": 0.19298245614035087
+   }
+  },
+  "cand_0011_anchor": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 62,
+    "not_won": 10,
+    "lost": 0,
+    "not_won_share": 0.16129032258064516
+   },
+   "b": {
+    "games": 64,
+    "not_won": 9,
+    "lost": 0,
+    "not_won_share": 0.140625
+   }
+  },
+  "cand_0012_gate": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 56,
+    "not_won": 10,
+    "lost": 4,
+    "not_won_share": 0.17857142857142858
+   },
+   "b": {
+    "games": 63,
+    "not_won": 12,
+    "lost": 0,
+    "not_won_share": 0.19047619047619047
+   }
+  },
+  "cand_0012_anchor": {
+   "threshold": 0.6,
+   "run": 3,
+   "games_with_q": 200,
+   "a": {
+    "games": 55,
+    "not_won": 6,
+    "lost": 1,
+    "not_won_share": 0.10909090909090909
+   },
+   "b": {
+    "games": 83,
+    "not_won": 4,
+    "lost": 0,
+    "not_won_share": 0.04819277108433735
+   }
+  }
+ },
+ "pooled": {
+  "threshold": 0.6,
+  "run": 3,
+  "games_with_q": 1800,
+  "a": {
+   "games": 512,
+   "not_won": 81,
+   "lost": 14,
+   "not_won_share": 0.158203125
+  },
+  "b": {
+   "games": 573,
+   "not_won": 94,
+   "lost": 8,
+   "not_won_share": 0.16404886561954624
+  }
+ },
+ "thresholds": {
+  "0.4": {
+   "threshold": 0.4,
+   "run": 3,
+   "games_with_q": 1800,
+   "a": {
+    "games": 731,
+    "not_won": 236,
+    "lost": 53,
+    "not_won_share": 0.3228454172366621
+   },
+   "b": {
+    "games": 803,
+    "not_won": 255,
+    "lost": 39,
+    "not_won_share": 0.3175591531755915
+   }
+  },
+  "0.5": {
+   "threshold": 0.5,
+   "run": 3,
+   "games_with_q": 1800,
+   "a": {
+    "games": 607,
+    "not_won": 132,
+    "lost": 24,
+    "not_won_share": 0.21746293245469522
+   },
+   "b": {
+    "games": 680,
+    "not_won": 160,
+    "lost": 18,
+    "not_won_share": 0.23529411764705882
+   }
+  },
+  "0.7": {
+   "threshold": 0.7,
+   "run": 3,
+   "games_with_q": 1800,
+   "a": {
+    "games": 382,
+    "not_won": 27,
+    "lost": 3,
+    "not_won_share": 0.07068062827225131
+   },
+   "b": {
+    "games": 423,
+    "not_won": 41,
+    "lost": 2,
+    "not_won_share": 0.09692671394799054
+   }
+  }
+ }
+}

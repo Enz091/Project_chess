@@ -1,0 +1,473 @@
+{
+ "depth_cache": "data/diag_s3/sf_d14.json",
+ "arenas": {
+  "cand_0007": {
+   "score": 0.5125,
+   "elo": 8.687699877294481,
+   "games": 200,
+   "moves": {
+    "A:ouverture": {
+     "moves": 1551,
+     "acpl": 22.097356544165056,
+     "blunders_200": 17,
+     "blunder_rate": 0.01096067053513862,
+     "mistakes_100": 76
+    },
+    "A:milieu": {
+     "moves": 5659,
+     "acpl": 40.78812511044354,
+     "blunders_200": 283,
+     "blunder_rate": 0.050008835483300935,
+     "mistakes_100": 641
+    },
+    "A:finale": {
+     "moves": 1789,
+     "acpl": 26.288988261598657,
+     "blunders_200": 65,
+     "blunder_rate": 0.03633314700950251,
+     "mistakes_100": 133
+    },
+    "A:tout": {
+     "moves": 8999,
+     "acpl": 34.6842982553617,
+     "blunders_200": 365,
+     "blunder_rate": 0.04056006222913657,
+     "mistakes_100": 850
+    },
+    "B:ouverture": {
+     "moves": 1551,
+     "acpl": 23.399742101869762,
+     "blunders_200": 22,
+     "blunder_rate": 0.014184397163120567,
+     "mistakes_100": 80
+    },
+    "B:milieu": {
+     "moves": 5666,
+     "acpl": 39.09971761383692,
+     "blunders_200": 253,
+     "blunder_rate": 0.044652312036710204,
+     "mistakes_100": 638
+    },
+    "B:finale": {
+     "moves": 1785,
+     "acpl": 28.67170868347339,
+     "blunders_200": 60,
+     "blunder_rate": 0.03361344537815126,
+     "mistakes_100": 139
+    },
+    "B:tout": {
+     "moves": 9002,
+     "acpl": 34.32692734947789,
+     "blunders_200": 335,
+     "blunder_rate": 0.037213952455009996,
+     "mistakes_100": 857
+    }
+   },
+   "swing_A_lost": {
+    "lost_games": 61,
+    "never_ok": 3,
+    "worst_own_blunder_200_by_phase": {
+     "ouverture": 1,
+     "milieu": 51,
+     "finale": 7
+    },
+    "own_move": 58,
+    "own_blunder_200": 38,
+    "phase": {
+     "ouverture": 7,
+     "milieu": 45,
+     "finale": 6
+    },
+    "ply_median": 56.5,
+    "material_median": 51.0
+   },
+   "swing_B_lost": {
+    "lost_games": 66,
+    "never_ok": 4,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 43,
+     "ouverture": 3,
+     "finale": 15
+    },
+    "own_move": 58,
+    "own_blunder_200": 32,
+    "phase": {
+     "milieu": 39,
+     "ouverture": 8,
+     "finale": 15
+    },
+    "ply_median": 58.5,
+    "material_median": 38.5
+   },
+   "repetitions": {
+    "total": 50,
+    "adv_150": 3,
+    "renounced_by_A": 2,
+    "renounced_by_B": 1
+   },
+   "conversion_300": {
+    "A": {
+     "reached": 95,
+     "not_won": 29,
+     "lost": 6
+    },
+    "B": {
+     "reached": 82,
+     "not_won": 21,
+     "lost": 4
+    }
+   }
+  },
+  "cand_0009": {
+   "score": 0.47,
+   "elo": -20.871204666028625,
+   "games": 200,
+   "moves": {
+    "A:ouverture": {
+     "moves": 1551,
+     "acpl": 21.279819471308834,
+     "blunders_200": 21,
+     "blunder_rate": 0.013539651837524178,
+     "mistakes_100": 72
+    },
+    "A:milieu": {
+     "moves": 5738,
+     "acpl": 42.870860927152314,
+     "blunders_200": 302,
+     "blunder_rate": 0.05263157894736842,
+     "mistakes_100": 700
+    },
+    "A:finale": {
+     "moves": 2011,
+     "acpl": 26.548980606663353,
+     "blunders_200": 65,
+     "blunder_rate": 0.03232222774738936,
+     "mistakes_100": 131
+    },
+    "A:tout": {
+     "moves": 9300,
+     "acpl": 35.740645161290324,
+     "blunders_200": 388,
+     "blunder_rate": 0.04172043010752688,
+     "mistakes_100": 903
+    },
+    "B:ouverture": {
+     "moves": 1551,
+     "acpl": 23.12637008381689,
+     "blunders_200": 23,
+     "blunder_rate": 0.014829142488716958,
+     "mistakes_100": 79
+    },
+    "B:milieu": {
+     "moves": 5746,
+     "acpl": 39.557605290636964,
+     "blunders_200": 251,
+     "blunder_rate": 0.043682561782109296,
+     "mistakes_100": 660
+    },
+    "B:finale": {
+     "moves": 2013,
+     "acpl": 26.179831097863886,
+     "blunders_200": 70,
+     "blunder_rate": 0.03477396920019871,
+     "mistakes_100": 141
+    },
+    "B:tout": {
+     "moves": 9310,
+     "acpl": 33.92771213748657,
+     "blunders_200": 344,
+     "blunder_rate": 0.036949516648764766,
+     "mistakes_100": 880
+    }
+   },
+   "swing_A_lost": {
+    "lost_games": 69,
+    "never_ok": 3,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 51,
+     "ouverture": 3,
+     "finale": 12
+    },
+    "own_move": 63,
+    "own_blunder_200": 39,
+    "phase": {
+     "milieu": 50,
+     "ouverture": 6,
+     "finale": 10
+    },
+    "ply_median": 60.5,
+    "material_median": 44.0
+   },
+   "swing_B_lost": {
+    "lost_games": 57,
+    "never_ok": 2,
+    "worst_own_blunder_200_by_phase": {
+     "ouverture": 2,
+     "milieu": 42,
+     "finale": 8
+    },
+    "own_move": 53,
+    "own_blunder_200": 25,
+    "phase": {
+     "ouverture": 8,
+     "milieu": 39,
+     "finale": 8
+    },
+    "ply_median": 64.0,
+    "material_median": 41.0
+   },
+   "repetitions": {
+    "total": 48,
+    "adv_150": 8,
+    "renounced_by_A": 4,
+    "renounced_by_B": 4
+   },
+   "conversion_300": {
+    "A": {
+     "reached": 90,
+     "not_won": 33,
+     "lost": 11
+    },
+    "B": {
+     "reached": 97,
+     "not_won": 28,
+     "lost": 4
+    }
+   }
+  },
+  "cand_0011": {
+   "score": 0.4675,
+   "elo": -22.615198760895453,
+   "games": 200,
+   "moves": {
+    "A:ouverture": {
+     "moves": 1551,
+     "acpl": 23.86653771760155,
+     "blunders_200": 24,
+     "blunder_rate": 0.015473887814313346,
+     "mistakes_100": 73
+    },
+    "A:milieu": {
+     "moves": 6138,
+     "acpl": 42.26735092864125,
+     "blunders_200": 307,
+     "blunder_rate": 0.05001629195177582,
+     "mistakes_100": 724
+    },
+    "A:finale": {
+     "moves": 1734,
+     "acpl": 24.054209919261822,
+     "blunders_200": 42,
+     "blunder_rate": 0.02422145328719723,
+     "mistakes_100": 117
+    },
+    "A:tout": {
+     "moves": 9423,
+     "acpl": 35.88708479252892,
+     "blunders_200": 373,
+     "blunder_rate": 0.03958399660405391,
+     "mistakes_100": 914
+    },
+    "B:ouverture": {
+     "moves": 1551,
+     "acpl": 23.69503546099291,
+     "blunders_200": 25,
+     "blunder_rate": 0.016118633139909737,
+     "mistakes_100": 86
+    },
+    "B:milieu": {
+     "moves": 6143,
+     "acpl": 39.68810027673775,
+     "blunders_200": 287,
+     "blunder_rate": 0.046719843724564544,
+     "mistakes_100": 687
+    },
+    "B:finale": {
+     "moves": 1734,
+     "acpl": 24.178777393310266,
+     "blunders_200": 47,
+     "blunder_rate": 0.02710495963091119,
+     "mistakes_100": 114
+    },
+    "B:tout": {
+     "moves": 9428,
+     "acpl": 34.20460330929147,
+     "blunders_200": 359,
+     "blunder_rate": 0.03807806533729317,
+     "mistakes_100": 887
+    }
+   },
+   "swing_A_lost": {
+    "lost_games": 74,
+    "never_ok": 4,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 58,
+     "ouverture": 9,
+     "finale": 5
+    },
+    "own_move": 68,
+    "own_blunder_200": 46,
+    "phase": {
+     "milieu": 55,
+     "ouverture": 9,
+     "finale": 6
+    },
+    "ply_median": 55.5,
+    "material_median": 49.5
+   },
+   "swing_B_lost": {
+    "lost_games": 61,
+    "never_ok": 5,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 48,
+     "ouverture": 3,
+     "finale": 8
+    },
+    "own_move": 52,
+    "own_blunder_200": 32,
+    "phase": {
+     "milieu": 43,
+     "ouverture": 7,
+     "finale": 6
+    },
+    "ply_median": 59.5,
+    "material_median": 46.5
+   },
+   "repetitions": {
+    "total": 47,
+    "adv_150": 6,
+    "renounced_by_A": 3,
+    "renounced_by_B": 3
+   },
+   "conversion_300": {
+    "A": {
+     "reached": 89,
+     "not_won": 28,
+     "lost": 5
+    },
+    "B": {
+     "reached": 95,
+     "not_won": 21,
+     "lost": 3
+    }
+   }
+  },
+  "cand_0012": {
+   "score": 0.395,
+   "elo": -74.06331161040343,
+   "games": 200,
+   "moves": {
+    "A:ouverture": {
+     "moves": 1551,
+     "acpl": 21.05157962604771,
+     "blunders_200": 23,
+     "blunder_rate": 0.014829142488716958,
+     "mistakes_100": 62
+    },
+    "A:milieu": {
+     "moves": 5844,
+     "acpl": 44.67385352498289,
+     "blunders_200": 336,
+     "blunder_rate": 0.057494866529774126,
+     "mistakes_100": 721
+    },
+    "A:finale": {
+     "moves": 1655,
+     "acpl": 25.3190332326284,
+     "blunders_200": 50,
+     "blunder_rate": 0.030211480362537766,
+     "mistakes_100": 101
+    },
+    "A:tout": {
+     "moves": 9050,
+     "acpl": 37.08596685082873,
+     "blunders_200": 409,
+     "blunder_rate": 0.04519337016574586,
+     "mistakes_100": 884
+    },
+    "B:ouverture": {
+     "moves": 1551,
+     "acpl": 22.295293359123146,
+     "blunders_200": 22,
+     "blunder_rate": 0.014184397163120567,
+     "mistakes_100": 78
+    },
+    "B:milieu": {
+     "moves": 5868,
+     "acpl": 37.17501704158146,
+     "blunders_200": 242,
+     "blunder_rate": 0.04124062713019768,
+     "mistakes_100": 611
+    },
+    "B:finale": {
+     "moves": 1652,
+     "acpl": 26.031476997578693,
+     "blunders_200": 47,
+     "blunder_rate": 0.028450363196125907,
+     "mistakes_100": 112
+    },
+    "B:tout": {
+     "moves": 9071,
+     "acpl": 32.60136699371624,
+     "blunders_200": 311,
+     "blunder_rate": 0.034285084334692975,
+     "mistakes_100": 801
+    }
+   },
+   "swing_A_lost": {
+    "lost_games": 93,
+    "never_ok": 2,
+    "worst_own_blunder_200_by_phase": {
+     "ouverture": 4,
+     "milieu": 82,
+     "finale": 5
+    },
+    "own_move": 86,
+    "own_blunder_200": 60,
+    "phase": {
+     "ouverture": 6,
+     "milieu": 77,
+     "finale": 8
+    },
+    "ply_median": 65.0,
+    "material_median": 46.0
+   },
+   "swing_B_lost": {
+    "lost_games": 51,
+    "never_ok": 6,
+    "worst_own_blunder_200_by_phase": {
+     "milieu": 34,
+     "ouverture": 6,
+     "finale": 8
+    },
+    "own_move": 42,
+    "own_blunder_200": 22,
+    "phase": {
+     "ouverture": 10,
+     "milieu": 26,
+     "finale": 9
+    },
+    "ply_median": 52.0,
+    "material_median": 47.0
+   },
+   "repetitions": {
+    "total": 44,
+    "adv_150": 2,
+    "renounced_by_A": 0,
+    "renounced_by_B": 2
+   },
+   "conversion_300": {
+    "A": {
+     "reached": 72,
+     "not_won": 21,
+     "lost": 7
+    },
+    "B": {
+     "reached": 110,
+     "not_won": 17,
+     "lost": 1
+    }
+   }
+  }
+ }
+}

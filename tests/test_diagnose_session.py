@@ -97,3 +97,25 @@ def test_simulate_rules_first_decision_exact_then_transitive():
     bad = [c(i, -40, los=0.01) for i in range(6)]
     assert ds.simulate_rules(bad, {"s": ("score", 0.52)})["s"]["status"] == "stagnation"
     assert ds.simulate_rules(bad, {"s": ("score", 0.52)}, counters_reset_after=(1,))["s"]["status"] == "ok"
+
+
+def test_selfref_metrics_entropy_spoiled_wins_and_correlation():
+    assert ds.entropy([1, 1]) == pytest.approx(np.log(2)) and ds.entropy([5, 0]) == 0.0
+    board = chess.Board()
+    item = {"fen": board.fen(), "moves": []}
+    after = {}
+    for uci, cp in (("e2e4", 400), ("g1f3", 150), ("a2a3", 380)):
+        b = chess.Board()
+        b.push_uci(uci)
+        after[uci] = (b.fen(), cp)
+    sf = {ds.fen_key(board.fen()): 420, **{ds.fen_key(f): cp for f, cp in after.values()}}
+    ref = [{"move": "e2e4", "prior_top_move": "e2e4", "visit_entropy": 0.5, "top_visit_share": 0.8, "prior_entropy": 1.0,
+            "prior_top": 0.5, "moves_10pct": 2, "root_q": 0.6}]
+    res = [dict(ref[0], move="g1f3", visit_entropy=0.2)]
+    m = ds.set_metrics([item], res, ref, sf, np.random.default_rng(0))
+    assert m["acpl"] == 270 and m["acpl_diff_vs_ref"] == 250  # 420 -> 150 contre 420 -> 400
+    assert m["spoiled_below_200"] == 1.0 and m["kept_300"] == 0.0 and m["same_search_move_as_ref"] == 0.0
+    assert m["search_move_is_prior_top"] == 0.0 and m["visit_entropy"] == 0.2
+    rows = {"a": {"x": 1.0, "y": 3.0}, "b": {"x": 2.0, "y": 2.0}, "c": {"x": 3.0, "y": 1.0}}
+    c = ds.correlations(rows, {"a": 0, "b": 10, "c": 20})
+    assert c["x"]["pearson"] == pytest.approx(1.0) and c["y"]["spearman"] == pytest.approx(-1.0)

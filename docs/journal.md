@@ -1611,3 +1611,98 @@ Script `scripts/diagnose_session.py` (`prune`, `sfeval`, `games`, `conversions`,
 1. kaggle.com → *Datasets* → *New Dataset* → téléverser `data\kaggle_upload\loop_session2.zip` (Kaggle l'extrait ; **privé**), nom `loop-session2`. Vérifier dans l'aperçu que `loop`, `selfplay` et `sp_train` sont visibles (un dossier intermédiaire est toléré).
 2. Notebook (**à réimporter** : COMMIT, dernière cellule) : entrées = `chesszero-kaggle-sup`, `lichess-24m`, **`loop-session2`** (Dataset) ; **aucune sortie de notebook** (retirer celle de la session 1 si elle est encore là : sinon refus « EXACTEMENT une »). Puis suivre les instructions de la session 3 plus haut (mêmes réglages, avec ce COMMIT).
 3. Cette session 3 se terminera désormais en « Successful » même sur un arrêt décisionnel (bandeau final dans la dernière cellule) : sa sortie sera proposée en entrée de la session 4.
+
+## Troisième session de boucle : critère d'échec atteint, boucle arrêtée sous cette forme (2026-11-07)
+
+### Session Kaggle 3 (sortie : `data\kaggle_out\loop_session3\`, hors git ; code `f425403`)
+- 638 min sur 660, fin « budget : fin de session » (version « Successful »). Arrêt « stagnation » de la session 2 levé au départ par `CLEAR_STOP` ; ligne gardée (candidat 6) ; règle « los » 0,20. 7 tranches de self-play (~102 000 positions, ~77 min chacune, 4 390 à 4 520 simulations/s), 6 tours (candidats 7 à 12, 475 à 492 pas, ~1,7 min), **4 générations acceptées**.
+
+| candidat | contre l'accepté (score, Elo, intervalle 95 %, P(meilleur)) | contre l'ancre `kaggle_sup` | décision | génération |
+|---|---|---|---|---|
+| 7 | contre `kaggle_sup` : 51,2 %, +9 (−28 à +45), 68 % | +9 (même arène, biaisée par la sélection) | accepté | 1 |
+| 8 | contre gen 1 : 47,0 %, −21 (−53 à +11), 10 % | — | rejeté | |
+| 9 | contre gen 1 : 51,2 %, +9 (−26 à +43), 69 % | **−21 (−58 à +16)** | accepté | 2 |
+| 10 | contre gen 2 : 47,8 %, −16 (−51 à +19), 19 % | — | rejeté | |
+| 11 | contre gen 2 : 49,5 %, −3 (−40 à +33), 42 % | **−23 (−64 à +18)** | accepté | 3 |
+| 12 | contre gen 3 : 48,0 %, −14 (−48 à +20), 21 % | **−74 (−117 à −34)** : 39,5 %, +51 =56 −93 | accepté | 4 |
+
+- Aucun veto (la plus forte baisse d'une génération à l'autre contre l'ancre, −51 entre les générations 3 et 4, reste sous les 2 erreurs types) ; l'arrêt « ancre » (borne haute < 0 sur 2 générations consécutives ≥ 3) n'est pas déclenché : la génération 3 a une borne haute à +18.
+- Indicateur de conversion (Q de recherche de chaque camp, Q > +0,6 sur 3 coups consécutifs, partie non gagnée) dans les arènes contre l'ancre : génération 1 : 13/78 (17 %) contre `kaggle_sup` 4/60 (7 %) ; 2 : 17/74 (23 %) contre 7/66 (11 %) ; 3 : 14/74 (19 %) contre 2/71 (3 %) ; **4 : 11/62 (18 %) contre 2/89 (2 %)**. Dans les arènes entre générations successives, l'écart disparaît (candidat 9 : 10 % contre 20 % ; 11 : 12 % contre 10 % ; 12 : 16 % contre 14 %).
+- Tendances des tours 7 à 12 (rapport) : coups préférés identiques à `kaggle_sup` 88,2 → 84,0 % ; entropie de la politique 1,343 → 1,325 (`kaggle_sup` ~1,42) ; entropie des cibles débruitées 0,906 → 0,862 ; top-1 Lichess 53,02 → 52,80 % (`kaggle_sup` 53,70 %), perte de politique Lichess 1,432 → 1,452 (1,405) ; répétitions en self-play 24,4 % (tranche jouée par `kaggle_sup`) → 30,0 % (génération 3) et 28,7 % (génération 4) ; faux abandons 1 sur 322 déclenchés.
+
+### Décision de l'auteur (2026-11-07)
+- **Critère d'échec fixé à l'avance atteint** : « réseau accepté à −40 Elo ou moins contre l'ancre à la génération 4 » (génération 4 : −74, intervalle −117 à −34, entièrement sous −34). Le critère de succès n'est pas rempli : après les acceptations, les candidats font 47 à 51 % contre le nouvel accepté (proche de 50 %), mais l'Elo contre l'ancre baisse (+9, −21, −23, −74) au lieu de remonter.
+- **On arrête la boucle AlphaZero sous cette forme : pas de session 4 avec cette configuration.** **`kaggle_sup` reste le réseau de référence (protocole v2 : 2423 ± 26).** Les générations 1 à 4 ne sont pas mesurées contre Stockfish (aucune n'est meilleure que `kaggle_sup` en arène contre l'ancre).
+- Suite : analyse de l'hypothèse d'auto-renforcement sur le PC (ci-dessous), puis document de décision `docs/options_apres_session3.md` (réparer le RL ou gagner en force par le supervisé). Rien n'est lancé sur Kaggle.
+
+### Analyse de l'hypothèse d'auto-renforcement (2026-11-07, 15:43 → 16:35, sur secteur, mode « Utilisation normale », EcoQoS désactivé ; analyse seule)
+Hypothèse testée : le réseau devient plus sûr de lui, sa recherche se concentre, les cibles se resserrent, et il gaffe davantage en position gagnante. Réseaux, dans l'ordre de la ligne : `kaggle_sup` (« sup »), candidat 6 de la session 2 (« c6 », −5 contre l'ancre, dernier point AVANT toute acceptation : entraîné sur des parties de `kaggle_sup` seulement), générations 1 à 4 (« g1 » à « g4 »). Commandes ajoutées à `scripts/diagnose_session.py` : `selfref` (recherches sur des positions fixes) et `targets` (cibles par réseau qui a joué) ; test `test_selfref_metrics_entropy_spoiled_wins_and_correlation`. Script de la chaîne : `data\diag_s3\run.sh` (hors git) ; cache Stockfish profondeur 14 : `data\diag_s3\sf_d14.json` (155 919 positions, hors git) ; résultats dans `docs/analyse_session3/`. Durées : Stockfish sur 4 arènes (56 306 positions nouvelles, 10 processus) 7,5 min ; juge unique 4 min ; cibles 0,4 min ; netteté 22 min (~3,7 min par réseau, plus lent que prévu) ; recherches 17 min. Total 52 min.
+
+**(1) Cibles du self-play par réseau qui a joué** (`cibles_par_generation.json`, toutes les positions des shards qui ont prior et Q, cibles débruitées exactes)
+
+| tranches | réseau qui a joué | positions | entropie brute | entropie débruitée | part du 1er coup (débruitée) |
+|---|---|---|---|---|---|
+| L0002_00 à 03 | `kaggle_sup` | 410 115 | 1,145 à 1,155 | 0,899 à 0,908 | 0,688 à 0,691 |
+| L0003_01-02 | g1 | 147 075 | 1,107 à 1,109 | 0,868 à 0,869 | 0,700 à 0,701 |
+| L0003_03-04 | g2 | 205 954 | 1,095 à 1,102 | 0,857 à 0,864 | 0,701 à 0,703 |
+| L0003_05 | g3 | 102 741 | 1,093 | 0,854 | 0,704 |
+| L0003_06 | g4 | 48 403 | 1,081 | 0,843 | 0,708 |
+
+- **Le premier maillon existe** : les cibles se resserrent à chaque générateur (entropie débruitée −0,06 de `kaggle_sup` à g4, part du premier coup +0,02), de façon régulière. |Q racine| ne monte pas (0,33 à 0,35).
+
+**(2) Politique brute sur les mêmes 50 000 positions des parties mises de côté** (tampon de la session 3, parties de g1 à g4 ; `nettete_politique.json` ; Lichess : 50 000 positions de validation)
+
+| réseau | entropie | p(préféré) | queue | même coup préféré que `kaggle_sup` (self-play / Lichess) | perte de politique Lichess | top-1 Lichess | perte de valeur Lichess |
+|---|---|---|---|---|---|---|---|
+| sup | 1,430 | 0,527 | 5,2 % | 100 / 100 % | 1,4049 | 53,70 % | 0,7267 |
+| c6 | 1,360 | 0,539 | 4,3 % | 88,2 / 90,2 % | 1,4303 | 53,10 % | 0,7431 |
+| g1 | 1,361 | 0,538 | 4,3 % | 87,7 / 89,7 % | 1,4324 | 53,02 % | 0,7433 |
+| g2 | 1,352 | 0,539 | 4,2 % | 86,4 / 88,6 % | 1,4395 | 52,82 % | 0,7463 |
+| g3 | 1,336 | 0,542 | 4,2 % | 84,9 / 87,5 % | 1,4475 | 52,82 % | 0,7423 |
+| g4 | 1,332 | 0,543 | 4,2 % | 84,0 / 86,9 % | 1,4519 | 52,80 % | 0,7437 |
+
+- **L'essentiel du resserrement a lieu AVANT toute acceptation** (sup → c6 : entropie −0,070, effet des cibles débruitées sur des parties de `kaggle_sup`), et c6 était le candidat le plus proche de l'ancre (−5). De g1 à g4 : −0,029 seulement. Ce qui continue de bouger, c'est la **dérive** : coups préférés différents de `kaggle_sup` 11,8 % → 16,0 %, perte de politique Lichess +0,047 depuis `kaggle_sup` (le garde-fou G1 rejette à +0,05).
+
+**(3) Recherche MCTS-200 sans bruit (comme l'arène, sans tables) sur des positions fixes** (`recherche_par_reseau.json`) : 300 positions des parties mises de côté (> 5 pièces, graine 0, échiquier reconstruit avec l'historique) ; 250 positions gagnantes (Stockfish +300 à +999 cp pour le camp au trait, > 5 pièces) tirées des 4 arènes contre l'ancre de la session 3. Perte = perte Stockfish (profondeur 14) du coup choisi ; écart apparié à `kaggle_sup`, bootstrap 95 % ; « gâché » = le coup laisse moins de +200 cp.
+
+| réseau | entropie des visites (300 / 250 gagnantes) | part du 1er coup (300 / 250) | entropie du prior (300 / 250) | même coup que `kaggle_sup` (300 / 250) | perte, 300 positions (écart) | perte, 250 gagnantes (écart ; 95 %) | gaffes > 200 cp (gagnantes) | gâché |
+|---|---|---|---|---|---|---|---|---|
+| sup | 1,018 / 0,998 | 0,625 / 0,632 | 1,450 / 1,419 | — | 32,3 | 68,6 | 27 | 9,2 % |
+| c6 | 0,980 / 0,995 | 0,642 / 0,627 | 1,380 / 1,355 | 81,3 / 80,4 % | 32,2 (−0,0) | 76,4 (+7,7 ; −4,0 à +22,5) | 28 | 9,6 % |
+| g1 | 0,991 / 1,003 | 0,638 / 0,625 | 1,379 / 1,353 | 79,7 / 81,2 % | 33,7 (+1,4) | 72,1 (+3,5 ; −5,7 à +14,3) | 29 | 9,6 % |
+| g2 | 0,982 / 1,012 | 0,635 / 0,624 | 1,372 / 1,362 | 77,3 / 79,2 % | 33,9 (+1,6) | 64,1 (−4,5 ; −17,6 à +8,0) | 25 | 8,0 % |
+| g3 | 0,980 / 1,012 | 0,640 / 0,625 | 1,359 / 1,339 | 75,0 / 83,2 % | 35,3 (+3,0 ; −2,7 à +9,0) | 58,8 (−9,9 ; −21,4 à −0,3) | 24 | 7,6 % |
+| g4 | 0,980 / 1,012 | 0,638 / 0,623 | 1,359 / 1,340 | 78,0 / 82,4 % | 34,2 (+2,0 ; −3,9 à +7,3) | 62,6 (−6,0 ; −17,1 à +3,0) | 25 | 8,0 % |
+
+- **La recherche ne se concentre pas de génération en génération** : entropie des visites −0,04 de sup à c6, puis plate (0,98 à 0,99) ; en position gagnante, elle augmente même un peu (0,998 → 1,012). Q racine moyen en position gagnante : 0,58 pour `kaggle_sup`, 0,67-0,68 pour tous les autres (valeur plus confiante, acquise dès c6).
+- **En position gagnante, g2 à g4 choisissent des coups au moins aussi bons que `kaggle_sup`** (g3 −9,9 cp, intervalle juste sous 0 ; g4 −6,0, non significatif) et ne gâchent pas plus souvent le gain (8 % contre 9 %). Sur les 300 positions quelconques, la perte augmente un peu (+1,4 à +3,0 cp), non significatif à cette taille (résolution ~±5 cp ; l'écart réel en partie est de ~+4,5 cp, voir (4)).
+- Corrélations avec l'Elo contre l'ancre (6 réseaux : sup 0, c6 −5, g1 +9, g2 −21, g3 −23, g4 −74 ; indicatives seulement) : en position gagnante, la perte et l'entropie des visites varient **dans le sens contraire** de l'hypothèse (Spearman perte/Elo +0,77 : les réseaux les plus faibles jouent mieux ces positions isolées).
+
+**(4) Parties réelles contre l'ancre, Stockfish profondeur 14** (`arenes_ancre_stockfish.json`, `conversions_*.json` ; A = génération, B = `kaggle_sup`, mêmes 100 ouvertures fixes)
+
+| arène | score | ACPL A / B | ACPL au milieu A / B | gaffes ‰ au milieu A / B | parties perdues par A (bascule au milieu) | +300 atteints A / B | +300 non gagnés A / B |
+|---|---|---|---|---|---|---|---|
+| g1 (cand_0007_gate) | 51,2 % | 34,7 / 34,3 | 40,8 / 39,1 | 50,0 / 44,7 | 61 (45) | 95 / 82 | 30,5 % / 25,6 % |
+| g2 (cand_0009_anchor) | 47,0 % | 35,7 / 33,9 | 42,9 / 39,6 | 52,6 / 43,7 | 69 (50) | 90 / 97 | 36,7 % / 28,9 % |
+| g3 (cand_0011_anchor) | 46,8 % | 35,9 / 34,2 | 42,3 / 39,7 | 50,0 / 46,7 | 74 (55) | 89 / 95 | 31,5 % / 22,1 % |
+| g4 (cand_0012_anchor) | 39,5 % | 37,1 / 32,6 | **44,7 / 37,2** | **57,5 / 41,2** | **93 (77)** | **72 / 110** | 29,2 % / 15,5 % |
+
+- L'écart de conversion Stockfish (5 à 14 points) existe à toutes les générations, comme pour les candidats de la session 2 (33,6 % contre 23,0 %) : **il ne grandit pas**. Ce qui s'aggrave à la génération 4, c'est le **milieu de partie** : +40 % de gaffes, 77 des 93 défaites basculent au milieu, et g4 atteint beaucoup moins souvent une position gagnante (72 fois contre 110).
+
+**(5) Conversion avec un juge unique** (`conversion_q_juge_sup.json`, `diagnose_session.py qconv --cand <kaggle_sup> --sup <kaggle_sup>` : valeur brute de `kaggle_sup` pour les deux camps, Q > +0,6 sur 3 coups consécutifs, partie non gagnée ; 9 arènes de la session 3)
+
+| arène | A : non gagnées / parties | B : non gagnées / parties | indicateur du rapport (Q de recherche de chaque réseau) A / B |
+|---|---|---|---|
+| cand_0007_gate (g1 contre sup) | 12/67 (17,9 %) | 10/56 (17,9 %) | 17 % / 7 % |
+| cand_0009_anchor (g2) | 8/58 (13,8 %) | 15/65 (23,1 %) | 23 % / 11 % |
+| cand_0011_anchor (g3) | 10/62 (16,1 %) | 9/64 (14,1 %) | 19 % / 3 % |
+| **cand_0012_anchor (g4)** | **6/55 (10,9 %)** | **4/83 (4,8 %)** | **18 % / 2 %** |
+| arènes entre générations (5) | 45/270 (16,7 %) | 56/305 (18,4 %) | — |
+| **toutes (9)** | **81/512 (15,8 %)** | **94/573 (16,4 %)** | — |
+
+- **Avec le même juge, l'écart de conversion disparaît** (15,8 % contre 16,4 % sur 9 arènes ; seuils 0,4 / 0,5 / 0,7 : 32,3 / 21,7 / 7,1 % contre 31,8 / 23,5 / 9,7 %). Dans l'arène ancre de la génération 4, le « 18 % contre 2 % » du rapport devient 6/55 contre 4/83 (non significatif) : il venait surtout de la confiance de g4 (Q au-dessus de +0,6 dans des positions que `kaggle_sup` juge moins bonnes). Ce que le juge unique confirme, c'est que **g4 atteint moins souvent une position gagnante** (55 parties contre 83).
+
+### Conclusion : l'hypothèse d'auto-renforcement n'est pas soutenue
+- Seul le premier maillon est observé : les cibles du self-play se resserrent un peu à chaque générateur (entropie débruitée 0,906 → 0,843). Mais la politique ne se resserre presque plus après c6 (−0,03 de g1 à g4, alors que l'essentiel, −0,07, a eu lieu avant toute acceptation, sans perte d'Elo), la recherche ne se concentre pas (entropie des visites plate), et **en position gagnante les dernières générations jouent aussi bien ou mieux que `kaggle_sup`** (positions fixes) ; avec un juge unique, elles ne convertissent pas plus mal. Le « 18 % contre 2 % » de l'indicateur était un effet de confiance.
+- Ce que les données montrent à la place : une **dérive** (coups préférés différents de `kaggle_sup` 12 → 16 %, top-1 Lichess −0,9 point, perte de politique Lichess +0,047) et une **non-transitivité** : chaque génération fait jeu égal avec la précédente (somme des écarts en arène A : +9 +9 −3 −14 = +1) mais recule contre l'ancre (+9, −21, −23, −74). La perte de force se voit en partie réelle au **milieu de partie** (gaffes +40 % pour g4) et dans la fréquence des avantages obtenus, pas dans la conversion ni sur des positions isolées (résolution ~±5 cp, sous l'écart réel de ~4,5 cp). Interprétation la plus probable : à ~100 000 positions par génération et 200 simulations, l'entraînement sur ses propres parties fait oublier une partie de ce que `kaggle_sup` savait du milieu de partie, sans que la recherche apporte assez pour compenser, et l'arène contre le précédent ne le voit pas. Réserve : l'Elo de g4 (−74 ± 42) peut être en partie de la malchance (g3 → g4 : −51 ± 59, non significatif), mais la tendance sur 4 générations est nette (moyenne de g2 à g4 : −39).
+- Suite : `docs/options_apres_session3.md` (document de décision, rien d'implémenté).
