@@ -1733,3 +1733,9 @@ Hypothèse testée : le réseau devient plus sûr de lui, sa recherche se concen
 - Affinage : 234 positions/s (essai à la vraie taille de lot) → 1 000 pas ≈ **1 h 15**, + 5 évaluations (~1,5 min chacune) et le chargement ≈ **1 h 25**.
 - Arène : 964 simulations/s mesurées (4 processus × 3 threads, 50 parties par processus) ; ~3,6 M de simulations (≈ 90 coups cherchés par partie × 200 × 200 parties), fin moins efficace quand il reste peu de parties ≈ **1 h 15 à 1 h 30**.
 - **Total ≈ 4 h 45 à 5 h.**
+
+### Lancement de la chaîne B2 (2026-11-07, 23:59, sur secteur)
+- Code figé : commit `6dd114a`, copie de travail `..\Projet_chess_b2` (`git worktree`), `PYTHONPATH` sur sa `src` (vérifié dans le journal de la chaîne : `chesszero` chargé depuis la copie) ; données, Stockfish, tables et `kaggle_sup` lus dans le dépôt principal. Script `data\b2\run.sh`, journal `data\b2\run.log` (hors git).
+- Étapes : étiquetage de l'entraînement (1 000 000), du contrôle (20 000), affinage (code 5 = critère 1 non rempli : la chaîne s'arrête sans arène), arène locale `--kind anchor --pairs 100` contre `kaggle_sup` (4 processus × 3 threads, 50 parties par processus, tables WDL). **La mesure v2 n'est pas dans la chaîne** (accord de l'auteur après l'arène).
+- Premiers chiffres : 1 000 000 de positions tirées, **132 115 tirages écartés (11,7 %)** car positions des lignes protégées ; premier morceau de 50 000 en 6,0 min (139/s), profondeur médiane 13, 1 133 mats (2,3 %).
+- Plan B1 (sans implémentation, accord attendu) : `docs/plan_b1.md`.
