@@ -1,0 +1,27 @@
+# B1 (docs/plan_b1.md) : réseau ~2 fois plus lourd que kaggle (12 blocs x 160 canaux, ~5,8 M de paramètres),
+# entraîné de zéro avec la même recette que kaggle_sup sur data/lichess_48m (16 mois, ouvertures protégées retirées).
+[model]
+n_blocks = 12
+n_filters = 160
+value_hidden = 128
+
+[train]
+batch_size = 1024
+lr = 2e-3
+weight_decay = 0.01
+warmup_steps = 1000
+min_lr_ratio = 0.01
+total_steps = 92000      # même nombre de pas que kaggle_sup : ~2,2 passages sur ~42 M de positions ; ne plus changer en cours de run
+grad_clip = 1.0
+log_every = 100
+eval_every = 1000
+save_every = 500         # reprise possible après une coupure de session (~2 min de travail perdu au plus)
+keep_last = 3
+val_positions = 100000
+amp = "auto"
+num_workers = 3          # Kaggle : 4 cœurs CPU
+mask_train_loss = true
+seed = 0
+min_pos_per_s = 3000     # critère approuvé le 2026-11-08 : arrêt si le débit est sous 3 000 positions/s au pas 2 000
+throughput_check_step = 2000
+throughput_skip_steps = 200

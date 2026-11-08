@@ -71,11 +71,17 @@ class TrainConfig:
     num_workers: int = 2  # processus qui préparent les masques de coups légaux (0 = dans le processus)
     mask_train_loss: bool = True  # false : perte politique sans masque (plus de masques à calculer à l'entraînement)
     seed: int = 0
+    # Garde-fou de débit (B1, quota Kaggle) : au pas `throughput_check_step`, si le débit mesuré depuis le pas
+    # `throughput_skip_steps` (attente des données + calcul ; validations et sauvegardes exclues) est sous
+    # `min_pos_per_s`, sauvegarde de last.pt et arrêt (`stopped_low_throughput`). 0 = pas de garde-fou.
+    min_pos_per_s: float = 0.0
+    throughput_check_step: int = 2000
+    throughput_skip_steps: int = 200
 
     def __post_init__(self):
         if self.amp not in ("auto", "off"):
             raise ValueError(f"amp doit valoir « auto » ou « off », pas {self.amp!r}")
-        for name in ("save_every", "eval_every"):
+        for name in ("save_every", "eval_every", "throughput_check_step"):
             if getattr(self, name) % self.log_every:
                 # sinon une reprise recommencerait une fenêtre de moyenne en cours de route
                 raise ValueError(f"{name} doit être un multiple de log_every ({self.log_every})")
@@ -351,6 +357,149 @@ def evaluate(model: ChessNet, batches: Iterable[Batch], device: torch.device, us
     return meter.means()
 
 
+# --------------------------------------------------------------------------- plusieurs GPU, garde-fou de débit
+
+
+def wrap_data_parallel(model: nn.Module, device: torch.device, gpus: int, force: bool = False, log=print) -> nn.Module:
+    """`nn.DataParallel` sur les GPU 0..gpus-1 si gpus > 1 (ou si `force`, même sans GPU : sur CPU l'enveloppe
+    appelle simplement le réseau). Refus si moins de `gpus` GPU sont visibles."""
+    if gpus > 1:
+        visible = torch.cuda.device_count() if device.type == "cuda" else 0
+        if visible < gpus:
+            raise ValueError(f"{gpus} GPU demandés, {visible} visibles")
+        log(f"DataParallel sur {gpus} GPU : chaque lot est coupé en {gpus}")
+        return nn.DataParallel(model, device_ids=list(range(gpus)))
+    if force:
+        return nn.DataParallel(model)
+    return model
+
+
+class ThroughputGuard:
+    """Débit (positions/s, attente des données + calcul) des pas `throughput_skip_steps`+1 .. `throughput_check_step`,
+    jugé au pas de contrôle ; écrit `throughput_check.json`. Inactif si `min_pos_per_s` = 0, si l'entraînement a
+    repris au-delà du pas de contrôle, ou s'il a repris si près du contrôle que moins de 100 pas seraient mesurés."""
+
+    def __init__(self, cfg: TrainConfig, start_step: int, out_dir: Path, log=print):
+        self.cfg, self.out_dir, self.log = cfg, Path(out_dir), log
+        self.first = max(start_step, cfg.throughput_skip_steps)
+        measurable = cfg.throughput_check_step - self.first
+        self.active = cfg.min_pos_per_s > 0 and measurable > 0 and (start_step <= cfg.throughput_skip_steps
+                                                                    or measurable >= 100)
+        if cfg.min_pos_per_s > 0 and not self.active and start_step < cfg.throughput_check_step:
+            log(f"Garde-fou de débit inactif : reprise au pas {start_step}, trop près du contrôle")
+        self.n, self.seconds, self.rate = 0, 0.0, None
+
+    def add(self, step: int, positions: int, seconds: float) -> None:
+        if self.active and self.first < step <= self.cfg.throughput_check_step:
+            self.n += positions
+            self.seconds += seconds
+
+    def failed(self, step: int) -> bool:
+        if not self.active or step != self.cfg.throughput_check_step:
+            return False
+        import json
+
+        self.rate = self.n / max(self.seconds, 1e-9)
+        ok = self.rate >= self.cfg.min_pos_per_s
+        (self.out_dir / "throughput_check.json").write_text(json.dumps(
+            {"step": step, "measured_from_step": self.first, "positions": self.n, "seconds": round(self.seconds, 2),
+             "pos_per_s": round(self.rate, 1), "min_pos_per_s": self.cfg.min_pos_per_s, "ok": ok}, indent=1) + "\n",
+            encoding="utf-8")
+        self.log(f"CONTRÔLE DU DÉBIT au pas {step} : {self.rate:,.0f} positions/s (seuil {self.cfg.min_pos_per_s:,.0f}) "
+                 f"-> {'on continue' if ok else 'ARRÊT'}")
+        return not ok
+
+
+def bench_throughput(model_cfg: ModelConfig, cfg: TrainConfig, data_dir: str | Path, device: torch.device,
+                     gpus_list=(1, 2), steps: int = 300, skip: int = 50, shards: int = 4, log=print) -> dict:
+    """Essai de débit d'entraînement (réseau neuf, rien sauvegardé) sur les `shards` premiers shards : pour chaque
+    nombre de GPU, `steps` pas complets (passe avant/arrière, optimiseur, masques par le pool), débit mesuré après
+    `skip` pas. Avant de mesurer DataParallel, contrôle de cohérence : sorties du réseau seul et enveloppé sur le
+    même lot, en mode évaluation (écart attendu ~1e-3 en fp16, seuil 0,05). Renvoie {gpus: résultat}."""
+    from chesszero.data import shard_paths
+
+    skip = min(skip, steps // 5)  # au moins 4/5 des pas mesurés
+    files = shard_paths(data_dir, "train")[:shards]
+    parts = [dict(np.load(f)) for f in files]
+    data = {k: np.concatenate([p[k] for p in parts]) for k in ("boards", "moves", "results", "value_valid")}
+    use_amp = cfg.amp == "auto" and device.type == "cuda"
+    if device.type == "cuda":
+        torch.backends.cudnn.benchmark = True
+    pool = ProcessPoolExecutor(cfg.num_workers) if cfg.num_workers > 0 else None
+    out = {}
+    try:
+        for gpus in gpus_list:
+            visible = torch.cuda.device_count() if device.type == "cuda" else 0
+            if gpus > 1 and visible < gpus:
+                out[gpus] = {"skipped": f"{visible} GPU visible(s)"}
+                log(f"{gpus} GPU : non mesuré ({visible} GPU visible(s))")
+                continue
+            torch.manual_seed(cfg.seed)
+            base = build_model(model_cfg).to(device)
+            model = wrap_data_parallel(base, device, gpus, log=log)
+            optimizer, _ = build_optimizer(base, cfg)
+            scaler = torch.amp.GradScaler(device.type, enabled=use_amp)
+            res = {}
+            if gpus > 1:  # cohérence : même lot, réseau seul contre réseau enveloppé (mode évaluation)
+                x = torch.from_numpy(unpack_batch(data["boards"][:512])).to(device)
+                base.eval()
+                with torch.no_grad(), torch.autocast(device_type=device.type, dtype=torch.float16, enabled=use_amp):
+                    l1, v1 = base(x)
+                    l2, v2 = model(x)
+                res["max_diff_logits"] = float((l1.float() - l2.float()).abs().max())
+                res["max_diff_value"] = float((v1.float() - v2.float()).abs().max())
+                res["consistent"] = res["max_diff_logits"] < 0.05 and res["max_diff_value"] < 0.05
+            base.train()
+            batches = stream_batches(data, train_indices(len(data["boards"]), cfg.batch_size, cfg.seed, 0, steps), pool)
+            t0, n, losses = time.perf_counter(), 0, []
+            for i, batch in enumerate(batches):
+                if i == skip:
+                    if device.type == "cuda":
+                        torch.cuda.synchronize()
+                    t0, n = time.perf_counter(), 0
+                loss, _, _, _, _ = forward_loss(model, batch, device, use_amp)
+                optimizer.zero_grad(set_to_none=True)
+                scaler.scale(loss).backward()
+                scaler.unscale_(optimizer)
+                nn.utils.clip_grad_norm_(base.parameters(), cfg.grad_clip)
+                scaler.step(optimizer)
+                scaler.update()
+                losses.append(float(loss.detach()))
+                n += len(batch.moves)
+            if device.type == "cuda":
+                torch.cuda.synchronize()
+            res.update({"pos_per_s": n / (time.perf_counter() - t0), "steps": steps, "skip": skip,
+                        "loss_first": losses[0], "loss_last": float(np.mean(losses[-20:])),
+                        "finite": bool(np.isfinite(losses).all())})
+            out[gpus] = res
+            log(f"{gpus} GPU : {res['pos_per_s']:,.0f} positions/s ; perte {res['loss_first']:.3f} -> {res['loss_last']:.3f}"
+                + (f" ; cohérence DataParallel : écarts {res['max_diff_logits']:.1e} / {res['max_diff_value']:.1e} "
+                   f"({'OK' if res['consistent'] else 'ÉCHEC'})" if gpus > 1 else ""))
+            del model, base, optimizer
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+    finally:
+        if pool:
+            pool.shutdown(cancel_futures=True)
+    return out
+
+
+def choose_gpus(bench: dict, min_gain: float = 0.10) -> tuple[int, str]:
+    """Nombre de GPU retenu d'après `bench_throughput` : 2 seulement si l'essai à 2 GPU est cohérent, à perte finie
+    et au moins `min_gain` plus rapide qu'à 1 GPU ; sinon 1."""
+    one, two = bench.get(1, {}), bench.get(2, {})
+    if "pos_per_s" not in one:
+        raise ValueError("pas de mesure à 1 GPU")
+    if "pos_per_s" not in two:
+        return 1, f"2 GPU non mesurés ({two.get('skipped', 'absent')}) : 1 GPU"
+    if not (two.get("consistent") and two.get("finite")):
+        return 1, "DataParallel incohérent ou perte non finie : 1 GPU"
+    gain = two["pos_per_s"] / one["pos_per_s"] - 1
+    if gain < min_gain:
+        return 1, f"gain de 2 GPU {gain:+.0%} < {min_gain:.0%} : 1 GPU"
+    return 2, f"gain de 2 GPU {gain:+.0%} : 2 GPU"
+
+
 # --------------------------------------------------------------------------- journal CSV
 
 
@@ -391,6 +540,8 @@ def train(
     *,
     stop_after: int | None = None,
     max_minutes: float | None = None,
+    gpus: int = 1,
+    force_data_parallel: bool = False,
     log=lambda *a: print(*a, flush=True),
 ) -> dict:
     """Entraîne (ou reprend) jusqu'à `cfg.total_steps`. Retourne un résumé.
@@ -399,6 +550,10 @@ def train(
     `max_minutes` : budget de temps d'entraînement (hors chargement des données). Une fois dépassé, on
     sauvegarde `last.pt` proprement et on s'arrête (`timed_out` vaut True) ; relancer reprend. Sert aux
     essais de débit et à finir une session Kaggle (12 h) avant la coupure.
+    `gpus` > 1 : `nn.DataParallel` sur les GPU 0..gpus-1 (chaque lot est coupé entre eux) ; les checkpoints restent
+    au format d'un seul réseau (`checkpoint._unwrap`), donc une reprise peut changer de nombre de GPU.
+    `force_data_parallel` : enveloppe DataParallel même sans GPU (tests sur CPU, où elle appelle simplement le réseau).
+    Garde-fou de débit : `TrainConfig.min_pos_per_s` (résultat `stopped_low_throughput`).
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -427,6 +582,8 @@ def train(
         best_val = meta["metrics"].get("best_val_loss", math.inf)
         elapsed_before = meta["metrics"].get("elapsed_s", 0.0)
         log(f"Reprise depuis {resume} (pas {step}/{cfg.total_steps})")
+    model = wrap_data_parallel(model, device, gpus, force_data_parallel, log)
+    start_step = step
     metrics_log = MetricsLog(out_dir / "metrics.csv", resume_step=step if resume else None)
 
     t0 = time.time()
@@ -474,6 +631,8 @@ def train(
         model.train()
         is_best = False
         deadline = None if max_minutes is None else time.time() + 60 * max_minutes
+        guard = ThroughputGuard(cfg, start_step, out_dir, log)
+        t_mark = time.perf_counter()
         for batch in batches:
             t_compute = time.perf_counter()
             loss, logits, parts, legal, moves = forward_loss(model, batch, device, use_amp)
@@ -490,6 +649,7 @@ def train(
             top1, top3 = topk_correct(logits, legal, moves)
             window.add(len(batch.moves), int(batch.value_valid.sum()), parts["policy"], parts["value"], top1, top3)
             timer.compute_s += time.perf_counter() - t_compute  # synchrone : les .item() attendent le GPU
+            guard.add(step, len(batch.moves), time.perf_counter() - t_mark)
             if stop_after is not None and step >= stop_after:
                 log(f"Arrêt simulé au pas {step}")
                 return {"step": step, "interrupted": True}
@@ -515,6 +675,15 @@ def train(
                 window = Meter()
                 timer.reset()
                 sampler.reset()
+            if guard.failed(step):
+                if not saved_now:
+                    flush_window()
+                    save(False, None)
+                log(f"DÉBIT INSUFFISANT : {guard.rate:,.0f} positions/s < {cfg.min_pos_per_s:,.0f} au pas {step} : "
+                    f"arrêt (last.pt sauvegardé ; relancer reprendrait sans nouveau contrôle)")
+                return {"step": step, "interrupted": True, "stopped_low_throughput": True, "pos_per_s": guard.rate,
+                        "elapsed_s": elapsed()}
+            t_mark = time.perf_counter()
             if deadline is not None and time.time() >= deadline and not last:
                 if not saved_now:
                     flush_window()

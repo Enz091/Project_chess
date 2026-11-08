@@ -143,7 +143,7 @@ def test_lr_schedule_shape():
 
 
 def test_config_files_have_train_section():
-    for name in ("tiny", "kaggle"):
+    for name in ("tiny", "kaggle", "kaggle_l"):
         cfg = TrainConfig.named(name)
         assert cfg.total_steps > cfg.warmup_steps > 0
     with pytest.raises(ValueError):
@@ -350,3 +350,70 @@ def test_time_budget_stops_cleanly_and_resumes_identically(data_dir, tmp_path):
     assert a["step"] == b["step"] == CFG.total_steps
     for k in a["model"]:
         assert torch.equal(a["model"][k], b["model"][k]), k
+
+
+# --------------------------------------------------------------------------- B1 : plusieurs GPU, garde-fou de débit
+
+
+def test_kaggle_l_config_is_12x160_with_the_approved_throughput_guard():
+    from chesszero.model import build_model
+
+    mc, cfg = ModelConfig.named("kaggle_l"), TrainConfig.named("kaggle_l")
+    assert (mc.n_blocks, mc.n_filters) == (12, 160)
+    assert (cfg.min_pos_per_s, cfg.throughput_check_step) == (3000, 2000)
+    assert cfg.total_steps == 92000 and cfg.save_every <= 500
+    n = sum(p.numel() for p in build_model(mc).parameters())
+    assert 5.5e6 < n < 6.2e6
+
+
+def test_throughput_guard_stops_and_saves_at_the_check_step(data_dir, tmp_path):
+    import json
+
+    cfg = replace(CFG, min_pos_per_s=1e12, throughput_check_step=15, throughput_skip_steps=0)
+    guard_cfg = replace(cfg, total_steps=200)
+    out = run_to_end(data_dir, tmp_path, guard_cfg)
+    assert out["stopped_low_throughput"] and out["step"] == 15
+    assert torch.load(tmp_path / "last.pt", weights_only=False)["step"] == 15
+    check = json.loads((tmp_path / "throughput_check.json").read_text(encoding="utf-8"))
+    assert check["ok"] is False and check["measured_from_step"] == 0 and check["positions"] == 15 * CFG.batch_size
+    # relancer = reprendre au-delà du contrôle : plus de garde-fou, l'entraînement va au bout
+    assert not run_to_end(data_dir, tmp_path, guard_cfg).get("stopped_low_throughput")
+    # seuil atteignable : on continue jusqu'au bout
+    ok = run_to_end(data_dir, tmp_path / "ok", replace(cfg, min_pos_per_s=1.0))
+    assert not ok["interrupted"] and json.loads((tmp_path / "ok" / "throughput_check.json").read_text())["ok"]
+
+
+def test_data_parallel_checkpoints_are_plain_and_resume_exactly(data_dir, tmp_path):
+    """DataParallel (forcé sur CPU : l'enveloppe appelle le réseau) : checkpoints sans préfixe « module. », chargeables
+    par load_for_inference, et une coupure sous DataParallel reprise SANS lui donne les mêmes poids qu'un run d'une
+    traite sans DataParallel."""
+    from chesszero.checkpoint import load_for_inference
+
+    run_to_end(data_dir, tmp_path / "ref")
+    assert run_to_end(data_dir, tmp_path / "dp", stop_after=13, force_data_parallel=True)["interrupted"]
+    keys = torch.load(tmp_path / "dp" / "last.pt", weights_only=False)["model"].keys()
+    assert not any(k.startswith("module.") for k in keys)
+    run_to_end(data_dir, tmp_path / "dp")
+    a = torch.load(tmp_path / "ref" / "last.pt", weights_only=False)["model"]
+    b = torch.load(tmp_path / "dp" / "last.pt", weights_only=False)["model"]
+    assert all(torch.equal(a[k], b[k]) for k in a)
+    load_for_inference(tmp_path / "dp" / "last.pt")
+    with pytest.raises(ValueError):  # 2 GPU demandés sans GPU
+        run_to_end(data_dir, tmp_path / "x", gpus=2)
+
+
+def test_choose_gpus_keeps_one_gpu_unless_two_are_consistent_and_faster():
+    from chesszero.train import choose_gpus
+
+    one = {"pos_per_s": 4000.0}
+    assert choose_gpus({1: one, 2: {"skipped": "1 GPU"}})[0] == 1
+    assert choose_gpus({1: one, 2: {"pos_per_s": 7000.0, "consistent": True, "finite": True}})[0] == 2
+    assert choose_gpus({1: one, 2: {"pos_per_s": 4200.0, "consistent": True, "finite": True}})[0] == 1
+    assert choose_gpus({1: one, 2: {"pos_per_s": 7000.0, "consistent": False, "finite": True}})[0] == 1
+
+
+def test_bench_throughput_on_cpu_measures_one_gpu_and_skips_two(data_dir):
+    from chesszero.train import bench_throughput
+
+    res = bench_throughput(SMALL, CFG, data_dir, CPU, steps=12, skip=2, shards=1, log=QUIET)
+    assert res[1]["pos_per_s"] > 0 and res[1]["finite"] and "skipped" in res[2]
