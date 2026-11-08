@@ -1740,6 +1740,24 @@ Hypothèse testée : le réseau devient plus sûr de lui, sa recherche se concen
 - Premiers chiffres : 1 000 000 de positions tirées ; **132 115 positions écartées sur les 2 001 000 examinées (6,6 %)** car positions des lignes protégées (correction du 2026-11-08 : `sample_rows` examine les positions par lots de 2 n + 1 000 et compte les écartées sur tout le lot ; j'avais rapporté ce nombre à 1 132 115 et écrit 11,7 % ; le tirage lui-même est correct : les n premières positions non protégées d'une permutation) ; premier morceau de 50 000 en 6,0 min (139/s), profondeur médiane 13, 1 133 mats (2,3 %).
 - Plan B1 (sans implémentation, accord attendu) : `docs/plan_b1.md`.
 
+### Résultats de la chaîne B2 (2026-11-07 23:59 → 2026-11-08 04:58, sur secteur ; ralentie par le travail B1 en parallèle, sans effet sur les résultats : nœuds et simulations fixes)
+- **Étiquetage** : 1 000 000 de positions en 149 min (112/s), contrôle de 20 000 en 2,4 min ; profondeur médiane 13 ; 20 990 mats (2,1 %).
+- **Échelle** ajustée sur les 689 698 positions étiquetées de parties terminées normalement : **s = 611 cp** (erreur contre le résultat 0,6912 ; formule de Lichess s = 543 : 0,6921 ; espérance WDL de Stockfish : 0,7924 ; « toujours 0 » : 0,8914). Le choix de l'essai (s ajusté, pas l'espérance WDL) est confirmé à grande échelle.
+- **Affinage** (1 000 pas, 72 min de calcul) :
+
+| réseau | top-1 Lichess | perte de politique | perte de valeur Lichess (résultats) | valeur contre Stockfish (contrôle) | contre les résultats (contrôle) | \|v\| moyen (cible 0,333) |
+|---|---|---|---|---|---|---|
+| `kaggle_sup` | 53,70 % | 1,4049 | 0,7267 | 0,0573 | 0,7202 | 0,367 |
+| pas 500 | 53,75 % | 1,4072 | 0,7257 | 0,0454 | 0,7163 | 0,307 |
+| pas 750 | 53,81 % | 1,4068 | 0,7261 | 0,0447 | 0,7164 | 0,305 |
+| **pas 1 000 (jugé)** | **53,75 %** | **1,4065** | 0,7257 | **0,0446** | 0,7160 | 0,306 |
+
+- **Critère 1 (politique intacte) : REMPLI** (top-1 53,75 % ≥ 53,5 % ; perte 1,4065 ≤ 1,4149).
+- **La valeur apprend Stockfish** : erreur contre Stockfish −22 % (0,0573 → 0,0446), presque tout avant le pas 500 ; mais contre les **résultats réels** elle bouge à peine (0,7202 → 0,7160 sur le contrôle, 0,7267 → 0,7257 sur Lichess). Elle devient aussi **plus prudente** : |v| moyen 0,367 → 0,306, sous celui de la cible (0,333). `kaggle_sup` était trop tranché par rapport à Stockfish ; le réseau affiné l'est un peu trop peu.
+- **Arène locale contre `kaggle_sup`** (200 parties, 100 ouvertures fixes de l'ancre × 2 couleurs, 200 simulations, tables WDL ; 65,8 min) : **59 victoires, 70 nulles, 71 défaites, score 47,0 %, Elo −21 (intervalle à 95 % : −59 à +17), P(meilleur) 13,8 %**. Fins : abandon 75, tables 46, répétition 48, mat 31 ; 108 demi-coups en moyenne ; 32 paires sur 100 à exactement 1 point. Indicateur de conversion (Q de chaque réseau > +0,6 sur 3 coups) : le réseau B2 y arrive dans 55 parties et les gagne toutes ; `kaggle_sup` dans 76 et en laisse 6 (7,9 %) : la valeur plus prudente déclenche moins souvent le seuil ; à lire en tendance seulement.
+- **Critère 2 (arène ≥ +20 avant la mesure v2) : NON REMPLI.** Conformément aux critères fixés à l'avance, **pas de mesure v2 ; l'essai B2 n'est pas retenu** ; `kaggle_sup` reste la référence (v2 : 2423 ± 26). Fichiers : `data\b2\ft\` (`final.pt`, SHA-256 `8e59f7e0…`, `result.json`, `scale.json`, `metrics.jsonl`) et `data\b2\arena\` (`result.json`, `games.pgn`), hors git.
+- **Lecture** : à politique égale, une valeur plus proche de Stockfish à profondeur 13 ne rend pas le MCTS-200 plus fort (plutôt un peu moins, sans que ce soit significatif). Cohérent avec l'A/B de la cible de valeur et les sessions de boucle : chez ce réseau, la valeur n'est pas le facteur limitant ; ce qui sépare les réseaux, c'est la politique et la recherche (diagnostic de la session 2). Cela renforce l'intérêt de B1 (réseau plus gros, politique), qui ne dépend pas de B2.
+
 ## Plan B1 approuvé : réseau 12 × 160 entraîné de zéro sur 48 M de positions (2026-11-08)
 
 ### Décision de l'auteur
