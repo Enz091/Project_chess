@@ -1778,3 +1778,27 @@ Hypothèse testée : le réseau devient plus sûr de lui, sa recherche se concen
 - Débit d'entraînement sur CPU (`train.py --bench`, 40 pas, mêmes conditions) : 12 × 160 = 72 positions/s, 10 × 128 = 112 positions/s : rapport **1,56** (rapport de calcul des convolutions : 1,86).
 - **Estimation sur T4** (10 × 128 : 7 970 positions/s mesurées, limité par le GPU) : **1 T4 ≈ 4 300 à 5 100 positions/s** (7 970 / 1,86 à 7 970 / 1,56) → 92 000 pas ≈ 5 h 10 à 6 h 05 ; **2 T4 (DataParallel) ≈ 6 900 à 8 000** (×1,6 à ×1,8, plafond de la préparation des lots ≥ 8 000) → ≈ 3 h 15 à 3 h 50. Les deux restent au-dessus du seuil de 3 000.
 - **Quota estimé d'une session complète** : chargement (~10 min pour 44 M de positions + masques de validation), vérification des 193 shards (~3 min), essai 1 / 2 GPU (~6 min), évaluation finale sur toute la validation (~3 min) ≈ 25 min de plus : **≈ 3 h 40 à 4 h 15 avec 2 T4, 5 h 35 à 6 h 30 si l'essai retient 1 GPU** ; une seule session (`FULL_MINUTES = 630`).
+
+### Instructions pas à pas : pré-entraînement B1 sur Kaggle — code figé `832ba3607ac078df42c2d76c6b75f9f238b0fc8f`
+**Avant de commencer (sur le PC)** : `git log origin/main -2` montre le commit de code `832ba36` et le suivant (notebook avec ce hash). `notebooks\kaggle_pretrain_b1.ipynb` contient `COMMIT = "832ba3607ac078df42c2d76c6b75f9f238b0fc8f"`.
+
+1. **Créer le Dataset** : kaggle.com → *Datasets* → *New Dataset* → téléverser **`data\kaggle_upload\lichess_48m.zip`** (501 Mo ; Kaggle le décompresse) → titre **`lichess-48m`**, visibilité **Private** → *Create*. Attendre la fin du traitement, puis vérifier dans l'aperçu que `manifest.json`, `train_00000.npz` … `train_00188.npz` et `val_00000.npz` … `val_00003.npz` (193 shards) sont visibles (un dossier intermédiaire est toléré : le notebook trouve le Dataset par son manifeste).
+2. **Créer le notebook** : *Code* → *New Notebook* → *File* → *Import Notebook* → *Upload* de `notebooks\kaggle_pretrain_b1.ipynb` (ou onglet *GitHub*, dépôt `Enz091/Project_chess`). Vérifier : 1 cellule de texte + **7 cellules de code**.
+3. **Entrées** (*Add Input*) : **uniquement le Dataset `lichess-48m`** (*Your Datasets*). Rien d'autre à la première session (pas de `lichess-24m`, pas de sortie de notebook).
+4. **Cellule de réglages (la première cellule de code)** : `MODE = "check"`, `COMMIT = "832ba3607ac078df42c2d76c6b75f9f238b0fc8f"` (à comparer caractère par caractère), `EXPECTED_STEP = 0`, `GPUS = "auto"`, `FULL_MINUTES = 630`, `ACCEPT_LOW_THROUGHPUT = False`, `CONFIG = "kaggle_l"`.
+5. **Mode check** : *Session options* → *Accelerator* = **None**, *Internet* = **On**, *Persistence* = *No persistence* → *Run All* (~5 min, pas de quota GPU). Lignes attendues :
+   - « données : /kaggle/input/…/lichess-48m ; entraînement 43,985,002, validation 970,047, 193 shards ; 3,114,673 positions protégées retirées de l'entraînement » ;
+   - « vérification des shards : 25/193 » … « 193/193 », puis « données : chaque shard vérifié (SHA-256, taille, positions) » ;
+   - « reprise : aucune sortie précédente, départ de zéro (EXPECTED_STEP = 0) » ;
+   - « Pas restants : 92,000 sur 92,000 ; à 4 300 positions/s (1 T4, estimation) ≈ 6.1 h ; à 7 000 (2 T4) ≈ 3.7 h … » ;
+   - **« VÉRIFICATION DES ENTRÉES : la session démarrerait. »** puis « /kaggle/working après la vérification : vide ».
+   Un « REFUS : … » dit quoi corriger (Dataset absent ou en double, shard abîmé, sortie précédente inattendue…).
+6. **Mode train** : *Accelerator* = **GPU T4 x2** (la session redémarre) ; cellule de réglages : `MODE = "train"` (rien d'autre).
+7. **Lancer** : *Save Version* → **Save & Run All (Commit)**, nom « B1 12x160 session 1 ». Déroulé attendu :
+   - essai de débit (~6 min) : « 1 GPU : … positions/s », « DataParallel sur 2 GPU », « 2 GPU : … positions/s ; perte … ; cohérence DataParallel : écarts … (OK) », puis « Choix : gain de 2 GPU +…% : 2 GPU » (ou le repli sur 1 GPU, avec la raison) ;
+   - chargement des données (~10 min), puis une ligne tous les 100 pas et une validation tous les 1 000 pas ;
+   - au pas 2 000 : « CONTRÔLE DU DÉBIT au pas 2000 : … positions/s (seuil 3,000) -> on continue » (sinon « DÉBIT INSUFFISANT » : arrêt, bandeau dans la dernière cellule, version « Successful » ; **ne pas relancer sans décision**) ;
+   - fin attendue après ~3 h 40 à 4 h 15 (2 T4) ou ~5 h 35 à 6 h 30 (1 T4) : « FINAL (toute la validation, 970,047 positions) … », résumé du débit, puis « ENTRAÎNEMENT TERMINÉ ».
+8. **À la fin** : télécharger la sortie `b1_12x160/` (au moins `best.pt`, `last.pt`, `metrics.csv`, `bench.json`, `throughput_check.json`) dans **`checkpoints\b1_12x160\`** sur le PC.
+9. **Si la session s'arrête avant la fin** (budget atteint ou coupure Kaggle) : nouvelle version du même notebook, entrées = `lichess-48m` + **la sortie de la version précédente** (*Your Work*, une seule), `EXPECTED_STEP` = le pas donné par la dernière cellule (ou par le mode check), `MODE = "check"` puis `"train"`.
+10. **Ensuite, sur le PC** (après décision sur le point ouvert du critère 2) : critère 2 sur la validation Lichess, arène locale contre `kaggle_sup` (critère 3), puis mesure v2 seulement avec l'accord de l'auteur (critère 4).
